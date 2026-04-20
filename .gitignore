@@ -1,0 +1,29 @@
+# Raw data chunks (large, rebuilt by scripts)
+chunk*.json
+chunk*.json
+
+# New trials batch files
+new_trials_*.json
+
+# Python scripts (internal, not needed for dashboard)
+*.py
+
+# Temp / intermediate files
+missing_cost_data.json
+partial_data.json
+partial_data_v2.json
+data_extract.json
+
+# Old/unused files
+cost-spread-data.js
+cost-spread.html
+page2-comparison.html
+extract_v2.py
+split_chunks.py
+
+# Windows shortcuts
+*.lnk
+*.url
+
+# Work folder
+work/

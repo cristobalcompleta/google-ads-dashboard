@@ -1,0 +1,2994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CookUnity — Google Ads Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;font-size:13px}
+
+/* ── HEADER & TAB NAV ─────────────────────────────────────────────────────── */
+header{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 28px;display:flex;align-items:center;gap:12px}
+.logo{width:36px;height:36px;background:#f5a623;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:12px;flex-shrink:0}
+.ht h1{font-size:16px;font-weight:700;color:#0f172a}
+.ht p{font-size:11px;color:#94a3b8;margin-top:1px}
+.tab-nav{background:#fff;border-bottom:2px solid #e2e8f0;padding:0 28px;display:flex;gap:0}
+.tab-btn{background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 18px;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;transition:color .15s,border-color .15s}
+.tab-btn:hover{color:#334155}
+.tab-btn.active{color:#f5a623;border-bottom-color:#f5a623}
+
+/* ── SHARED CONTROLS ──────────────────────────────────────────────────────── */
+.controls{background:#fff;border-bottom:1px solid #e2e8f0;padding:8px 28px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.ctrl-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.ctrl-group{display:flex;align-items:center;gap:8px}
+
+/* ── DROPDOWNS ────────────────────────────────────────────────────────────── */
+.dd-wrap{position:relative}
+.dd-btn{background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;min-width:130px;justify-content:space-between;color:#334155;white-space:nowrap}
+.dd-btn:hover{border-color:#94a3b8}
+.dd-panel{position:absolute;top:calc(100%+4px);left:0;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:300;min-width:200px;display:none;flex-direction:column}
+.dd-panel.open{display:flex}
+.dd-search{border:none;border-bottom:1px solid #e2e8f0;padding:8px 12px;font-size:12px;outline:none;border-radius:8px 8px 0 0;width:100%}
+.dd-list{max-height:200px;overflow-y:auto;padding:4px 0}
+.dd-item{padding:6px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#334155;user-select:none}
+.dd-item:hover{background:#f8fafc}
+.dd-item input{width:13px;height:13px;accent-color:#f5a623;cursor:pointer;flex-shrink:0}
+.dd-item.hidden{display:none}
+.dd-actions{border-top:1px solid #e2e8f0;padding:6px 12px;display:flex;gap:8px}
+.dd-act-btn{font-size:11px;color:#f5a623;cursor:pointer;background:none;border:none;padding:0;font-weight:600}
+.dd-act-btn:hover{color:#d97706}
+
+/* ── TAB PANES ────────────────────────────────────────────────────────────── */
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* ── PAGE 1: COST SPREAD ──────────────────────────────────────────────────── */
+.main{padding:20px 28px;display:flex;flex-direction:column;gap:24px}
+.section{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px 24px}
+.section-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:2px}
+.section-sub{font-size:11px;color:#94a3b8;margin-bottom:18px}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.chart-label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+canvas{max-height:300px}
+
+/* ── PAGE 2: PERIOD COMPARISON ────────────────────────────────────────────── */
+.periods{background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 28px;display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+.period-group{display:flex;align-items:center;gap:8px}
+.period-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;color:#fff}
+.badge-a{background:#3b82f6}
+.badge-b{background:#f97316}
+.period-label{font-size:11px;color:#64748b;font-weight:600}
+.date-input{border:1px solid #cbd5e1;border-radius:5px;padding:4px 8px;font-size:12px;color:#1e293b;background:#fff}
+.date-input:focus{outline:none;border-color:#f5a623}
+.period-sep{font-size:11px;color:#94a3b8}
+.p2-main{padding:20px 28px;display:flex;flex-direction:column;gap:20px}
+.p2-section{background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden}
+.section-header{padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:10px}
+table{width:100%;border-collapse:collapse}
+thead tr{background:#f8fafc}
+th{padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;border-bottom:1px solid #e2e8f0}
+th.num{text-align:right}
+td{padding:10px 16px;font-size:13px;color:#1e293b;border-bottom:1px solid #f1f5f9;white-space:nowrap}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td.metric{font-weight:600;color:#374151;min-width:160px}
+td.sub{font-size:11px;color:#94a3b8;font-weight:400}
+tr:last-child td{border-bottom:none}
+tr.separator td{border-top:2px solid #e2e8f0;background:#fafafa;font-weight:700}
+tr:hover td{background:#f8fafc}
+.delta-pos{color:#16a34a;font-weight:600}
+.delta-neg{color:#dc2626;font-weight:600}
+.delta-neu{color:#64748b}
+.delta-inv-pos{color:#dc2626;font-weight:600}
+.delta-inv-neg{color:#16a34a;font-weight:600}
+.delta-warn{color:#f59e0b;font-weight:600}
+.pct-pill{display:inline-block;font-size:10px;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:700}
+.pill-pos{background:#dcfce7;color:#16a34a}
+.pill-neg{background:#fee2e2;color:#dc2626}
+.pill-neu{background:#f1f5f9;color:#64748b}
+/* ── SORTABLE TABLE HEADERS ──────────────────────────────────────────────── */
+.tbl-group-hd{text-align:center;background:#f8fafc;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;padding:5px 10px;border-bottom:1px solid #e2e8f0}
+.sort-hd{cursor:pointer;user-select:none;transition:color .12s,background .12s}
+.sort-hd:hover{color:#f5a623;background:#fffbf5}
+.sort-hd.sort-active{color:#f5a623}
+.sort-ind{font-size:9px;margin-left:2px;opacity:.4}
+.sort-hd.sort-active .sort-ind{opacity:1}
+.ctrl-sep{width:1px;height:24px;background:#e2e8f0;flex-shrink:0}
+.empty-state{padding:48px;text-align:center;color:#94a3b8;font-size:13px}
+.inline-filter{display:flex;align-items:center;gap:10px;padding:6px 0 2px}
+.inline-filter .ctrl-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.period-sep-inline{font-size:11px;color:#94a3b8}
+
+/* ── PAGE 0: SUMMARY ──────────────────────────────────────────────────────── */
+.p0-main{padding:20px 28px;display:flex;flex-direction:column;gap:20px}
+.p0-kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.p0-kpi-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px 24px}
+.p0-kpi-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.p0-kpi-value{font-size:28px;font-weight:800;color:#0f172a;margin-bottom:12px;line-height:1.1}
+.p0-kpi-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:4px 0;border-top:1px solid #f1f5f9}
+.p0-kpi-row-label{color:#94a3b8}
+.p0-insight-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.p0-insight-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:18px 20px;display:flex;flex-direction:column;gap:4px}
+.p0-hero{background:#1e293b;border-color:#334155}
+.p0-hero .p0-insight-title{color:#f5a623}
+.p0-hero .p0-insight-body{color:#94a3b8;font-size:12px;line-height:1.7}
+.p0-insight-icon{font-size:18px;margin-bottom:4px}
+.p0-insight-title{font-size:13px;font-weight:700;color:#0f172a;line-height:1.35}
+.p0-insight-body{font-size:11px;color:#64748b;line-height:1.65;margin-top:2px}
+</style>
+</head>
+<body>
+
+<!-- ── SHARED HEADER ─────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">CU</div>
+  <div class="ht">
+    <h1>Google Ads Dashboard</h1>
+    <p>CookUnity · Search, Shopping &amp; More · Updated manually</p>
+  </div>
+</header>
+<nav class="tab-nav">
+  <button class="tab-btn active" id="tabBtn0" onclick="showTab(0)">Summary</button>
+  <button class="tab-btn" id="tabBtn1" onclick="showTab(1)">Campaign Type Zoom In</button>
+  <button class="tab-btn" id="tabBtn2" onclick="showTab(2)">Campaign Zoom In</button>
+  <button class="tab-btn" id="tabBtn3" onclick="showTab(3)">CAC Decomposition</button>
+  <button class="tab-btn" id="tabBtn4" onclick="showTab(4)">Device Breakdown</button>
+  <button class="tab-btn" id="tabBtn5" onclick="showTab(5)">Period Comparison</button>
+</nav>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 0 — SUMMARY                                                          -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="tab0" class="tab-pane active">
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Report Date</span>
+      <input class="date-input" type="date" id="p0_date" onchange="p0_recalc()">
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Campaign Type</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('p0_ctPanel')"><span id="p0_ctLabel">All Types</span><span>▾</span></button>
+        <div class="dd-panel" id="p0_ctPanel">
+          <div class="dd-list">
+            <label class="dd-item"><input type="checkbox" value="Brand" checked onchange="p0_onCTChange()"> Brand</label>
+            <label class="dd-item"><input type="checkbox" value="NonBrand" checked onchange="p0_onCTChange()"> NonBrand</label>
+            <label class="dd-item"><input type="checkbox" value="BrandShopping" checked onchange="p0_onCTChange()"> BrandShopping</label>
+            <label class="dd-item"><input type="checkbox" value="NonBrandShopping" checked onchange="p0_onCTChange()"> NonBrandShopping</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Campaign</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('p0_campPanel')"><span id="p0_campLabel">All Campaigns</span><span>▾</span></button>
+        <div class="dd-panel" id="p0_campPanel">
+          <input class="dd-search" type="text" placeholder="Search campaigns…" oninput="p0_filterCampList(this.value)">
+          <div class="dd-list" id="p0_campList"></div>
+          <div class="dd-actions">
+            <button class="dd-act-btn" onclick="p0_campSelectAll()">Select all</button>
+            <button class="dd-act-btn" onclick="p0_campClearAll()">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="p0-main">
+
+    <!-- KPI Cards -->
+    <div class="p0-kpi-grid" id="p0_kpiGrid">
+      <div class="p0-kpi-card" style="grid-column:1/-1"><div class="empty-state">Loading…</div></div>
+    </div>
+
+    <!-- Insight Cards -->
+    <div class="p0-insight-grid" id="p0_insightGrid">
+      <div class="p0-insight-card p0-hero" style="grid-column:1/-1"><div class="p0-insight-body">Loading…</div></div>
+    </div>
+
+    <!-- 14-day Trend Chart -->
+    <div class="p2-section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">30-Day Trend — Trials &amp; CAC</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:1px">Trials volume (bars · left axis) · Trials CAC (line · right axis) · dashed = 7-day avg</div>
+        </div>
+      </div>
+      <div style="padding:20px 24px">
+        <canvas id="p0_chart" style="max-height:800px;min-height:600px"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 2 — CAMPAIGN ZOOM IN                                                -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="tab2" class="tab-pane">
+  <div class="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Campaign Type</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('p1_ctPanel')"><span id="p1_ctLabel">All Types</span><span>▾</span></button>
+        <div class="dd-panel" id="p1_ctPanel">
+          <div class="dd-list">
+            <label class="dd-item"><input type="checkbox" value="Brand" checked onchange="p1_onCTChange()"> Brand</label>
+            <label class="dd-item"><input type="checkbox" value="NonBrand" checked onchange="p1_onCTChange()"> NonBrand</label>
+            <label class="dd-item"><input type="checkbox" value="BrandShopping" checked onchange="p1_onCTChange()"> BrandShopping</label>
+            <label class="dd-item"><input type="checkbox" value="NonBrandShopping" checked onchange="p1_onCTChange()"> NonBrandShopping</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Chart Range</span>
+      <input class="date-input" type="date" id="p1_chartStart" onchange="p1_renderChart()">
+      <span class="period-sep-inline">→</span>
+      <input class="date-input" type="date" id="p1_chartEnd" onchange="p1_renderChart()">
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- Chart A -->
+    <div class="section">
+      <div class="section-title">Cost Spread by Campaign Category</div>
+      <div class="section-sub">% of spend within selected campaign types · Status &amp; Campaign Type filters apply</div>
+      <div class="charts-row">
+        <div><div class="chart-label">Daily</div><canvas id="cA_d"></canvas></div>
+        <div><div class="chart-label">Weekly</div><canvas id="cA_w"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Snapshot date picker -->
+    <div class="inline-filter">
+      <span class="ctrl-label">Snapshot Date</span>
+      <input class="date-input" type="date" id="p1_day" onchange="p1_recalc()">
+      <span class="period-sep-inline" style="margin-left:4px">— deltas vs yesterday, same day LW &amp; 7-day avg</span>
+    </div>
+
+    <!-- Snapshot Table -->
+    <div class="p2-section" style="padding:0;overflow:hidden">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Campaign Snapshot — Selected Day</div>
+          <div class="section-sub" id="p1_tableSubtitle" style="margin-bottom:0">All filters applied · Default sort: Cost ↓</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2" class="sort-hd" id="p1_sh_type" onclick="p1_sortBy('type')">Type <span class="sort-ind" id="p1_si_type">⇅</span></th>
+              <th rowspan="2" class="sort-hd" id="p1_sh_camp" onclick="p1_sortBy('camp')">Campaign <span class="sort-ind" id="p1_si_camp">⇅</span></th>
+              <th rowspan="2" class="sort-hd num" id="p1_sh_cac_t" onclick="p1_sortBy('cac_t')">CAC <span class="sort-ind" id="p1_si_cac_t">⇅</span></th>
+              <th colspan="3" class="tbl-group-hd">CAC vs</th>
+              <th rowspan="2" class="sort-hd num" id="p1_sh_cost_t" onclick="p1_sortBy('cost_t')">Cost <span class="sort-ind" id="p1_si_cost_t">↓</span></th>
+              <th colspan="3" class="tbl-group-hd">Cost vs</th>
+            </tr>
+            <tr>
+              <th class="sort-hd num" id="p1_sh_cac_dY"  onclick="p1_sortBy('cac_dY')">Yesterday <span class="sort-ind" id="p1_si_cac_dY">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_cac_dLW" onclick="p1_sortBy('cac_dLW')">Same Day LW <span class="sort-ind" id="p1_si_cac_dLW">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_cac_d7"  onclick="p1_sortBy('cac_d7')">7-Day Avg <span class="sort-ind" id="p1_si_cac_d7">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_cost_dY"  onclick="p1_sortBy('cost_dY')">Yesterday <span class="sort-ind" id="p1_si_cost_dY">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_cost_dLW" onclick="p1_sortBy('cost_dLW')">Same Day LW <span class="sort-ind" id="p1_si_cost_dLW">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_cost_d7"  onclick="p1_sortBy('cost_d7')">7-Day Avg <span class="sort-ind" id="p1_si_cost_d7">⇅</span></th>
+            </tr>
+          </thead>
+          <tbody id="p1_tableBody">
+            <tr><td colspan="10" class="empty-state">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Period date picker -->
+    <div class="inline-filter">
+      <span class="ctrl-label">Period</span>
+      <input class="date-input" type="date" id="p1_pStart" onchange="p1_recalc()">
+      <span class="period-sep-inline">→</span>
+      <input class="date-input" type="date" id="p1_pEnd" onchange="p1_recalc()">
+      <span class="period-sep-inline" style="margin-left:4px">— campaign efficiency for spend decisions</span>
+    </div>
+
+    <!-- Period Performance Table -->
+    <div class="p2-section" style="padding:0;overflow:hidden">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Campaign Performance — Period View</div>
+          <div class="section-sub" id="p1_pTableSubtitle" style="margin-bottom:0">All filters applied · Default sort: Cost ↓</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th class="sort-hd"     id="p1_sh_p_type" onclick="p1_pSortBy('type')">Type     <span class="sort-ind" id="p1_si_p_type">⇅</span></th>
+              <th class="sort-hd"     id="p1_sh_p_camp" onclick="p1_pSortBy('camp')">Campaign  <span class="sort-ind" id="p1_si_p_camp">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cost" onclick="p1_pSortBy('cost')">Cost      <span class="sort-ind" id="p1_si_p_cost">↓</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cac"  onclick="p1_pSortBy('cac')">CAC       <span class="sort-ind" id="p1_si_p_cac">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_ctr"  onclick="p1_pSortBy('ctr')">CTR       <span class="sort-ind" id="p1_si_p_ctr">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cpc"  onclick="p1_pSortBy('cpc')">CPC       <span class="sort-ind" id="p1_si_p_cpc">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cvr"  onclick="p1_pSortBy('cvr')">CVR       <span class="sort-ind" id="p1_si_p_cvr">⇅</span></th>
+            </tr>
+          </thead>
+          <tbody id="p1_pTableBody">
+            <tr><td colspan="7" class="empty-state">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 5 — PERIOD COMPARISON                                               -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="tab5" class="tab-pane">
+
+  <!-- PERIOD INPUTS -->
+  <div class="periods">
+    <div class="period-group">
+      <span class="period-badge badge-a">A</span>
+      <span class="period-label">Start</span>
+      <input class="date-input" type="date" id="aStart" value="2026-03-20" onchange="p2_recalc()">
+      <span class="period-sep">→</span>
+      <span class="period-label">End</span>
+      <input class="date-input" type="date" id="aEnd" value="2026-03-26" onchange="p2_recalc()">
+    </div>
+    <div style="width:1px;height:24px;background:#e2e8f0"></div>
+    <div class="period-group">
+      <span class="period-badge badge-b">B</span>
+      <span class="period-label">Start</span>
+      <input class="date-input" type="date" id="bStart" value="2026-03-27" onchange="p2_recalc()">
+      <span class="period-sep">→</span>
+      <span class="period-label">End</span>
+      <input class="date-input" type="date" id="bEnd" value="2026-04-02" onchange="p2_recalc()">
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="controls">
+    <span class="ctrl-label">Filters</span>
+
+    <!-- Campaign Type -->
+    <div class="dd-wrap">
+      <button class="dd-btn" onclick="toggleDD('p2_ctPanel')"><span id="p2_ctLabel">All Types</span><span>▾</span></button>
+      <div class="dd-panel" id="p2_ctPanel">
+        <div class="dd-list">
+          <label class="dd-item"><input type="checkbox" value="Brand" checked onchange="p2_onCTChange()"> Brand</label>
+          <label class="dd-item"><input type="checkbox" value="NonBrand" checked onchange="p2_onCTChange()"> NonBrand</label>
+          <label class="dd-item"><input type="checkbox" value="BrandShopping" checked onchange="p2_onCTChange()"> BrandShopping</label>
+          <label class="dd-item"><input type="checkbox" value="NonBrandShopping" checked onchange="p2_onCTChange()"> NonBrandShopping</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campaign (searchable) -->
+    <div class="dd-wrap">
+      <button class="dd-btn" onclick="toggleDD('p2_campPanel')"><span id="p2_campLabel">All Campaigns</span><span>▾</span></button>
+      <div class="dd-panel" id="p2_campPanel">
+        <input class="dd-search" type="text" placeholder="Search campaigns..." oninput="p2_filterList('p2_campList',this.value)">
+        <div class="dd-list" id="p2_campList"></div>
+        <div class="dd-actions">
+          <button class="dd-act-btn" onclick="p2_selectAll('p2_campList')">Select all</button>
+          <button class="dd-act-btn" onclick="p2_clearAll('p2_campList')">Clear</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TABLE -->
+  <div class="p2-main">
+    <div class="p2-section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Period A vs Period B — Performance Summary</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:1px" id="p2_tableSubtitle">All campaigns · New + Legacy</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th class="num"><span class="period-badge badge-a" style="font-size:10px">A</span></th>
+            <th class="num"><span class="period-badge badge-b" style="font-size:10px">B</span></th>
+            <th class="num">Δ Absolute</th>
+            <th class="num">Δ %</th>
+          </tr>
+        </thead>
+        <tbody id="p2_tableBody">
+          <tr><td colspan="5" class="empty-state">Select periods and filters above to compare.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- VOLUME FUNNEL TABLE -->
+    <div class="p2-section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Volume Funnel — Period A vs Period B</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:1px">Impressions → Clicks → [Conversions | Trials] · Same filters applied</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Stage</th>
+            <th class="num"><span class="period-badge badge-a" style="font-size:10px">A</span> Volume</th>
+            <th class="num"><span class="period-badge badge-b" style="font-size:10px">B</span> Volume</th>
+            <th class="num">Δ Volume</th>
+            <th class="num"><span class="period-badge badge-a" style="font-size:10px">A</span> Rate</th>
+            <th class="num"><span class="period-badge badge-b" style="font-size:10px">B</span> Rate</th>
+            <th class="num">Δ Rate (pp)</th>
+          </tr>
+        </thead>
+        <tbody id="p2_funnelBody">
+          <tr><td colspan="7" class="empty-state">Select periods above to view funnel.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 4 — DEVICE BREAKDOWN                                               -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="tab4" class="tab-pane">
+
+  <!-- PERIOD INPUTS -->
+  <div class="periods">
+    <div class="period-group">
+      <span class="period-badge badge-a">A</span>
+      <span class="period-label">Start</span>
+      <input class="date-input" type="date" id="p3_aStart" value="2026-03-20" onchange="p3_recalc()">
+      <span class="period-sep">→</span>
+      <span class="period-label">End</span>
+      <input class="date-input" type="date" id="p3_aEnd" value="2026-03-26" onchange="p3_recalc()">
+    </div>
+    <div style="width:1px;height:24px;background:#e2e8f0"></div>
+    <div class="period-group">
+      <span class="period-badge badge-b">B</span>
+      <span class="period-label">Start</span>
+      <input class="date-input" type="date" id="p3_bStart" value="2026-03-27" onchange="p3_recalc()">
+      <span class="period-sep">→</span>
+      <span class="period-label">End</span>
+      <input class="date-input" type="date" id="p3_bEnd" value="2026-04-02" onchange="p3_recalc()">
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="controls">
+    <span class="ctrl-label">Filters</span>
+
+    <div class="dd-wrap">
+      <button class="dd-btn" onclick="toggleDD('p3_ctPanel')"><span id="p3_ctLabel">All Types</span><span>▾</span></button>
+      <div class="dd-panel" id="p3_ctPanel">
+        <div class="dd-list">
+          <label class="dd-item"><input type="checkbox" value="Brand" checked onchange="p3_onCTChange()"> Brand</label>
+          <label class="dd-item"><input type="checkbox" value="NonBrand" checked onchange="p3_onCTChange()"> NonBrand</label>
+          <label class="dd-item"><input type="checkbox" value="BrandShopping" checked onchange="p3_onCTChange()"> BrandShopping</label>
+          <label class="dd-item"><input type="checkbox" value="NonBrandShopping" checked onchange="p3_onCTChange()"> NonBrandShopping</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="dd-wrap">
+      <button class="dd-btn" onclick="toggleDD('p3_campPanel')"><span id="p3_campLabel">All Campaigns</span><span>▾</span></button>
+      <div class="dd-panel" id="p3_campPanel">
+        <input class="dd-search" type="text" placeholder="Search campaigns..." oninput="p3_filterList('p3_campList',this.value)">
+        <div class="dd-list" id="p3_campList"></div>
+        <div class="dd-actions">
+          <button class="dd-act-btn" onclick="p3_selectAll('p3_campList')">Select all</button>
+          <button class="dd-act-btn" onclick="p3_clearAll('p3_campList')">Clear</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- DEVICE TABLES — one per metric, dynamically rendered -->
+  <div id="p3_container" class="p2-main">
+    <div class="p2-section"><div class="empty-state">Loading device data…</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 3 — CAC DECOMPOSITION                                               -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="tab3" class="tab-pane">
+
+  <!-- PERIOD INPUTS -->
+  <div class="periods">
+    <div class="period-group">
+      <span class="period-badge badge-a">A</span>
+      <span class="period-label">Start</span>
+      <input class="date-input" type="date" id="p4_aStart" value="2026-03-20" onchange="p4_recalc()">
+      <span class="period-sep">→</span>
+      <span class="period-label">End</span>
+      <input class="date-input" type="date" id="p4_aEnd" value="2026-03-26" onchange="p4_recalc()">
+    </div>
+    <div style="width:1px;height:24px;background:#e2e8f0"></div>
+    <div class="period-group">
+      <span class="period-badge badge-b">B</span>
+      <span class="period-label">Start</span>
+      <input class="date-input" type="date" id="p4_bStart" value="2026-03-27" onchange="p4_recalc()">
+      <span class="period-sep">→</span>
+      <span class="period-label">End</span>
+      <input class="date-input" type="date" id="p4_bEnd" value="2026-04-02" onchange="p4_recalc()">
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="controls">
+    <span class="ctrl-label">Filters</span>
+
+    <div class="dd-wrap">
+      <button class="dd-btn" onclick="toggleDD('p4_ctPanel')"><span id="p4_ctLabel">All Types</span><span>▾</span></button>
+      <div class="dd-panel" id="p4_ctPanel">
+        <div class="dd-list">
+          <label class="dd-item"><input type="checkbox" value="Brand" checked onchange="p4_onCTChange()"> Brand</label>
+          <label class="dd-item"><input type="checkbox" value="NonBrand" checked onchange="p4_onCTChange()"> NonBrand</label>
+          <label class="dd-item"><input type="checkbox" value="BrandShopping" checked onchange="p4_onCTChange()"> BrandShopping</label>
+          <label class="dd-item"><input type="checkbox" value="NonBrandShopping" checked onchange="p4_onCTChange()"> NonBrandShopping</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="dd-wrap">
+      <button class="dd-btn" onclick="toggleDD('p4_campPanel')"><span id="p4_campLabel">All Campaigns</span><span>▾</span></button>
+      <div class="dd-panel" id="p4_campPanel">
+        <input class="dd-search" type="text" placeholder="Search campaigns..." oninput="p4_filterList('p4_campList',this.value)">
+        <div class="dd-list" id="p4_campList"></div>
+        <div class="dd-actions">
+          <button class="dd-act-btn" onclick="p4_selectAll('p4_campList')">Select all</button>
+          <button class="dd-act-btn" onclick="p4_clearAll('p4_campList')">Clear</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CONTENT -->
+  <div class="p2-main">
+
+    <!-- Waterfall Chart -->
+    <div class="p2-section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">CAC Waterfall — What drove the change?</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:1px">Trials CAC · log-proportional attribution across CPM → CTR → CVR</div>
+        </div>
+      </div>
+      <div style="padding:20px 24px;min-height:200px" id="p4_chartWrap">
+        <canvas id="p4_chart" style="max-height:280px"></canvas>
+      </div>
+    </div>
+
+    <!-- Decomposition Table -->
+    <div class="p2-section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">CAC Decomposition Table</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:1px" id="p4_tableSubtitle">All campaigns · New + Legacy</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th class="num"><span class="period-badge badge-a" style="font-size:10px">A</span></th>
+            <th class="num"><span class="period-badge badge-b" style="font-size:10px">B</span></th>
+            <th class="num">Δ %</th>
+            <th class="num">$ Effect on CAC</th>
+          </tr>
+        </thead>
+        <tbody id="p4_tableBody">
+          <tr><td colspan="5" class="empty-state">Select periods above to view decomposition.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 1 — CAMPAIGN TYPE ZOOM IN                                           -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="tab1" class="tab-pane">
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Chart Range</span>
+      <input class="date-input" type="date" id="p5_chartStart" onchange="p5_renderChart()">
+      <span class="period-sep-inline">→</span>
+      <input class="date-input" type="date" id="p5_chartEnd" onchange="p5_renderChart()">
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- Chart: Cost Spread by Campaign Type -->
+    <div class="section">
+      <div class="section-title">Cost Spread by Campaign Type</div>
+      <div class="section-sub">% of spend across Brand / NonBrand / BrandShopping / NonBrandShopping · Status filter applies</div>
+      <div class="charts-row">
+        <div><div class="chart-label">Daily</div><canvas id="cT_d"></canvas></div>
+        <div><div class="chart-label">Weekly</div><canvas id="cT_w"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Snapshot date picker -->
+    <div class="inline-filter">
+      <span class="ctrl-label">Snapshot Date</span>
+      <input class="date-input" type="date" id="p5_day" onchange="p5_recalc()">
+      <span class="period-sep-inline" style="margin-left:4px">— deltas vs yesterday, same day LW &amp; 7-day avg</span>
+    </div>
+
+    <!-- Snapshot Table -->
+    <div class="p2-section" style="padding:0;overflow:hidden">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Campaign Type Snapshot — Selected Day</div>
+          <div class="section-sub" id="p5_tableSubtitle" style="margin-bottom:0">Status filter applied · Default sort: Cost ↓</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2" class="sort-hd" id="p5_sh_type" onclick="p5_sortBy('type')">Campaign Type <span class="sort-ind" id="p5_si_type">⇅</span></th>
+              <th rowspan="2" class="sort-hd num" id="p5_sh_cac_t" onclick="p5_sortBy('cac_t')">CAC <span class="sort-ind" id="p5_si_cac_t">⇅</span></th>
+              <th colspan="3" class="tbl-group-hd">CAC vs</th>
+              <th rowspan="2" class="sort-hd num" id="p5_sh_cost_t" onclick="p5_sortBy('cost_t')">Cost <span class="sort-ind" id="p5_si_cost_t">↓</span></th>
+              <th colspan="3" class="tbl-group-hd">Cost vs</th>
+            </tr>
+            <tr>
+              <th class="sort-hd num" id="p5_sh_cac_dY"  onclick="p5_sortBy('cac_dY')">Yesterday <span class="sort-ind" id="p5_si_cac_dY">⇅</span></th>
+              <th class="sort-hd num" id="p5_sh_cac_dLW" onclick="p5_sortBy('cac_dLW')">Same Day LW <span class="sort-ind" id="p5_si_cac_dLW">⇅</span></th>
+              <th class="sort-hd num" id="p5_sh_cac_d7"  onclick="p5_sortBy('cac_d7')">7-Day Avg <span class="sort-ind" id="p5_si_cac_d7">⇅</span></th>
+              <th class="sort-hd num" id="p5_sh_cost_dY"  onclick="p5_sortBy('cost_dY')">Yesterday <span class="sort-ind" id="p5_si_cost_dY">⇅</span></th>
+              <th class="sort-hd num" id="p5_sh_cost_dLW" onclick="p5_sortBy('cost_dLW')">Same Day LW <span class="sort-ind" id="p5_si_cost_dLW">⇅</span></th>
+              <th class="sort-hd num" id="p5_sh_cost_d7"  onclick="p5_sortBy('cost_d7')">7-Day Avg <span class="sort-ind" id="p5_si_cost_d7">⇅</span></th>
+            </tr>
+          </thead>
+          <tbody id="p5_tableBody">
+            <tr><td colspan="9" class="empty-state">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Period date picker -->
+    <div class="inline-filter">
+      <span class="ctrl-label">Period</span>
+      <input class="date-input" type="date" id="p5_pStart" onchange="p5_recalc()">
+      <span class="period-sep-inline">→</span>
+      <input class="date-input" type="date" id="p5_pEnd" onchange="p5_recalc()">
+      <span class="period-sep-inline" style="margin-left:4px">— type efficiency for spend decisions</span>
+    </div>
+
+    <!-- Period Performance Table -->
+    <div class="p2-section" style="padding:0;overflow:hidden">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Campaign Type Performance — Period View</div>
+          <div class="section-sub" id="p5_pTableSubtitle" style="margin-bottom:0">Status filter applied · Default sort: Cost ↓</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th class="sort-hd"     id="p5_sh_p_type" onclick="p5_pSortBy('type')">Campaign Type <span class="sort-ind" id="p5_si_p_type">⇅</span></th>
+              <th class="sort-hd num" id="p5_sh_p_cost" onclick="p5_pSortBy('cost')">Cost <span class="sort-ind" id="p5_si_p_cost">↓</span></th>
+              <th class="sort-hd num" id="p5_sh_p_cac"  onclick="p5_pSortBy('cac')">CAC  <span class="sort-ind" id="p5_si_p_cac">⇅</span></th>
+              <th class="sort-hd num" id="p5_sh_p_ctr"  onclick="p5_pSortBy('ctr')">CTR  <span class="sort-ind" id="p5_si_p_ctr">⇅</span></th>
+              <th class="sort-hd num" id="p5_sh_p_cpc"  onclick="p5_pSortBy('cpc')">CPC  <span class="sort-ind" id="p5_si_p_cpc">⇅</span></th>
+              <th class="sort-hd num" id="p5_sh_p_cvr"  onclick="p5_pSortBy('cvr')">CVR  <span class="sort-ind" id="p5_si_p_cvr">⇅</span></th>
+            </tr>
+          </thead>
+          <tbody id="p5_pTableBody">
+            <tr><td colspan="6" class="empty-state">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- DATA + SCRIPTS                                                          -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<script>
+// ── PAGE 1 DATA (Cost Spread — 422 aggregated records) ─────────────────────
+const D=[
+{d:"2026-03-15",t:"Brand",nl:"Legacy",c:"BrandCore",v:25200.51},
+{d:"2026-03-15",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:1076.43},
+{d:"2026-03-15",t:"Brand",nl:"New",c:"BrandResurrection",v:192.12},
+{d:"2026-03-15",t:"NonBrand",nl:"Legacy",c:"Competitors",v:9401.79},
+{d:"2026-03-15",t:"NonBrand",nl:"Legacy",c:"Cuisines",v:35.14},
+{d:"2026-03-15",t:"NonBrand",nl:"Legacy",c:"Events",v:40.43},
+{d:"2026-03-15",t:"NonBrand",nl:"Legacy",c:"Generic",v:3725.33},
+{d:"2026-03-15",t:"NonBrand",nl:"Legacy",c:"Lifestyle",v:140.87},
+{d:"2026-03-15",t:"NonBrand",nl:"Legacy",c:"NonBrandResurrection",v:229.32},
+{d:"2026-03-15",t:"NonBrand",nl:"New",c:"Cuisines",v:4602.65},
+{d:"2026-03-15",t:"NonBrand",nl:"New",c:"DSA",v:6563.51},
+{d:"2026-03-15",t:"NonBrand",nl:"New",c:"Discovery",v:10221.45},
+{d:"2026-03-15",t:"NonBrand",nl:"New",c:"Generic",v:30345.21},
+{d:"2026-03-15",t:"NonBrand",nl:"New",c:"Lifestyle",v:11718.56},
+{d:"2026-03-15",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:327.56},
+{d:"2026-03-15",t:"NonBrand",nl:"New",c:"Store",v:1925.68},
+{d:"2026-03-15",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:1184.67},
+{d:"2026-03-15",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:17949.69},
+{d:"2026-03-16",t:"Brand",nl:"Legacy",c:"BrandCore",v:25556.63},
+{d:"2026-03-16",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:1098.76},
+{d:"2026-03-16",t:"Brand",nl:"New",c:"BrandResurrection",v:263.5},
+{d:"2026-03-16",t:"NonBrand",nl:"Legacy",c:"Competitors",v:7620.95},
+{d:"2026-03-16",t:"NonBrand",nl:"Legacy",c:"Events",v:99.72},
+{d:"2026-03-16",t:"NonBrand",nl:"Legacy",c:"Generic",v:388.14},
+{d:"2026-03-16",t:"NonBrand",nl:"Legacy",c:"Lifestyle",v:223.12},
+{d:"2026-03-16",t:"NonBrand",nl:"Legacy",c:"NonBrandResurrection",v:67.77},
+{d:"2026-03-16",t:"NonBrand",nl:"New",c:"Cuisines",v:4106.8},
+{d:"2026-03-16",t:"NonBrand",nl:"New",c:"DSA",v:7189.34},
+{d:"2026-03-16",t:"NonBrand",nl:"New",c:"Discovery",v:7215.6},
+{d:"2026-03-16",t:"NonBrand",nl:"New",c:"Generic",v:26492.2},
+{d:"2026-03-16",t:"NonBrand",nl:"New",c:"Lifestyle",v:11179.59},
+{d:"2026-03-16",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:424.5},
+{d:"2026-03-16",t:"NonBrand",nl:"New",c:"Store",v:2160.58},
+{d:"2026-03-16",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:880.39},
+{d:"2026-03-16",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:17363.26},
+{d:"2026-03-17",t:"Brand",nl:"Legacy",c:"BrandCore",v:22216.96},
+{d:"2026-03-17",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:964.39},
+{d:"2026-03-17",t:"Brand",nl:"New",c:"BrandResurrection",v:208.11},
+{d:"2026-03-17",t:"NonBrand",nl:"Legacy",c:"Competitors",v:8428.55},
+{d:"2026-03-17",t:"NonBrand",nl:"Legacy",c:"Generic",v:85.54},
+{d:"2026-03-17",t:"NonBrand",nl:"Legacy",c:"Lifestyle",v:55.82},
+{d:"2026-03-17",t:"NonBrand",nl:"Legacy",c:"NonBrandResurrection",v:33.29},
+{d:"2026-03-17",t:"NonBrand",nl:"New",c:"Competitors",v:1158.2},
+{d:"2026-03-17",t:"NonBrand",nl:"New",c:"Cuisines",v:4642.47},
+{d:"2026-03-17",t:"NonBrand",nl:"New",c:"DSA",v:4464.92},
+{d:"2026-03-17",t:"NonBrand",nl:"New",c:"Discovery",v:5121.27},
+{d:"2026-03-17",t:"NonBrand",nl:"New",c:"Generic",v:23083.63},
+{d:"2026-03-17",t:"NonBrand",nl:"New",c:"Lifestyle",v:14990.93},
+{d:"2026-03-17",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:434.58},
+{d:"2026-03-17",t:"NonBrand",nl:"New",c:"Store",v:2193.48},
+{d:"2026-03-17",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:742.57},
+{d:"2026-03-17",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:12487.46},
+{d:"2026-03-18",t:"Brand",nl:"Legacy",c:"BrandCore",v:22382.3},
+{d:"2026-03-18",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:1120.76},
+{d:"2026-03-18",t:"Brand",nl:"New",c:"BrandResurrection",v:385.66},
+{d:"2026-03-18",t:"NonBrand",nl:"Legacy",c:"Competitors",v:2156.34},
+{d:"2026-03-18",t:"NonBrand",nl:"Legacy",c:"Events",v:7.07},
+{d:"2026-03-18",t:"NonBrand",nl:"Legacy",c:"Generic",v:33.23},
+{d:"2026-03-18",t:"NonBrand",nl:"Legacy",c:"NonBrandResurrection",v:15.46},
+{d:"2026-03-18",t:"NonBrand",nl:"New",c:"Competitors",v:14372.35},
+{d:"2026-03-18",t:"NonBrand",nl:"New",c:"Cuisines",v:4203.81},
+{d:"2026-03-18",t:"NonBrand",nl:"New",c:"DSA",v:4326.63},
+{d:"2026-03-18",t:"NonBrand",nl:"New",c:"Discovery",v:9838.03},
+{d:"2026-03-18",t:"NonBrand",nl:"New",c:"Generic",v:23449.06},
+{d:"2026-03-18",t:"NonBrand",nl:"New",c:"Lifestyle",v:16042.15},
+{d:"2026-03-18",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:205.61},
+{d:"2026-03-18",t:"NonBrand",nl:"New",c:"Store",v:1840.02},
+{d:"2026-03-18",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:818.8},
+{d:"2026-03-18",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:15352.06},
+{d:"2026-03-19",t:"Brand",nl:"Legacy",c:"BrandCore",v:19964.22},
+{d:"2026-03-19",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:1430.24},
+{d:"2026-03-19",t:"Brand",nl:"New",c:"BrandResurrection",v:232.06},
+{d:"2026-03-19",t:"NonBrand",nl:"New",c:"Competitors",v:18896.12},
+{d:"2026-03-19",t:"NonBrand",nl:"New",c:"Cuisines",v:3583.16},
+{d:"2026-03-19",t:"NonBrand",nl:"New",c:"DSA",v:2308.28},
+{d:"2026-03-19",t:"NonBrand",nl:"New",c:"Discovery",v:12594.9},
+{d:"2026-03-19",t:"NonBrand",nl:"New",c:"Generic",v:25810.35},
+{d:"2026-03-19",t:"NonBrand",nl:"New",c:"Lifestyle",v:17951.78},
+{d:"2026-03-19",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:204.41},
+{d:"2026-03-19",t:"NonBrand",nl:"New",c:"Store",v:2398.75},
+{d:"2026-03-19",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:788.97},
+{d:"2026-03-19",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:12294.72},
+{d:"2026-03-20",t:"Brand",nl:"Legacy",c:"BrandCore",v:18370.96},
+{d:"2026-03-20",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:879.11},
+{d:"2026-03-20",t:"Brand",nl:"New",c:"BrandResurrection",v:47.11},
+{d:"2026-03-20",t:"NonBrand",nl:"New",c:"Competitors",v:19713.42},
+{d:"2026-03-20",t:"NonBrand",nl:"New",c:"Cuisines",v:3403.65},
+{d:"2026-03-20",t:"NonBrand",nl:"New",c:"DSA",v:4683.0},
+{d:"2026-03-20",t:"NonBrand",nl:"New",c:"Discovery",v:11590.05},
+{d:"2026-03-20",t:"NonBrand",nl:"New",c:"Generic",v:19851.15},
+{d:"2026-03-20",t:"NonBrand",nl:"New",c:"Lifestyle",v:14537.25},
+{d:"2026-03-20",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:23.81},
+{d:"2026-03-20",t:"NonBrand",nl:"New",c:"Store",v:1672.39},
+{d:"2026-03-20",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:771.7},
+{d:"2026-03-20",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:15936.81},
+{d:"2026-03-21",t:"Brand",nl:"Legacy",c:"BrandCore",v:18251.12},
+{d:"2026-03-21",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:812.29},
+{d:"2026-03-21",t:"Brand",nl:"New",c:"BrandResurrection",v:42.86},
+{d:"2026-03-21",t:"NonBrand",nl:"New",c:"Competitors",v:10438.39},
+{d:"2026-03-21",t:"NonBrand",nl:"New",c:"Cuisines",v:3732.57},
+{d:"2026-03-21",t:"NonBrand",nl:"New",c:"DSA",v:6778.78},
+{d:"2026-03-21",t:"NonBrand",nl:"New",c:"Discovery",v:7564.08},
+{d:"2026-03-21",t:"NonBrand",nl:"New",c:"Generic",v:17558.8},
+{d:"2026-03-21",t:"NonBrand",nl:"New",c:"Lifestyle",v:11722.65},
+{d:"2026-03-21",t:"NonBrand",nl:"New",c:"Store",v:1633.19},
+{d:"2026-03-21",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:799.1},
+{d:"2026-03-21",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:19680.16},
+{d:"2026-03-22",t:"Brand",nl:"Legacy",c:"BrandCore",v:23948.22},
+{d:"2026-03-22",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:918.03},
+{d:"2026-03-22",t:"Brand",nl:"New",c:"BrandResurrection",v:47.19},
+{d:"2026-03-22",t:"NonBrand",nl:"New",c:"Competitors",v:13114.89},
+{d:"2026-03-22",t:"NonBrand",nl:"New",c:"Cuisines",v:3478.49},
+{d:"2026-03-22",t:"NonBrand",nl:"New",c:"DSA",v:7215.57},
+{d:"2026-03-22",t:"NonBrand",nl:"New",c:"Discovery",v:8829.13},
+{d:"2026-03-22",t:"NonBrand",nl:"New",c:"Generic",v:23839.99},
+{d:"2026-03-22",t:"NonBrand",nl:"New",c:"Lifestyle",v:13988.28},
+{d:"2026-03-22",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:25.07},
+{d:"2026-03-22",t:"NonBrand",nl:"New",c:"Store",v:2396.28},
+{d:"2026-03-22",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:1025.5},
+{d:"2026-03-22",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:25197.68},
+{d:"2026-03-23",t:"Brand",nl:"Legacy",c:"BrandCore",v:22277.85},
+{d:"2026-03-23",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:987.0},
+{d:"2026-03-23",t:"Brand",nl:"New",c:"BrandResurrection",v:47.17},
+{d:"2026-03-23",t:"NonBrand",nl:"New",c:"Competitors",v:13828.8},
+{d:"2026-03-23",t:"NonBrand",nl:"New",c:"Cuisines",v:3179.9},
+{d:"2026-03-23",t:"NonBrand",nl:"New",c:"DSA",v:8278.51},
+{d:"2026-03-23",t:"NonBrand",nl:"New",c:"Discovery",v:6434.81},
+{d:"2026-03-23",t:"NonBrand",nl:"New",c:"Generic",v:22895.37},
+{d:"2026-03-23",t:"NonBrand",nl:"New",c:"Lifestyle",v:14945.95},
+{d:"2026-03-23",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:114.21},
+{d:"2026-03-23",t:"NonBrand",nl:"New",c:"Store",v:2053.54},
+{d:"2026-03-23",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:839.48},
+{d:"2026-03-23",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:19699.33},
+{d:"2026-03-24",t:"Brand",nl:"Legacy",c:"BrandCore",v:19592.9},
+{d:"2026-03-24",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:901.68},
+{d:"2026-03-24",t:"Brand",nl:"New",c:"BrandResurrection",v:17.33},
+{d:"2026-03-24",t:"NonBrand",nl:"New",c:"Competitors",v:11251.78},
+{d:"2026-03-24",t:"NonBrand",nl:"New",c:"Cuisines",v:2634.65},
+{d:"2026-03-24",t:"NonBrand",nl:"New",c:"DSA",v:7202.43},
+{d:"2026-03-24",t:"NonBrand",nl:"New",c:"Discovery",v:10061.44},
+{d:"2026-03-24",t:"NonBrand",nl:"New",c:"Generic",v:21084.4},
+{d:"2026-03-24",t:"NonBrand",nl:"New",c:"Lifestyle",v:13906.53},
+{d:"2026-03-24",t:"NonBrand",nl:"New",c:"Store",v:2079.99},
+{d:"2026-03-24",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:757.16},
+{d:"2026-03-24",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:20305.91},
+{d:"2026-03-25",t:"Brand",nl:"Legacy",c:"BrandCore",v:21730.15},
+{d:"2026-03-25",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:810.61},
+{d:"2026-03-25",t:"Brand",nl:"New",c:"BrandResurrection",v:20.63},
+{d:"2026-03-25",t:"NonBrand",nl:"New",c:"Competitors",v:9758.39},
+{d:"2026-03-25",t:"NonBrand",nl:"New",c:"Cuisines",v:2892.89},
+{d:"2026-03-25",t:"NonBrand",nl:"New",c:"DSA",v:5014.15},
+{d:"2026-03-25",t:"NonBrand",nl:"New",c:"Discovery",v:8732.67},
+{d:"2026-03-25",t:"NonBrand",nl:"New",c:"Generic",v:18615.3},
+{d:"2026-03-25",t:"NonBrand",nl:"New",c:"Lifestyle",v:16081.05},
+{d:"2026-03-25",t:"NonBrand",nl:"New",c:"Store",v:1998.09},
+{d:"2026-03-25",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:986.91},
+{d:"2026-03-25",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:19620.06},
+{d:"2026-03-26",t:"Brand",nl:"Legacy",c:"BrandCore",v:22510.82},
+{d:"2026-03-26",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:1404.85},
+{d:"2026-03-26",t:"Brand",nl:"New",c:"BrandCore",v:10025.57},
+{d:"2026-03-26",t:"Brand",nl:"New",c:"BrandResurrection",v:29.93},
+{d:"2026-03-26",t:"NonBrand",nl:"New",c:"Competitors",v:10352.89},
+{d:"2026-03-26",t:"NonBrand",nl:"New",c:"Cuisines",v:2793.75},
+{d:"2026-03-26",t:"NonBrand",nl:"New",c:"DSA",v:4752.78},
+{d:"2026-03-26",t:"NonBrand",nl:"New",c:"Discovery",v:6547.75},
+{d:"2026-03-26",t:"NonBrand",nl:"New",c:"Generic",v:19410.08},
+{d:"2026-03-26",t:"NonBrand",nl:"New",c:"Lifestyle",v:19177.2},
+{d:"2026-03-26",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:138.79},
+{d:"2026-03-26",t:"NonBrand",nl:"New",c:"Store",v:1473.15},
+{d:"2026-03-26",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:671.72},
+{d:"2026-03-26",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:17985.86},
+{d:"2026-03-27",t:"Brand",nl:"Legacy",c:"BrandCore",v:30908.48},
+{d:"2026-03-27",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:2112.98},
+{d:"2026-03-27",t:"Brand",nl:"New",c:"BrandCore",v:9998.12},
+{d:"2026-03-27",t:"Brand",nl:"New",c:"BrandResurrection",v:153.23},
+{d:"2026-03-27",t:"NonBrand",nl:"New",c:"Competitors",v:8497.92},
+{d:"2026-03-27",t:"NonBrand",nl:"New",c:"Cuisines",v:2560.64},
+{d:"2026-03-27",t:"NonBrand",nl:"New",c:"DSA",v:3714.5},
+{d:"2026-03-27",t:"NonBrand",nl:"New",c:"Discovery",v:5688.05},
+{d:"2026-03-27",t:"NonBrand",nl:"New",c:"Generic",v:19248.24},
+{d:"2026-03-27",t:"NonBrand",nl:"New",c:"Lifestyle",v:18379.81},
+{d:"2026-03-27",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:462.84},
+{d:"2026-03-27",t:"NonBrand",nl:"New",c:"Store",v:1757.18},
+{d:"2026-03-27",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:518.5},
+{d:"2026-03-27",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:13303.01},
+{d:"2026-03-28",t:"Brand",nl:"Legacy",c:"BrandCore",v:38322.38},
+{d:"2026-03-28",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:2164.49},
+{d:"2026-03-28",t:"Brand",nl:"New",c:"BrandCore",v:9986.56},
+{d:"2026-03-28",t:"Brand",nl:"New",c:"BrandResurrection",v:2.51},
+{d:"2026-03-28",t:"NonBrand",nl:"New",c:"Competitors",v:9351.16},
+{d:"2026-03-28",t:"NonBrand",nl:"New",c:"Cuisines",v:2839.18},
+{d:"2026-03-28",t:"NonBrand",nl:"New",c:"DSA",v:4662.79},
+{d:"2026-03-28",t:"NonBrand",nl:"New",c:"Discovery",v:6187.55},
+{d:"2026-03-28",t:"NonBrand",nl:"New",c:"Generic",v:20267.92},
+{d:"2026-03-28",t:"NonBrand",nl:"New",c:"Lifestyle",v:19990.51},
+{d:"2026-03-28",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:466.64},
+{d:"2026-03-28",t:"NonBrand",nl:"New",c:"Store",v:1644.85},
+{d:"2026-03-28",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:469.45},
+{d:"2026-03-28",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:16860.81},
+{d:"2026-03-29",t:"Brand",nl:"Legacy",c:"BrandCore",v:33943.75},
+{d:"2026-03-29",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:1531.85},
+{d:"2026-03-29",t:"Brand",nl:"New",c:"BrandCore",v:10788.26},
+{d:"2026-03-29",t:"Brand",nl:"New",c:"BrandResurrection",v:105.91},
+{d:"2026-03-29",t:"NonBrand",nl:"New",c:"Competitors",v:10540.44},
+{d:"2026-03-29",t:"NonBrand",nl:"New",c:"Cuisines",v:3224.2},
+{d:"2026-03-29",t:"NonBrand",nl:"New",c:"DSA",v:5034.0},
+{d:"2026-03-29",t:"NonBrand",nl:"New",c:"Discovery",v:6601.78},
+{d:"2026-03-29",t:"NonBrand",nl:"New",c:"Generic",v:20762.4},
+{d:"2026-03-29",t:"NonBrand",nl:"New",c:"Lifestyle",v:23989.39},
+{d:"2026-03-29",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:548.85},
+{d:"2026-03-29",t:"NonBrand",nl:"New",c:"Store",v:2385.96},
+{d:"2026-03-29",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:752.67},
+{d:"2026-03-29",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:17915.35},
+{d:"2026-03-30",t:"Brand",nl:"Legacy",c:"BrandCore",v:24560.17},
+{d:"2026-03-30",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:991.91},
+{d:"2026-03-30",t:"Brand",nl:"New",c:"BrandCore",v:1175.59},
+{d:"2026-03-30",t:"Brand",nl:"New",c:"BrandResurrection",v:41.12},
+{d:"2026-03-30",t:"NonBrand",nl:"New",c:"Competitors",v:9914.59},
+{d:"2026-03-30",t:"NonBrand",nl:"New",c:"Cuisines",v:3314.17},
+{d:"2026-03-30",t:"NonBrand",nl:"New",c:"DSA",v:6993.74},
+{d:"2026-03-30",t:"NonBrand",nl:"New",c:"Discovery",v:8032.14},
+{d:"2026-03-30",t:"NonBrand",nl:"New",c:"Generic",v:24667.83},
+{d:"2026-03-30",t:"NonBrand",nl:"New",c:"Lifestyle",v:14709.5},
+{d:"2026-03-30",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:546.72},
+{d:"2026-03-30",t:"NonBrand",nl:"New",c:"Store",v:2485.39},
+{d:"2026-03-30",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:402.42},
+{d:"2026-03-30",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:16749.14},
+{d:"2026-03-31",t:"Brand",nl:"Legacy",c:"BrandCore",v:23040.17},
+{d:"2026-03-31",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:706.75},
+{d:"2026-03-31",t:"Brand",nl:"New",c:"BrandResurrection",v:26.98},
+{d:"2026-03-31",t:"NonBrand",nl:"New",c:"Competitors",v:8609.52},
+{d:"2026-03-31",t:"NonBrand",nl:"New",c:"Cuisines",v:2713.9},
+{d:"2026-03-31",t:"NonBrand",nl:"New",c:"DSA",v:6429.07},
+{d:"2026-03-31",t:"NonBrand",nl:"New",c:"Discovery",v:5609.67},
+{d:"2026-03-31",t:"NonBrand",nl:"New",c:"Generic",v:20389.16},
+{d:"2026-03-31",t:"NonBrand",nl:"New",c:"Lifestyle",v:14249.06},
+{d:"2026-03-31",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:598.76},
+{d:"2026-03-31",t:"NonBrand",nl:"New",c:"Store",v:2669.44},
+{d:"2026-03-31",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:713.32},
+{d:"2026-03-31",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:18571.1},
+{d:"2026-04-01",t:"Brand",nl:"Legacy",c:"BrandCore",v:23399.2},
+{d:"2026-04-01",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:794.46},
+{d:"2026-04-01",t:"Brand",nl:"New",c:"BrandResurrection",v:79.94},
+{d:"2026-04-01",t:"NonBrand",nl:"New",c:"Competitors",v:6525.28},
+{d:"2026-04-01",t:"NonBrand",nl:"New",c:"Cuisines",v:2470.0},
+{d:"2026-04-01",t:"NonBrand",nl:"New",c:"DSA",v:6197.12},
+{d:"2026-04-01",t:"NonBrand",nl:"New",c:"Discovery",v:5979.03},
+{d:"2026-04-01",t:"NonBrand",nl:"New",c:"Generic",v:18313.87},
+{d:"2026-04-01",t:"NonBrand",nl:"New",c:"Lifestyle",v:12501.27},
+{d:"2026-04-01",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:379.93},
+{d:"2026-04-01",t:"NonBrand",nl:"New",c:"Store",v:2149.8},
+{d:"2026-04-01",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:727.98},
+{d:"2026-04-01",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:17178.13},
+{d:"2026-04-02",t:"Brand",nl:"Legacy",c:"BrandCore",v:20672.01},
+{d:"2026-04-02",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:852.91},
+{d:"2026-04-02",t:"Brand",nl:"New",c:"BrandResurrection",v:28.13},
+{d:"2026-04-02",t:"NonBrand",nl:"New",c:"Competitors",v:7194.6},
+{d:"2026-04-02",t:"NonBrand",nl:"New",c:"Cuisines",v:2244.95},
+{d:"2026-04-02",t:"NonBrand",nl:"New",c:"DSA",v:5316.77},
+{d:"2026-04-02",t:"NonBrand",nl:"New",c:"Discovery",v:6172.54},
+{d:"2026-04-02",t:"NonBrand",nl:"New",c:"Generic",v:16932.74},
+{d:"2026-04-02",t:"NonBrand",nl:"New",c:"Lifestyle",v:12605.35},
+{d:"2026-04-02",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:448.49},
+{d:"2026-04-02",t:"NonBrand",nl:"New",c:"Store",v:2818.22},
+{d:"2026-04-02",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:1109.67},
+{d:"2026-04-02",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:16942.55},
+{d:"2026-04-03",t:"Brand",nl:"Legacy",c:"BrandCore",v:17673.55},
+{d:"2026-04-03",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:972.06},
+{d:"2026-04-03",t:"Brand",nl:"New",c:"BrandResurrection",v:26.54},
+{d:"2026-04-03",t:"NonBrand",nl:"New",c:"Competitors",v:5475.63},
+{d:"2026-04-03",t:"NonBrand",nl:"New",c:"Cuisines",v:2311.05},
+{d:"2026-04-03",t:"NonBrand",nl:"New",c:"DSA",v:4223.89},
+{d:"2026-04-03",t:"NonBrand",nl:"New",c:"Discovery",v:5393.89},
+{d:"2026-04-03",t:"NonBrand",nl:"New",c:"Generic",v:15132.46},
+{d:"2026-04-03",t:"NonBrand",nl:"New",c:"Lifestyle",v:13496.91},
+{d:"2026-04-03",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:687.99},
+{d:"2026-04-03",t:"NonBrand",nl:"New",c:"Store",v:2147.79},
+{d:"2026-04-03",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:923.21},
+{d:"2026-04-03",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:15115.43},
+{d:"2026-04-04",t:"Brand",nl:"Legacy",c:"BrandCore",v:17768.75},
+{d:"2026-04-04",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:700.46},
+{d:"2026-04-04",t:"Brand",nl:"New",c:"BrandResurrection",v:46.78},
+{d:"2026-04-04",t:"NonBrand",nl:"New",c:"Competitors",v:6765.62},
+{d:"2026-04-04",t:"NonBrand",nl:"New",c:"Cuisines",v:2328.17},
+{d:"2026-04-04",t:"NonBrand",nl:"New",c:"DSA",v:3863.3},
+{d:"2026-04-04",t:"NonBrand",nl:"New",c:"Discovery",v:6497.08},
+{d:"2026-04-04",t:"NonBrand",nl:"New",c:"Generic",v:15388.48},
+{d:"2026-04-04",t:"NonBrand",nl:"New",c:"Lifestyle",v:13033.85},
+{d:"2026-04-04",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:676.88},
+{d:"2026-04-04",t:"NonBrand",nl:"New",c:"Store",v:2056.5},
+{d:"2026-04-04",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:736.33},
+{d:"2026-04-04",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:16151.19},
+{d:"2026-04-05",t:"Brand",nl:"Legacy",c:"BrandCore",v:22541.27},
+{d:"2026-04-05",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:931.79},
+{d:"2026-04-05",t:"Brand",nl:"New",c:"BrandResurrection",v:7.35},
+{d:"2026-04-05",t:"NonBrand",nl:"New",c:"Competitors",v:9809.77},
+{d:"2026-04-05",t:"NonBrand",nl:"New",c:"Cuisines",v:2761.02},
+{d:"2026-04-05",t:"NonBrand",nl:"New",c:"DSA",v:5178.34},
+{d:"2026-04-05",t:"NonBrand",nl:"New",c:"Discovery",v:8836.71},
+{d:"2026-04-05",t:"NonBrand",nl:"New",c:"Generic",v:21201.8},
+{d:"2026-04-05",t:"NonBrand",nl:"New",c:"Lifestyle",v:13153.56},
+{d:"2026-04-05",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:550.76},
+{d:"2026-04-05",t:"NonBrand",nl:"New",c:"Store",v:2908.01},
+{d:"2026-04-05",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:943.23},
+{d:"2026-04-05",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:16884.29},
+{d:"2026-04-06",t:"Brand",nl:"Legacy",c:"BrandCore",v:21423.8},
+{d:"2026-04-06",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:810.49},
+{d:"2026-04-06",t:"Brand",nl:"New",c:"BrandCore",v:500.82},
+{d:"2026-04-06",t:"Brand",nl:"New",c:"BrandMidTier",v:506.73},
+{d:"2026-04-06",t:"Brand",nl:"New",c:"BrandNonCore",v:506.08},
+{d:"2026-04-06",t:"Brand",nl:"New",c:"BrandResurrection",v:39.83},
+{d:"2026-04-06",t:"NonBrand",nl:"New",c:"Competitors",v:9428.07},
+{d:"2026-04-06",t:"NonBrand",nl:"New",c:"Cuisines",v:2277.24},
+{d:"2026-04-06",t:"NonBrand",nl:"New",c:"DSA",v:5880.22},
+{d:"2026-04-06",t:"NonBrand",nl:"New",c:"Discovery",v:7629.77},
+{d:"2026-04-06",t:"NonBrand",nl:"New",c:"Generic",v:22217.66},
+{d:"2026-04-06",t:"NonBrand",nl:"New",c:"Lifestyle",v:12897.1},
+{d:"2026-04-06",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:1062.29},
+{d:"2026-04-06",t:"NonBrand",nl:"New",c:"Store",v:3250.77},
+{d:"2026-04-06",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:767.88},
+{d:"2026-04-06",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:16460.59},
+{d:"2026-04-07",t:"Brand",nl:"Legacy",c:"BrandCore",v:20547.99},
+{d:"2026-04-07",t:"Brand",nl:"Legacy",c:"BrandNonCore",v:217.95},
+{d:"2026-04-07",t:"Brand",nl:"New",c:"BrandCore",v:1999.12},
+{d:"2026-04-07",t:"Brand",nl:"New",c:"BrandMidTier",v:2022.12},
+{d:"2026-04-07",t:"Brand",nl:"New",c:"BrandNonCore",v:1152.76},
+{d:"2026-04-07",t:"Brand",nl:"New",c:"BrandResurrection",v:86.42},
+{d:"2026-04-07",t:"NonBrand",nl:"New",c:"Competitors",v:10795.16},
+{d:"2026-04-07",t:"NonBrand",nl:"New",c:"Cuisines",v:2197.5},
+{d:"2026-04-07",t:"NonBrand",nl:"New",c:"DSA",v:4550.04},
+{d:"2026-04-07",t:"NonBrand",nl:"New",c:"Discovery",v:8848.0},
+{d:"2026-04-07",t:"NonBrand",nl:"New",c:"Generic",v:30043.22},
+{d:"2026-04-07",t:"NonBrand",nl:"New",c:"Lifestyle",v:12890.78},
+{d:"2026-04-07",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:471.86},
+{d:"2026-04-07",t:"NonBrand",nl:"New",c:"Store",v:2981.14},
+{d:"2026-04-07",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:1080.2},
+{d:"2026-04-07",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:19558.97},
+{d:"2026-04-08",t:"Brand",nl:"Legacy",c:"BrandCore",v:10101.53},
+{d:"2026-04-08",t:"Brand",nl:"New",c:"BrandCore",v:2095.1},
+{d:"2026-04-08",t:"Brand",nl:"New",c:"BrandMidTier",v:2076.16},
+{d:"2026-04-08",t:"Brand",nl:"New",c:"BrandNonCore",v:2948.92},
+{d:"2026-04-08",t:"Brand",nl:"New",c:"BrandResurrection",v:102.23},
+{d:"2026-04-08",t:"NonBrand",nl:"New",c:"Competitors",v:13644.41},
+{d:"2026-04-08",t:"NonBrand",nl:"New",c:"Cuisines",v:1853.42},
+{d:"2026-04-08",t:"NonBrand",nl:"New",c:"DSA",v:4015.32},
+{d:"2026-04-08",t:"NonBrand",nl:"New",c:"Discovery",v:10834.0},
+{d:"2026-04-08",t:"NonBrand",nl:"New",c:"Generic",v:31012.44},
+{d:"2026-04-08",t:"NonBrand",nl:"New",c:"Lifestyle",v:12410.84},
+{d:"2026-04-08",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:961.56},
+{d:"2026-04-08",t:"NonBrand",nl:"New",c:"Store",v:3083.54},
+{d:"2026-04-08",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:1063.31},
+{d:"2026-04-08",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:19152.59},
+{d:"2026-04-09",t:"Brand",nl:"New",c:"BrandCore",v:11522.71},
+{d:"2026-04-09",t:"Brand",nl:"New",c:"BrandMidTier",v:3854.37},
+{d:"2026-04-09",t:"Brand",nl:"New",c:"BrandNonCore",v:4565.42},
+{d:"2026-04-09",t:"Brand",nl:"New",c:"BrandResurrection",v:39.71},
+{d:"2026-04-09",t:"NonBrand",nl:"New",c:"Competitors",v:12191.75},
+{d:"2026-04-09",t:"NonBrand",nl:"New",c:"Cuisines",v:2336.75},
+{d:"2026-04-09",t:"NonBrand",nl:"New",c:"DSA",v:3594.89},
+{d:"2026-04-09",t:"NonBrand",nl:"New",c:"Discovery",v:9497.1},
+{d:"2026-04-09",t:"NonBrand",nl:"New",c:"Generic",v:25820.74},
+{d:"2026-04-09",t:"NonBrand",nl:"New",c:"Lifestyle",v:13198.03},
+{d:"2026-04-09",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:652.53},
+{d:"2026-04-09",t:"NonBrand",nl:"New",c:"Store",v:2986.44},
+{d:"2026-04-09",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:1075.3},
+{d:"2026-04-09",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:20684.54},
+{d:"2026-04-10",t:"Brand",nl:"New",c:"BrandCore",v:11079.85},
+{d:"2026-04-10",t:"Brand",nl:"New",c:"BrandMidTier",v:5206.15},
+{d:"2026-04-10",t:"Brand",nl:"New",c:"BrandNonCore",v:7166.35},
+{d:"2026-04-10",t:"Brand",nl:"New",c:"BrandResurrection",v:222.34},
+{d:"2026-04-10",t:"NonBrand",nl:"New",c:"Competitors",v:10152.69},
+{d:"2026-04-10",t:"NonBrand",nl:"New",c:"Cuisines",v:2422.33},
+{d:"2026-04-10",t:"NonBrand",nl:"New",c:"DSA",v:3037.24},
+{d:"2026-04-10",t:"NonBrand",nl:"New",c:"Discovery",v:6665.28},
+{d:"2026-04-10",t:"NonBrand",nl:"New",c:"Generic",v:23859.41},
+{d:"2026-04-10",t:"NonBrand",nl:"New",c:"Lifestyle",v:12845.03},
+{d:"2026-04-10",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:1154.96},
+{d:"2026-04-10",t:"NonBrand",nl:"New",c:"Store",v:2262.05},
+{d:"2026-04-10",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:680.1},
+{d:"2026-04-10",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:16669.93},
+{d:"2026-04-11",t:"Brand",nl:"New",c:"BrandCore",v:11302.61},
+{d:"2026-04-11",t:"Brand",nl:"New",c:"BrandMidTier",v:6542.05},
+{d:"2026-04-11",t:"Brand",nl:"New",c:"BrandNonCore",v:6652.48},
+{d:"2026-04-11",t:"Brand",nl:"New",c:"BrandResurrection",v:56.5},
+{d:"2026-04-11",t:"NonBrand",nl:"New",c:"Competitors",v:10050.57},
+{d:"2026-04-11",t:"NonBrand",nl:"New",c:"Cuisines",v:2805.56},
+{d:"2026-04-11",t:"NonBrand",nl:"New",c:"DSA",v:2740.13},
+{d:"2026-04-11",t:"NonBrand",nl:"New",c:"Discovery",v:7600.28},
+{d:"2026-04-11",t:"NonBrand",nl:"New",c:"Generic",v:27886.29},
+{d:"2026-04-11",t:"NonBrand",nl:"New",c:"Lifestyle",v:13444.15},
+{d:"2026-04-11",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:728.13},
+{d:"2026-04-11",t:"NonBrand",nl:"New",c:"Store",v:2571.57},
+{d:"2026-04-11",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:825.53},
+{d:"2026-04-11",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:18923.44},
+{d:"2026-04-12",t:"Brand",nl:"New",c:"BrandCore",v:14274.1},
+{d:"2026-04-12",t:"Brand",nl:"New",c:"BrandMidTier",v:7305.2},
+{d:"2026-04-12",t:"Brand",nl:"New",c:"BrandNonCore",v:9403.29},
+{d:"2026-04-12",t:"Brand",nl:"New",c:"BrandResurrection",v:12.9},
+{d:"2026-04-12",t:"NonBrand",nl:"New",c:"Competitors",v:11270.31},
+{d:"2026-04-12",t:"NonBrand",nl:"New",c:"Cuisines",v:2898.94},
+{d:"2026-04-12",t:"NonBrand",nl:"New",c:"DSA",v:3718.67},
+{d:"2026-04-12",t:"NonBrand",nl:"New",c:"Discovery",v:9876.5},
+{d:"2026-04-12",t:"NonBrand",nl:"New",c:"Generic",v:33804.12},
+{d:"2026-04-12",t:"NonBrand",nl:"New",c:"Lifestyle",v:13228.44},
+{d:"2026-04-12",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:916.21},
+{d:"2026-04-12",t:"NonBrand",nl:"New",c:"Store",v:4048.27},
+{d:"2026-04-12",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:1083.7},
+{d:"2026-04-12",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:21513.58},
+{d:"2026-04-13",t:"Brand",nl:"New",c:"BrandCore",v:15145.6},
+{d:"2026-04-13",t:"Brand",nl:"New",c:"BrandMidTier",v:6683.91},
+{d:"2026-04-13",t:"Brand",nl:"New",c:"BrandNonCore",v:8852.71},
+{d:"2026-04-13",t:"Brand",nl:"New",c:"BrandResurrection",v:223.65},
+{d:"2026-04-13",t:"NonBrand",nl:"New",c:"Competitors",v:14153.44},
+{d:"2026-04-13",t:"NonBrand",nl:"New",c:"Cuisines",v:1000.59},
+{d:"2026-04-13",t:"NonBrand",nl:"New",c:"DSA",v:4267.68},
+{d:"2026-04-13",t:"NonBrand",nl:"New",c:"Discovery",v:9779.61},
+{d:"2026-04-13",t:"NonBrand",nl:"New",c:"Generic",v:26686.01},
+{d:"2026-04-13",t:"NonBrand",nl:"New",c:"Lifestyle",v:12477.7},
+{d:"2026-04-13",t:"NonBrand",nl:"New",c:"NonBrandResurrection",v:948.87},
+{d:"2026-04-13",t:"NonBrand",nl:"New",c:"Store",v:2053.59},
+{d:"2026-04-13",t:"Shopping",nl:"Legacy",c:"BrandShopping",v:722.78},
+{d:"2026-04-13",t:"Shopping",nl:"Legacy",c:"NonBrandShopping",v:22821.04}
+];
+</script>
+
+<script src="page2-data.js"></script>
+<script src="device-data.js"></script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// SHARED FUNCTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+function showTab(n){
+  document.querySelectorAll(".tab-pane").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("tab"+n).classList.add("active");
+  document.getElementById("tabBtn"+n).classList.add("active");
+  // Resize charts on tab switch
+  if(n===0) { if(p0_chartInst) p0_chartInst.resize(); }
+  if(n===1) Object.values(p5_charts).forEach(c=>c.resize());
+  if(n===2) Object.values(p1_charts).forEach(c=>c.resize());
+  // Close any open dropdowns
+  document.querySelectorAll(".dd-panel").forEach(x=>x.classList.remove("open"));
+}
+
+function toggleDD(id){
+  const p=document.getElementById(id);
+  document.querySelectorAll(".dd-panel").forEach(x=>{if(x.id!==id)x.classList.remove("open")});
+  p.classList.toggle("open");
+}
+document.addEventListener("click",e=>{
+  if(!e.target.closest(".dd-wrap")) document.querySelectorAll(".dd-panel").forEach(x=>x.classList.remove("open"));
+});
+
+function derivedType(row){ return row.t; }
+
+function monday(dateStr){
+  const d=new Date(dateStr+"T00:00:00");
+  const day=d.getDay();
+  d.setDate(d.getDate()-(day===0?6:day-1));
+  return d.toISOString().slice(0,10);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PAGE 0 — SUMMARY
+// ══════════════════════════════════════════════════════════════════════════════
+
+let p0_selCT=new Set(["Brand","NonBrand","BrandShopping","NonBrandShopping"]);
+let p0_selCamp=null; // null = all campaigns; Set = specific selection
+let p0_chartInst=null;
+
+// Like deltaClass but returns delta-warn (yellow) when |change| < 2%
+function p0_deltaClass(delta, ref, invert=false){
+  if(!isFinite(ref)||ref===0) return deltaClass(delta,invert);
+  if(Math.abs(delta/ref)<0.02) return"delta-warn";
+  return deltaClass(delta,invert);
+}
+
+// ── date helpers ──────────────────────────────────────────────────────────────
+function p0_addDays(ds,n){
+  const d=new Date(ds+"T00:00:00");
+  d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+function p0_weekStart(ds){
+  const d=new Date(ds+"T00:00:00");
+  const day=d.getDay();
+  d.setDate(d.getDate()-(day===0?6:day-1));
+  return d.toISOString().slice(0,10);
+}
+function p0_latestDate(){
+  let latest="";
+  DATA.forEach(r=>{if(r.d>latest) latest=r.d;});
+  return latest;
+}
+
+// ── data aggregation ──────────────────────────────────────────────────────────
+function p0_dayRaw(dateStr){
+  let imp=0,cl=0,cost=0,trials=0;
+  DATA.forEach(r=>{
+    if(r.d!==dateStr) return;
+    if(!p0_selCT.has(derivedType(r))) return;
+    if(p0_selCamp&&!p0_selCamp.has(r.cat)) return;
+    imp+=r.imp; cl+=r.cl; cost+=r.cost; trials+=r.trials;
+  });
+  return{imp,cl,cost,trials};
+}
+function p0_dayRawType(dateStr,typeName){
+  // Bypasses p0_selCT and p0_selCamp — used by Brand/NonBrand CAC mover cards
+  let imp=0,cl=0,cost=0,trials=0;
+  DATA.forEach(r=>{
+    if(r.d!==dateStr||derivedType(r)!==typeName) return;
+    imp+=r.imp; cl+=r.cl; cost+=r.cost; trials+=r.trials;
+  });
+  return{imp,cl,cost,trials};
+}
+function p0_rangeRaw(startStr,endStr){
+  const s=new Date(startStr+"T00:00:00"),e=new Date(endStr+"T00:00:00");
+  let imp=0,cl=0,cost=0,trials=0;
+  DATA.forEach(r=>{
+    const rd=new Date(r.d+"T00:00:00");
+    if(rd<s||rd>e) return;
+    if(!p0_selCT.has(derivedType(r))) return;
+    if(p0_selCamp&&!p0_selCamp.has(r.cat)) return;
+    imp+=r.imp; cl+=r.cl; cost+=r.cost; trials+=r.trials;
+  });
+  return{imp,cl,cost,trials};
+}
+function p0_derive(raw){
+  return{
+    ...raw,
+    cpc: raw.cl>0?raw.cost/raw.cl:null,
+    ctr: raw.imp>0?raw.cl/raw.imp:null,
+    cac: raw.trials>0?raw.cost/raw.trials:null,
+    cvr: raw.cl>0?raw.trials/raw.cl:null,
+  };
+}
+function p0_7dayAvg(today){
+  // Pooled avg over the 7 days immediately before today
+  const raw=p0_rangeRaw(p0_addDays(today,-7),p0_addDays(today,-1));
+  return{
+    cost:   raw.cost/7,
+    trials: raw.trials/7,
+    cpc:    raw.cl>0?raw.cost/raw.cl:null,
+    ctr:    raw.imp>0?raw.cl/raw.imp:null,
+    cac:    raw.trials>0?raw.cost/raw.trials:null,
+    cvr:    raw.cl>0?raw.trials/raw.cl:null,
+  };
+}
+
+// ── CT filter ─────────────────────────────────────────────────────────────────
+function p0_onCTChange(){
+  p0_selCT=new Set([...document.querySelectorAll("#p0_ctPanel input:checked")].map(x=>x.value));
+  document.getElementById("p0_ctLabel").textContent=
+    p0_selCT.size===4?"All Types":p0_selCT.size===0?"None":[...p0_selCT].join(", ");
+  // Rebuild campaign list to only show campaigns within selected types; reset selection
+  p0_selCamp=null;
+  p0_rebuildCampList();
+  p0_recalc();
+}
+
+// ── Campaign filter ────────────────────────────────────────────────────────────
+function p0_rebuildCampList(){
+  const cats=new Set();
+  DATA.forEach(r=>{if(p0_selCT.has(derivedType(r))) cats.add(r.cat);});
+  const sorted=[...cats].sort();
+  document.getElementById("p0_campList").innerHTML=sorted.map(c=>
+    `<label class="dd-item"><input type="checkbox" value="${c}" checked onchange="p0_onCampChange()"> ${c}</label>`
+  ).join("");
+  p0_updateCampLabel();
+}
+function p0_updateCampLabel(){
+  const checks=[...document.querySelectorAll("#p0_campList input:checked")].map(x=>x.value);
+  const total=document.querySelectorAll("#p0_campList input").length;
+  document.getElementById("p0_campLabel").textContent=
+    checks.length===0?"None":checks.length===total?"All Campaigns":`${checks.length} campaigns`;
+}
+function p0_onCampChange(){
+  const checks=[...document.querySelectorAll("#p0_campList input:checked")].map(x=>x.value);
+  const total=document.querySelectorAll("#p0_campList input").length;
+  p0_selCamp=checks.length===total?null:new Set(checks);
+  p0_updateCampLabel();
+  p0_recalc();
+}
+function p0_filterCampList(q){
+  document.querySelectorAll("#p0_campList .dd-item").forEach(el=>{
+    el.classList.toggle("hidden",!el.textContent.toLowerCase().includes(q.toLowerCase()));
+  });
+}
+function p0_campSelectAll(){
+  document.querySelectorAll("#p0_campList input").forEach(x=>x.checked=true);
+  p0_selCamp=null;
+  p0_updateCampLabel();
+  p0_recalc();
+}
+function p0_campClearAll(){
+  document.querySelectorAll("#p0_campList input").forEach(x=>x.checked=false);
+  p0_selCamp=new Set();
+  p0_updateCampLabel();
+  p0_recalc();
+}
+
+// ── card builders ─────────────────────────────────────────────────────────────
+function p0_kpiCard(label,todayVal,fmtVal,fmtAbs,invert,comps){
+  const valStr=todayVal!==null&&isFinite(todayVal)?fmtVal(todayVal):"—";
+  const rows=comps.map(({lbl,cur,ref})=>{
+    if(cur===null||ref===null||!isFinite(cur)||!isFinite(ref)||ref===0)
+      return`<div class="p0-kpi-row"><span class="p0-kpi-row-label">${lbl}</span><span class="delta-neu">—</span></div>`;
+    const d=cur-ref;
+    const pct=d/Math.abs(ref);
+    const cls=p0_deltaClass(d,ref,invert);
+    const sign=d>=0?"+":"−";
+    return`<div class="p0-kpi-row"><span class="p0-kpi-row-label">${lbl}</span><span class="${cls}">${sign}${fmtAbs(Math.abs(d))} <span style="opacity:.7">(${fmtPct(pct)})</span></span></div>`;
+  }).join("");
+  return`<div class="p0-kpi-card">
+    <div class="p0-kpi-label">${label}</div>
+    <div class="p0-kpi-value">${valStr}</div>
+    ${rows}
+  </div>`;
+}
+
+function p0_efficiencyCard(selDate, groupLabel, groupTypes, accentColor){
+  // Filter to types in both the group and current CT selection
+  const activeTypes=groupTypes.filter(t=>p0_selCT.has(t));
+
+  // Blank state — group filtered out
+  if(!activeTypes.length) return`<div class="p0-insight-card p0-hero">
+    <div class="p0-insight-icon">🏆</div>
+    <div class="p0-insight-title" style="color:${accentColor}">${groupLabel} — Most Efficient</div>
+    <div class="p0-insight-body">Not in current filter.</div>
+  </div>`;
+
+  // Aggregate by campaign category within active types + campaign filter
+  const campMap={};
+  let totalCost=0, totalTrials=0;
+  DATA.forEach(r=>{
+    if(r.d!==selDate) return;
+    if(!activeTypes.includes(derivedType(r))) return;
+    if(p0_selCamp&&!p0_selCamp.has(r.cat)) return;
+    if(!campMap[r.cat]) campMap[r.cat]={cost:0,trials:0};
+    campMap[r.cat].cost+=r.cost; campMap[r.cat].trials+=r.trials;
+    totalCost+=r.cost; totalTrials+=r.trials;
+  });
+
+  const typeAvgCAC=totalTrials>0?totalCost/totalTrials:null;
+
+  const ranked=Object.entries(campMap)
+    .map(([cat,d])=>({cat, cac:d.trials>0?d.cost/d.trials:null}))
+    .filter(x=>x.cac!==null)
+    .sort((a,b)=>a.cac-b.cac);
+
+  if(!ranked.length) return`<div class="p0-insight-card p0-hero">
+    <div class="p0-insight-icon">🏆</div>
+    <div class="p0-insight-title" style="color:${accentColor}">${groupLabel} — Most Efficient</div>
+    <div class="p0-insight-body">No trial data today.</div>
+  </div>`;
+
+  const best=ranked[0];
+  const runner=ranked[1];
+
+  // % vs type avg — negative = below avg = good
+  const vsAvg=(typeAvgCAC&&best.cac)?(best.cac-typeAvgCAC)/Math.abs(typeAvgCAC):null;
+  const vsAvgColor=Math.abs(vsAvg)<0.02?'#f59e0b':vsAvg<0?'#4ade80':'#f87171';
+  const vsAvgStr=vsAvg!==null
+    ?` <span style="color:${vsAvgColor}">(${vsAvg>=0?'+':''}${(vsAvg*100).toFixed(0)}% vs ${groupLabel} avg)</span>`
+    :'';
+
+  const runnerStr=runner
+    ?`<br>Runner-up: <strong style="color:#cbd5e1">${runner.cat}</strong> · ${fmtD(runner.cac,2)}`
+    :'';
+
+  return`<div class="p0-insight-card p0-hero">
+    <div class="p0-insight-icon">🏆</div>
+    <div class="p0-insight-title" style="color:${accentColor}">${groupLabel} — Most Efficient</div>
+    <div class="p0-insight-body">
+      <strong style="color:${accentColor}">${best.cat}</strong> · ${fmtD(best.cac,2)} CAC${vsAvgStr}${runnerStr}
+    </div>
+  </div>`;
+}
+
+function p0_topCACMoverCard(selDate){
+  const yday=p0_addDays(selDate,-1);
+  const todayMap={}, ydayMap={};
+
+  DATA.forEach(r=>{
+    if(!p0_selCT.has(derivedType(r))) return;
+    if(p0_selCamp&&!p0_selCamp.has(r.cat)) return;
+    if(r.d===selDate){
+      if(!todayMap[r.cat]) todayMap[r.cat]={cost:0,trials:0};
+      todayMap[r.cat].cost+=r.cost; todayMap[r.cat].trials+=r.trials;
+    }
+    if(r.d===yday){
+      if(!ydayMap[r.cat]) ydayMap[r.cat]={cost:0,trials:0};
+      ydayMap[r.cat].cost+=r.cost; ydayMap[r.cat].trials+=r.trials;
+    }
+  });
+
+  const deltas=[];
+  Object.keys(todayMap).forEach(cat=>{
+    const t=todayMap[cat], y=ydayMap[cat]||{cost:0,trials:0};
+    if(t.trials<1||y.trials<1) return;
+    const cac_t=t.cost/t.trials, cac_y=y.cost/y.trials;
+    deltas.push({cat,cac_t,cac_y,delta:cac_t-cac_y});
+  });
+
+  if(!deltas.length) return`<div class="p0-insight-card p0-hero">
+    <div class="p0-insight-title" style="color:#f5a623">Top CAC Mover</div>
+    <div class="p0-insight-body">Not enough data to compare campaigns vs yesterday.</div>
+  </div>`;
+
+  deltas.sort((a,b)=>a.delta-b.delta);
+  const best=deltas[0];
+  const worst=deltas[deltas.length-1];
+
+  const bestPct=best.cac_y?Math.abs(best.delta/best.cac_y):1;
+  const worstPct=worst.cac_y?Math.abs(worst.delta/worst.cac_y):1;
+  const bestColor=bestPct<0.02?'#f59e0b':'#4ade80';
+  const worstColor=worstPct<0.02?'#f59e0b':'#f87171';
+  const bestLine=best.delta<0
+    ?`<span style="color:${bestColor}">↓ <strong>${best.cat}</strong> ${fmtDeltaD(best.delta,2)}</span>`
+    :'';
+  const worstLine=worst!==best&&worst.delta>0
+    ?`${bestLine?'<br>':''}<span style="color:${worstColor}">↑ <strong>${worst.cat}</strong> ${fmtDeltaD(worst.delta,2)}</span>`
+    :'';
+  const body=bestLine||worstLine
+    ?`${bestLine}${worstLine}<br><span style="opacity:.5;font-size:10px">vs yesterday · min 1 trial each day</span>`
+    :`<span style="opacity:.7">All campaigns moved within normal range.</span>`;
+
+  return`<div class="p0-insight-card p0-hero">
+    <div class="p0-insight-title" style="color:#f5a623">Top CAC Mover</div>
+    <div class="p0-insight-body">${body}</div>
+  </div>`;
+}
+
+function p0_streakCard(selDate){
+  // Build last 30 days of daily CAC, respecting active filters via p0_dayRaw
+  const days=[];
+  for(let i=0;i<30;i++){
+    const d=p0_addDays(selDate,-i);
+    const raw=p0_dayRaw(d);
+    days.push({d, cac:raw.trials>0?raw.cost/raw.trials:null});
+  }
+
+  // Walk from today backward; streak breaks on <2% move or null day
+  let streak=0, direction=null, streakStartCAC=null, streakStartDate=null;
+  for(let i=0;i<days.length-1;i++){
+    const cur=days[i].cac, prev=days[i+1].cac;
+    if(cur===null||prev===null||prev===0) break;
+    const pct=(cur-prev)/Math.abs(prev);
+    if(Math.abs(pct)<0.02) break; // flat — end streak
+    const dir=pct<0?'improving':'deteriorating';
+    if(direction===null){
+      direction=dir; streak=1;
+      streakStartCAC=prev; streakStartDate=days[i+1].d;
+    } else if(dir===direction){
+      streak++; streakStartCAC=prev; streakStartDate=days[i+1].d;
+    } else break;
+  }
+
+  if(!streak||direction===null) return`<div class="p0-insight-card p0-hero">
+    <div class="p0-insight-title" style="color:#94a3b8">CAC Trend</div>
+    <div class="p0-insight-body">No consistent trend — CAC flat or mixed recently.</div>
+  </div>`;
+
+  const todayCAC=days[0].cac;
+  const totalDelta=todayCAC!==null?todayCAC-streakStartCAC:null;
+  const color=direction==='improving'?'#4ade80':'#f87171';
+  const arrow=direction==='improving'?'↓':'↑';
+  const label=direction==='improving'?'Improving':'Deteriorating';
+  const deltaStr=totalDelta!==null?` · ${fmtDeltaD(totalDelta,2)} since ${fmtDate(streakStartDate)}`:'';
+
+  return`<div class="p0-insight-card p0-hero">
+    <div class="p0-insight-title" style="color:${color}">CAC ${label}</div>
+    <div class="p0-insight-body">
+      ${arrow} <strong style="color:${color}">${streak} day${streak>1?'s':''} running</strong>${deltaStr}
+    </div>
+  </div>`;
+}
+
+function p0_cpcStoryCard(today,lw){
+  if(!today.cpc||!lw.cpc) return`<div class="p0-insight-card">
+    <div class="p0-insight-icon">📈</div>
+    <div class="p0-insight-title">CPC Story</div>
+    <div class="p0-insight-body">Insufficient click data for comparison.</div>
+  </div>`;
+
+  const cpcDelta=today.cpc-lw.cpc;
+  const ctrDelta=(today.ctr&&lw.ctr)?today.ctr-lw.ctr:null;
+  const cacDelta=(today.cac&&lw.cac)?today.cac-lw.cac:null;
+  const icon=cpcDelta<0?"📉":"📈";
+  const sign=cpcDelta>=0?"+":"−";
+  const titleCls=p0_deltaClass(cpcDelta,lw.cpc,true);
+
+  let body="";
+  if(ctrDelta!==null){
+    const ctrDir=ctrDelta>0?"↑":"↓";
+    const ctrPct=(Math.abs(ctrDelta/lw.ctr)*100).toFixed(1);
+    body=`CTR ${ctrDir}${ctrPct}% vs LW → CPC ${sign}${fmtD(Math.abs(cpcDelta),2)}`;
+    if(cacDelta!==null){
+      const cacDir=cacDelta>0?"↑":"↓";
+      body+=` → CAC ${cacDir}${fmtD(Math.abs(cacDelta),2)}.`;
+    } else { body+="."; }
+  } else {
+    body=`CPC ${sign}${fmtD(Math.abs(cpcDelta),2)} vs same day last week.`;
+    if(cacDelta!==null) body+=` CAC ${cacDelta>0?"up":"down"} ${fmtD(Math.abs(cacDelta),2)}.`;
+  }
+
+  return`<div class="p0-insight-card">
+    <div class="p0-insight-icon">${icon}</div>
+    <div class="p0-insight-title">CPC <span class="${titleCls}">${sign}${fmtD(Math.abs(cpcDelta),2)}</span> vs last week</div>
+    <div class="p0-insight-body">${body}</div>
+  </div>`;
+}
+
+function p0_cacMoverCard(typeName,selDate,lwDate){
+  const t=p0_dayRawType(selDate,typeName);
+  const l=p0_dayRawType(lwDate,typeName);
+  const cac_t=t.trials>0?t.cost/t.trials:null;
+  const cac_l=l.trials>0?l.cost/l.trials:null;
+
+  if(!cac_t||!cac_l) return`<div class="p0-insight-card">
+    <div class="p0-insight-icon">🔍</div>
+    <div class="p0-insight-title">${typeName} CAC</div>
+    <div class="p0-insight-body">No trial data for one or both periods.</div>
+  </div>`;
+
+  const delta=cac_t-cac_l;
+  const pct=delta/Math.abs(cac_l);
+  const cls=p0_deltaClass(delta,cac_l,true);
+  const icon=cls==="delta-warn"?"➡️":delta>0?"⚠️":"✅";
+  const sign=delta>=0?"+":"−";
+  return`<div class="p0-insight-card">
+    <div class="p0-insight-icon">${icon}</div>
+    <div class="p0-insight-title">${typeName} — CAC <span class="${cls}">${sign}${fmtD(Math.abs(delta),2)}</span></div>
+    <div class="p0-insight-body">Today: ${fmtD(cac_t,2)} vs ${fmtD(cac_l,2)} same day LW <span class="${cls}">(${fmtPct(pct)})</span>.</div>
+  </div>`;
+}
+
+function p0_wtdCard(selDate){
+  const wStart=p0_weekStart(selDate);
+  const lwStart=p0_addDays(wStart,-7);
+  const lwEnd=p0_addDays(selDate,-7);
+  const wtd=p0_rangeRaw(wStart,selDate);
+  const lwtd=p0_rangeRaw(lwStart,lwEnd);
+  const wtd_cac=wtd.trials>0?wtd.cost/wtd.trials:null;
+  const lwtd_cac=lwtd.trials>0?lwtd.cost/lwtd.trials:null;
+  const costDelta=wtd.cost-lwtd.cost;
+  const cacDelta=(wtd_cac!==null&&lwtd_cac!==null)?wtd_cac-lwtd_cac:null;
+  const d1=new Date(wStart+"T00:00:00"),d2=new Date(selDate+"T00:00:00");
+  const nDays=Math.round((d2-d1)/864e5)+1;
+  const costPct=lwtd.cost>0?costDelta/lwtd.cost:null;
+  const cacPct=(cacDelta!==null&&lwtd_cac)?cacDelta/Math.abs(lwtd_cac):null;
+  const costCls=p0_deltaClass(costDelta,lwtd.cost,false);
+  const cacCls=cacDelta!==null?p0_deltaClass(cacDelta,lwtd_cac,true):"delta-neu";
+  const fmtPctWTD=v=>v===null?"—":(v>=0?"+":"")+( v*100).toFixed(1)+"%";
+  return`<div class="p0-insight-card">
+    <div class="p0-insight-icon">📅</div>
+    <div class="p0-insight-title">Week-to-Date (${nDays} day${nDays>1?"s":""})</div>
+    <div class="p0-insight-body">
+      Spend: ${fmtD(wtd.cost,0)} <span class="${costCls}">(${fmtPctWTD(costPct)} vs LW)</span><br>
+      CAC: ${wtd_cac!==null?fmtD(wtd_cac,2):"—"} <span class="${cacCls}">(${fmtPctWTD(cacPct)} vs LW)</span><br>
+      Trials: ${fmtN(wtd.trials,0)} total
+    </div>
+  </div>`;
+}
+
+// ── chart ─────────────────────────────────────────────────────────────────────
+function p0_renderChart(selDate){
+  const labels=[],trialData=[],cacData=[];
+  for(let i=29;i>=0;i--){
+    const d=p0_addDays(selDate,-i);
+    const raw=p0_dayRaw(d);
+    const dt=new Date(d+"T00:00:00");
+    labels.push(`${dt.getMonth()+1}/${dt.getDate()}`);
+    trialData.push(raw.trials||0);
+    cacData.push(raw.trials>0?raw.cost/raw.trials:null);
+  }
+  // Period average = pooled across all 30 days in the chart window
+  const periodRaw=p0_rangeRaw(p0_addDays(selDate,-29),selDate);
+  const periodTrialAvg=periodRaw.trials/30;
+  const periodCacAvg=periodRaw.trials>0?periodRaw.cost/periodRaw.trials:null;
+
+  const chartData={
+    labels,
+    datasets:[
+      {
+        type:"bar",label:"Trials",data:trialData,
+        backgroundColor:"rgba(59,130,246,0.65)",yAxisID:"y",order:2,
+      },
+      {
+        type:"line",label:"Trials CAC",data:cacData,
+        borderColor:"#f97316",backgroundColor:"transparent",
+        pointBackgroundColor:"#f97316",pointRadius:3,tension:0.3,
+        yAxisID:"y2",order:1,
+      },
+      {
+        type:"line",label:"Period avg Trials",data:Array(30).fill(periodTrialAvg||null),
+        borderColor:"rgba(59,130,246,0.35)",borderDash:[5,4],pointRadius:0,
+        yAxisID:"y",order:3,
+      },
+      {
+        type:"line",label:"Period avg CAC",data:Array(30).fill(periodCacAvg||null),
+        borderColor:"rgba(249,115,22,0.35)",borderDash:[5,4],pointRadius:0,
+        yAxisID:"y2",order:4,
+      },
+    ]
+  };
+
+  const chartOpts={
+    responsive:true,maintainAspectRatio:false,
+    interaction:{mode:"index",intersect:false},
+    plugins:{
+      legend:{position:"bottom",labels:{font:{size:10},padding:10,boxWidth:10,boxHeight:10}},
+      tooltip:{callbacks:{
+        label:ctx=>{
+          if(ctx.dataset.yAxisID==="y2")
+            return`${ctx.dataset.label}: ${ctx.parsed.y!==null?fmtD(ctx.parsed.y,2):"—"}`;
+          return`${ctx.dataset.label}: ${fmtN(ctx.parsed.y,0)}`;
+        }
+      }}
+    },
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:10}}},
+      y:{
+        position:"left",grid:{color:"#f1f5f9"},
+        ticks:{font:{size:10},callback:v=>fmtN(v,0)},
+        title:{display:true,text:"Trials",font:{size:10},color:"#94a3b8"},
+      },
+      y2:{
+        position:"right",grid:{display:false},
+        ticks:{font:{size:10},callback:v=>"$"+v.toFixed(0)},
+        title:{display:true,text:"CAC ($)",font:{size:10},color:"#94a3b8"},
+      }
+    }
+  };
+
+  if(p0_chartInst){
+    p0_chartInst.data=chartData;
+    p0_chartInst.options=chartOpts;
+    p0_chartInst.update();
+  } else {
+    p0_chartInst=new Chart(
+      document.getElementById("p0_chart").getContext("2d"),
+      {type:"bar",data:chartData,options:chartOpts}
+    );
+  }
+}
+
+// ── main recalc ───────────────────────────────────────────────────────────────
+function p0_recalc(){
+  const selDate=document.getElementById("p0_date").value;
+  if(!selDate) return;
+
+  const yesterday=p0_addDays(selDate,-1);
+  const lw=p0_addDays(selDate,-7);
+
+  const today=p0_derive(p0_dayRaw(selDate));
+  const yday=p0_derive(p0_dayRaw(yesterday));
+  const lwD=p0_derive(p0_dayRaw(lw));
+  const avg7=p0_7dayAvg(selDate);
+
+  // ── KPI cards ──────────────────────────────────────────────────────────────
+  document.getElementById("p0_kpiGrid").innerHTML=[
+    p0_kpiCard("Spend", today.cost, v=>fmtD(v,0), v=>fmtD(v,0), false, [
+      {lbl:"vs Yesterday",   cur:today.cost, ref:yday.cost},
+      {lbl:"vs Same Day LW", cur:today.cost, ref:lwD.cost},
+      {lbl:"vs 7-day avg",   cur:today.cost, ref:avg7.cost},
+    ]),
+    p0_kpiCard("Trials CAC", today.cac, v=>fmtD(v,2), v=>fmtD(v,2), true, [
+      {lbl:"vs Yesterday",   cur:today.cac, ref:yday.cac},
+      {lbl:"vs Same Day LW", cur:today.cac, ref:lwD.cac},
+      {lbl:"vs 7-day avg",   cur:today.cac, ref:avg7.cac},
+    ]),
+    p0_kpiCard("Trials", today.trials, v=>fmtN(v,0), v=>fmtN(v,0), false, [
+      {lbl:"vs Yesterday",   cur:today.trials, ref:yday.trials},
+      {lbl:"vs Same Day LW", cur:today.trials, ref:lwD.trials},
+      {lbl:"vs 7-day avg",   cur:today.trials, ref:avg7.trials},
+    ]),
+    p0_kpiCard("CPC", today.cpc, v=>fmtD(v,2), v=>fmtD(v,2), true, [
+      {lbl:"vs Yesterday",   cur:today.cpc, ref:yday.cpc},
+      {lbl:"vs Same Day LW", cur:today.cpc, ref:lwD.cpc},
+      {lbl:"vs 7-day avg",   cur:today.cpc, ref:avg7.cpc},
+    ]),
+    p0_kpiCard("CVR", today.cvr, v=>(v*100).toFixed(2)+"%", v=>(v*100).toFixed(2)+"pp", false, [
+      {lbl:"vs Yesterday",   cur:today.cvr, ref:yday.cvr},
+      {lbl:"vs Same Day LW", cur:today.cvr, ref:lwD.cvr},
+      {lbl:"vs 7-day avg",   cur:today.cvr, ref:avg7.cvr},
+    ]),
+  ].join("");
+
+  // ── Insight cards ──────────────────────────────────────────────────────────
+  document.getElementById("p0_insightGrid").innerHTML=[
+    p0_efficiencyCard(selDate, "Brand",    ["Brand","BrandShopping"],       "#93c5fd"),
+    p0_efficiencyCard(selDate, "NonBrand", ["NonBrand","NonBrandShopping"], "#fdba74"),
+    p0_topCACMoverCard(selDate),
+    p0_streakCard(selDate),
+    p0_cpcStoryCard(today, lwD),
+    p0_cacMoverCard("Brand",    selDate, lw),
+    p0_cacMoverCard("NonBrand", selDate, lw),
+    p0_wtdCard(selDate),
+  ].join("");
+
+  // ── Chart ──────────────────────────────────────────────────────────────────
+  p0_renderChart(selDate);
+}
+
+function p0_init(){
+  document.getElementById("p0_date").value=p0_latestDate();
+  p0_rebuildCampList();
+  p0_recalc();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PAGE 1 — CAMPAIGN ZOOM IN
+// ══════════════════════════════════════════════════════════════════════════════
+
+const DISP={Discovery:"Discovery_Broad",DSA:"Discovery_DSA"};
+function p1_disp(c){return DISP[c]||c}
+
+const CC={
+  BrandCore:"#1e3a8a",BrandNonCore:"#3b82f6",BrandMidTier:"#93c5fd",BrandResurrection:"#bfdbfe",
+  Generic:"#ea580c",Competitors:"#dc2626",Cuisines:"#f59e0b",Lifestyle:"#eab308",
+  Discovery_Broad:"#0d9488",Discovery_DSA:"#10b981",Store:"#7c3aed",
+  NonBrandResurrection:"#f97316",Events:"#6b7280",
+  BrandShopping:"#166534",NonBrandShopping:"#4ade80"
+};
+const TC={Brand:"#1e3a8a",NonBrand:"#ea580c",BrandShopping:"#166534",NonBrandShopping:"#4ade80"};
+
+let p1_selCT=new Set(["Brand","NonBrand","BrandShopping","NonBrandShopping"]);
+const p1_charts={};
+let p1_sort={col:"cost_t",dir:"desc"};
+let p1_tableData=[];
+const p1_COLS=["type","camp","cac_t","cac_dY","cac_dLW","cac_d7","cost_t","cost_dY","cost_dLW","cost_d7"];
+let p1_pSort={col:"cost",dir:"desc"};
+let p1_pTableData=[];
+const p1_PCOLS=["type","camp","cost","cac","ctr","cpc","cvr"];
+
+function p1_onCTChange(){
+  p1_selCT=new Set([...document.querySelectorAll("#p1_ctPanel input:checked")].map(x=>x.value));
+  const lbl=p1_selCT.size===4?"All Types":p1_selCT.size===0?"None":[...p1_selCT].join(", ");
+  document.getElementById("p1_ctLabel").textContent=lbl;
+  p1_recalc();
+}
+
+function fmtDate(s){const d=new Date(s+"T00:00:00");return`${d.getMonth()+1}/${d.getDate()}`}
+function fmtWeek(s){const d=new Date(s+"T00:00:00");return`W ${d.getMonth()+1}/${d.getDate()}`}
+
+// Aggregate rows by keyFn into groups defined by groupFn, summing valFn
+function p1_aggregate(rows, keyFn, groupFn, valFn){
+  const vFn = valFn || (r=>r.cost);
+  const map={};
+  rows.forEach(r=>{
+    const k=keyFn(r), g=groupFn(r);
+    if(!map[k]) map[k]={};
+    map[k][g]=(map[k][g]||0)+vFn(r);
+  });
+  return map;
+}
+
+function p1_buildChartData(map, colorMap){
+  const dates=Object.keys(map).sort();
+  const cats=new Set();
+  dates.forEach(d=>Object.keys(map[d]).forEach(c=>cats.add(c)));
+  const catArr=[...cats];
+  const datasets=catArr.map(cat=>{
+    const data=dates.map(date=>{
+      const row=map[date]||{};
+      const total=Object.values(row).reduce((a,b)=>a+b,0);
+      return total>0?(row[cat]||0)/total*100:0;
+    });
+    return{label:cat,data,backgroundColor:colorMap[cat]||"#ccc",stack:"s"};
+  });
+  return{labels:dates,datasets};
+}
+
+const p1_BASE_OPTS={
+  responsive:true,maintainAspectRatio:false,
+  plugins:{
+    legend:{position:"bottom",labels:{font:{size:10},padding:8,boxWidth:10,boxHeight:10}},
+    tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}}
+  },
+  scales:{
+    x:{stacked:true,grid:{display:false},ticks:{font:{size:9},maxRotation:45,minRotation:45}},
+    y:{stacked:true,min:0,max:100,grid:{color:"#f1f5f9"},ticks:{font:{size:10},callback:v=>v+"%"}}
+  }
+};
+
+function p1_upsertChart(id, data, labelFn){
+  const cfg=JSON.parse(JSON.stringify(p1_BASE_OPTS));
+  cfg.plugins.tooltip={callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}};
+  cfg.scales.x.ticks.callback=function(val){return labelFn(this.getLabelForValue(val))};
+  if(p1_charts[id]){
+    p1_charts[id].data=data;
+    p1_charts[id].options.scales.x.ticks.callback=function(val){return labelFn(this.getLabelForValue(val))};
+    p1_charts[id].update();
+    return;
+  }
+  p1_charts[id]=new Chart(document.getElementById(id).getContext("2d"),{type:"bar",data,options:cfg});
+}
+
+function p1_renderChart(){
+  // Chart A — filter by CT + chart date range, group by cat, sum cost — uses DATA
+  const cStart=document.getElementById("p1_chartStart").value;
+  const cEnd  =document.getElementById("p1_chartEnd").value;
+  let filtA=DATA.filter(r=>p1_selCT.has(derivedType(r)));
+  if(cStart&&cEnd){
+    const s=new Date(cStart+"T00:00:00"),e=new Date(cEnd+"T00:00:00");
+    filtA=filtA.filter(r=>{const rd=new Date(r.d+"T00:00:00");return rd>=s&&rd<=e;});
+  }
+  const mapAd=p1_aggregate(filtA,r=>r.d,r=>p1_disp(r.cat),r=>r.cost);
+  const mapAw=p1_aggregate(filtA,r=>monday(r.d),r=>p1_disp(r.cat),r=>r.cost);
+  p1_upsertChart("cA_d",p1_buildChartData(mapAd,CC),fmtDate);
+  p1_upsertChart("cA_w",p1_buildChartData(mapAw,CC),fmtWeek);
+}
+
+// Aggregate a single day from DATA by campaign key, filtered by CT
+function p1_dayByCamp(dateStr){
+  const map={};
+  DATA.forEach(r=>{
+    if(r.d!==dateStr) return;
+    if(!p1_selCT.has(derivedType(r))) return;
+    const key=r.camp+"|||"+derivedType(r);
+    if(!map[key]) map[key]={camp:r.camp, type:derivedType(r), cost:0, trials:0};
+    map[key].cost+=r.cost;
+    map[key].trials+=r.trials;
+  });
+  return map;
+}
+
+// Aggregate a date range from DATA by campaign key, filtered by CT
+function p1_rangeByCamp(startStr, endStr){
+  const s=new Date(startStr+"T00:00:00"), e=new Date(endStr+"T00:00:00");
+  const map={};
+  DATA.forEach(r=>{
+    const rd=new Date(r.d+"T00:00:00");
+    if(rd<s||rd>e) return;
+    if(!p1_selCT.has(derivedType(r))) return;
+    const key=r.camp+"|||"+derivedType(r);
+    if(!map[key]) map[key]={camp:r.camp, type:derivedType(r), cost:0, trials:0};
+    map[key].cost+=r.cost;
+    map[key].trials+=r.trials;
+  });
+  return map;
+}
+
+function p1_buildTableData(){
+  const selDate=document.getElementById("p1_day").value;
+  if(!selDate) return [];
+  const yday=p0_addDays(selDate,-1);
+  const lwDay=p0_addDays(selDate,-7);
+  const avg7Start=p0_addDays(selDate,-7), avg7End=p0_addDays(selDate,-1);
+
+  const today=p1_dayByCamp(selDate);
+  const yesterday=p1_dayByCamp(yday);
+  const lastWeek=p1_dayByCamp(lwDay);
+  const range7=p1_rangeByCamp(avg7Start,avg7End);
+
+  // Collect all campaign keys seen in today
+  return Object.keys(today).map(key=>{
+    const t=today[key];
+    const y=yesterday[key]||{cost:0,trials:0};
+    const lw=lastWeek[key]||{cost:0,trials:0};
+    const r7=range7[key]||{cost:0,trials:0};
+
+    const cac_t  = t.trials>0  ? t.cost/t.trials   : null;
+    const cac_y  = y.trials>0  ? y.cost/y.trials   : null;
+    const cac_lw = lw.trials>0 ? lw.cost/lw.trials : null;
+    const cac_7  = r7.trials>0 ? r7.cost/r7.trials : null; // pooled 7-day avg
+
+    return {
+      type:     t.type,
+      camp:     t.camp,
+      cost_t:   t.cost,
+      cost_y:   y.cost,
+      cost_lw:  lw.cost,
+      cost_7:   r7.cost/7,       // daily avg over 7 days
+      cac_t,
+      cac_y,
+      cac_lw,
+      cac_7,
+      // deltas (absolute)
+      cost_dY:  t.cost  - y.cost,
+      cost_dLW: t.cost  - lw.cost,
+      cost_d7:  t.cost  - r7.cost/7,
+      cac_dY:   (cac_t!==null&&cac_y!==null)  ? cac_t-cac_y  : null,
+      cac_dLW:  (cac_t!==null&&cac_lw!==null) ? cac_t-cac_lw : null,
+      cac_d7:   (cac_t!==null&&cac_7!==null)  ? cac_t-cac_7  : null,
+    };
+  });
+}
+
+function p1_sortBy(col){
+  if(p1_sort.col===col){
+    p1_sort.dir=p1_sort.dir==="asc"?"desc":"asc";
+  } else {
+    p1_sort={col, dir:col==="type"||col==="camp"?"asc":"desc"};
+  }
+  p1_updateSortHeaders();
+  p1_renderTable();
+}
+
+function p1_updateSortHeaders(){
+  p1_COLS.forEach(c=>{
+    const hd=document.getElementById("p1_sh_"+c);
+    const si=document.getElementById("p1_si_"+c);
+    if(!hd||!si) return;
+    hd.classList.toggle("sort-active", c===p1_sort.col);
+    si.textContent = c!==p1_sort.col ? "⇅" : p1_sort.dir==="asc" ? "▲" : "▼";
+  });
+}
+
+function p1_fmtDelta(v, isCost){
+  if(v===null||v===undefined||!isFinite(v)) return '<td class="num delta-neu">—</td>';
+  const cls = isCost
+    ? (v>0?"delta-pos":v<0?"delta-neg":"delta-neu")
+    : (v<0?"delta-inv-neg":v>0?"delta-inv-pos":"delta-neu");
+  const val = isCost ? fmtDeltaD(v,0) : fmtDeltaD(v,2);
+  return `<td class="num ${cls}">${val}</td>`;
+}
+
+function p1_renderTable(){
+  const data=[...p1_tableData];
+  const col=p1_sort.col, dir=p1_sort.dir;
+  data.sort((a,b)=>{
+    let av=a[col], bv=b[col];
+    if(col==="type"||col==="camp"){
+      av=av||""; bv=bv||"";
+      return dir==="asc"?av.localeCompare(bv):bv.localeCompare(av);
+    }
+    if(av===null&&bv===null) return 0;
+    if(av===null) return 1;
+    if(bv===null) return -1;
+    return dir==="asc"?av-bv:bv-av;
+  });
+
+  if(!data.length){
+    document.getElementById("p1_tableBody").innerHTML=
+      '<tr><td colspan="10" class="empty-state">No data for selected date / filters.</td></tr>';
+    return;
+  }
+
+  const rows=data.map(r=>`
+    <tr>
+      <td>${r.type}</td>
+      <td>${r.camp}</td>
+      <td class="num">${r.cac_t!==null?fmtD(r.cac_t,2):"—"}</td>
+      ${p1_fmtDelta(r.cac_dY,  false)}
+      ${p1_fmtDelta(r.cac_dLW, false)}
+      ${p1_fmtDelta(r.cac_d7,  false)}
+      <td class="num">${fmtD(r.cost_t,0)}</td>
+      ${p1_fmtDelta(r.cost_dY,  true)}
+      ${p1_fmtDelta(r.cost_dLW, true)}
+      ${p1_fmtDelta(r.cost_d7,  true)}
+    </tr>`).join("");
+  document.getElementById("p1_tableBody").innerHTML=rows;
+
+  const selDate=document.getElementById("p1_day").value;
+  const ctStr=p1_selCT.size===4?"All Types":p1_selCT.size===0?"None":[...p1_selCT].join(", ");
+  document.getElementById("p1_tableSubtitle").textContent=
+    `${selDate} · ${ctStr} · ${data.length} campaigns`;
+}
+
+function p1_buildPeriodData(){
+  const start=document.getElementById("p1_pStart").value;
+  const end  =document.getElementById("p1_pEnd").value;
+  if(!start||!end) return [];
+  const s=new Date(start+"T00:00:00"), e=new Date(end+"T00:00:00");
+  const map={};
+  DATA.forEach(r=>{
+    const rd=new Date(r.d+"T00:00:00");
+    if(rd<s||rd>e) return;
+    if(!p1_selCT.has(derivedType(r))) return;
+    const key=r.camp+"|||"+derivedType(r);
+    if(!map[key]) map[key]={type:derivedType(r),camp:r.camp,cost:0,trials:0,cl:0,imp:0};
+    map[key].cost+=r.cost; map[key].trials+=r.trials;
+    map[key].cl+=r.cl;     map[key].imp+=r.imp;
+  });
+  return Object.values(map).map(d=>({
+    type: d.type, camp: d.camp,
+    cost: d.cost,
+    cac:  d.trials>0 ? d.cost/d.trials : null,
+    ctr:  d.imp>0    ? d.cl/d.imp      : null,
+    cpc:  d.cl>0     ? d.cost/d.cl     : null,
+    cvr:  d.cl>0     ? d.trials/d.cl   : null,
+  }));
+}
+
+function p1_pSortBy(col){
+  if(p1_pSort.col===col){
+    p1_pSort.dir=p1_pSort.dir==="asc"?"desc":"asc";
+  } else {
+    p1_pSort={col, dir:(col==="type"||col==="camp")?"asc":"desc"};
+  }
+  p1_pUpdateSortHeaders();
+  p1_renderPeriodTable();
+}
+
+function p1_pUpdateSortHeaders(){
+  p1_PCOLS.forEach(c=>{
+    const hd=document.getElementById("p1_sh_p_"+c);
+    const si=document.getElementById("p1_si_p_"+c);
+    if(!hd||!si) return;
+    hd.classList.toggle("sort-active", c===p1_pSort.col);
+    si.textContent = c!==p1_pSort.col ? "⇅" : p1_pSort.dir==="asc" ? "▲" : "▼";
+  });
+}
+
+function p1_renderPeriodTable(){
+  const data=[...p1_pTableData];
+  const col=p1_pSort.col, dir=p1_pSort.dir;
+  data.sort((a,b)=>{
+    let av=a[col], bv=b[col];
+    if(col==="type"||col==="camp"){
+      return dir==="asc"?(av||"").localeCompare(bv||""):(bv||"").localeCompare(av||"");
+    }
+    if(av===null&&bv===null) return 0;
+    if(av===null) return 1;
+    if(bv===null) return -1;
+    return dir==="asc"?av-bv:bv-av;
+  });
+
+  const start=document.getElementById("p1_pStart").value;
+  const end  =document.getElementById("p1_pEnd").value;
+
+  if(!start||!end){
+    document.getElementById("p1_pTableBody").innerHTML=
+      '<tr><td colspan="7" class="empty-state">Set a period above to view campaign performance.</td></tr>';
+    return;
+  }
+  if(!data.length){
+    document.getElementById("p1_pTableBody").innerHTML=
+      '<tr><td colspan="7" class="empty-state">No data for selected period / filters.</td></tr>';
+    return;
+  }
+
+  const rows=data.map(r=>`
+    <tr>
+      <td>${r.type}</td>
+      <td>${r.camp}</td>
+      <td class="num">${fmtD(r.cost,0)}</td>
+      <td class="num">${r.cac!==null?fmtD(r.cac,2):"—"}</td>
+      <td class="num">${r.ctr!==null?(r.ctr*100).toFixed(2)+"%":"—"}</td>
+      <td class="num">${r.cpc!==null?fmtD(r.cpc,2):"—"}</td>
+      <td class="num">${r.cvr!==null?(r.cvr*100).toFixed(2)+"%":"—"}</td>
+    </tr>`).join("");
+  document.getElementById("p1_pTableBody").innerHTML=rows;
+
+  const ctStr=p1_selCT.size===4?"All Types":p1_selCT.size===0?"None":[...p1_selCT].join(", ");
+  document.getElementById("p1_pTableSubtitle").textContent=
+    `${start} → ${end} · ${ctStr} · ${data.length} campaigns`;
+}
+
+function p1_recalc(){
+  p1_renderChart();
+  p1_tableData=p1_buildTableData();
+  p1_updateSortHeaders();
+  p1_renderTable();
+  p1_pTableData=p1_buildPeriodData();
+  p1_pUpdateSortHeaders();
+  p1_renderPeriodTable();
+}
+
+function p1_init(){
+  const latest=p0_latestDate();
+  document.getElementById("p1_day").value=latest;
+  document.getElementById("p1_pEnd").value=latest;
+  document.getElementById("p1_pStart").value=p0_addDays(latest,-6);
+  document.getElementById("p1_chartStart").value=p0_addDays(latest,-29);
+  document.getElementById("p1_chartEnd").value=latest;
+  p1_recalc();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PAGE 5 — CAMPAIGN TYPE ZOOM IN
+// ══════════════════════════════════════════════════════════════════════════════
+
+let p5_sort={col:"cost_t",dir:"desc"};
+let p5_tableData=[];
+const p5_TYPES=["Brand","NonBrand","BrandShopping","NonBrandShopping"];
+const p5_COLS=["type","cac_t","cac_dY","cac_dLW","cac_d7","cost_t","cost_dY","cost_dLW","cost_d7"];
+const p5_charts={};
+let p5_pSort={col:"cost",dir:"desc"};
+let p5_pTableData=[];
+const p5_PCOLS=["type","cost","cac","ctr","cpc","cvr"];
+
+// Sum metrics for a date range filtered by a single campaign type
+function p5_rangeByType(startStr, endStr, typeName){
+  const s=new Date(startStr+"T00:00:00"), e=new Date(endStr+"T00:00:00");
+  let cost=0, trials=0;
+  DATA.forEach(r=>{
+    const rd=new Date(r.d+"T00:00:00");
+    if(rd<s||rd>e) return;
+    if(derivedType(r)!==typeName) return;
+    cost+=r.cost; trials+=r.trials;
+  });
+  return {cost, trials};
+}
+
+function p5_dayByType(dateStr, typeName){
+  let cost=0, trials=0;
+  DATA.forEach(r=>{
+    if(r.d!==dateStr) return;
+    if(derivedType(r)!==typeName) return;
+    cost+=r.cost; trials+=r.trials;
+  });
+  return {cost, trials};
+}
+
+function p5_buildTableData(){
+  const selDate=document.getElementById("p5_day").value;
+  if(!selDate) return [];
+  const yday=p0_addDays(selDate,-1);
+  const lwDay=p0_addDays(selDate,-7);
+  const avg7Start=p0_addDays(selDate,-7), avg7End=p0_addDays(selDate,-1);
+
+  return p5_TYPES.map(typeName=>{
+    const t  = p5_dayByType(selDate, typeName);
+    const y  = p5_dayByType(yday,    typeName);
+    const lw = p5_dayByType(lwDay,   typeName);
+    const r7 = p5_rangeByType(avg7Start, avg7End, typeName);
+
+    const cac_t  = t.trials>0  ? t.cost/t.trials   : null;
+    const cac_y  = y.trials>0  ? y.cost/y.trials   : null;
+    const cac_lw = lw.trials>0 ? lw.cost/lw.trials : null;
+    const cac_7  = r7.trials>0 ? r7.cost/r7.trials : null; // pooled avg
+
+    return {
+      type:     typeName,
+      cost_t:   t.cost,
+      cac_t,
+      cost_dY:  t.cost - y.cost,
+      cost_dLW: t.cost - lw.cost,
+      cost_d7:  t.cost - r7.cost/7,
+      cac_dY:   (cac_t!==null&&cac_y!==null)  ? cac_t-cac_y  : null,
+      cac_dLW:  (cac_t!==null&&cac_lw!==null) ? cac_t-cac_lw : null,
+      cac_d7:   (cac_t!==null&&cac_7!==null)  ? cac_t-cac_7  : null,
+    };
+  });
+}
+
+function p5_sortBy(col){
+  if(p5_sort.col===col){
+    p5_sort.dir=p5_sort.dir==="asc"?"desc":"asc";
+  } else {
+    p5_sort={col, dir:col==="type"?"asc":"desc"};
+  }
+  p5_updateSortHeaders();
+  p5_renderTable();
+}
+
+function p5_updateSortHeaders(){
+  p5_COLS.forEach(c=>{
+    const hd=document.getElementById("p5_sh_"+c);
+    const si=document.getElementById("p5_si_"+c);
+    if(!hd||!si) return;
+    hd.classList.toggle("sort-active", c===p5_sort.col);
+    si.textContent = c!==p5_sort.col ? "⇅" : p5_sort.dir==="asc" ? "▲" : "▼";
+  });
+}
+
+function p5_fmtDelta(v, isCost){
+  if(v===null||v===undefined||!isFinite(v)) return '<td class="num delta-neu">—</td>';
+  const cls = isCost
+    ? (v>0?"delta-pos":v<0?"delta-neg":"delta-neu")
+    : (v<0?"delta-inv-neg":v>0?"delta-inv-pos":"delta-neu");
+  const val = isCost ? fmtDeltaD(v,0) : fmtDeltaD(v,2);
+  return `<td class="num ${cls}">${val}</td>`;
+}
+
+function p5_renderTable(){
+  const data=[...p5_tableData];
+  const col=p5_sort.col, dir=p5_sort.dir;
+  data.sort((a,b)=>{
+    let av=a[col], bv=b[col];
+    if(col==="type"){
+      return dir==="asc"?(av||"").localeCompare(bv||""):(bv||"").localeCompare(av||"");
+    }
+    if(av===null&&bv===null) return 0;
+    if(av===null) return 1;
+    if(bv===null) return -1;
+    return dir==="asc"?av-bv:bv-av;
+  });
+
+  if(!data.length){
+    document.getElementById("p5_tableBody").innerHTML=
+      '<tr><td colspan="9" class="empty-state">No data for selected date / filters.</td></tr>';
+    return;
+  }
+
+  const rows=data.map(r=>`
+    <tr>
+      <td>${r.type}</td>
+      <td class="num">${r.cac_t!==null?fmtD(r.cac_t,2):"—"}</td>
+      ${p5_fmtDelta(r.cac_dY,  false)}
+      ${p5_fmtDelta(r.cac_dLW, false)}
+      ${p5_fmtDelta(r.cac_d7,  false)}
+      <td class="num">${fmtD(r.cost_t,0)}</td>
+      ${p5_fmtDelta(r.cost_dY,  true)}
+      ${p5_fmtDelta(r.cost_dLW, true)}
+      ${p5_fmtDelta(r.cost_d7,  true)}
+    </tr>`).join("");
+  document.getElementById("p5_tableBody").innerHTML=rows;
+
+  const selDate=document.getElementById("p5_day").value;
+  document.getElementById("p5_tableSubtitle").textContent=`${selDate}`;
+}
+
+function p5_renderChart(){
+  // All 4 types always shown, grouped by derivedType — filtered by chart date range
+  const cStart=document.getElementById("p5_chartStart").value;
+  const cEnd  =document.getElementById("p5_chartEnd").value;
+  let filt=DATA;
+  if(cStart&&cEnd){
+    const s=new Date(cStart+"T00:00:00"),e=new Date(cEnd+"T00:00:00");
+    filt=filt.filter(r=>{const rd=new Date(r.d+"T00:00:00");return rd>=s&&rd<=e;});
+  }
+  const mapD=p1_aggregate(filt,r=>r.d,         r=>derivedType(r), r=>r.cost);
+  const mapW=p1_aggregate(filt,r=>monday(r.d),  r=>derivedType(r), r=>r.cost);
+  p1_upsertChart("cT_d", p1_buildChartData(mapD, TC), fmtDate);
+  p1_upsertChart("cT_w", p1_buildChartData(mapW, TC), fmtWeek);
+  // track in p5_charts so showTab can resize them
+  p5_charts["cT_d"]=p1_charts["cT_d"];
+  p5_charts["cT_w"]=p1_charts["cT_w"];
+}
+
+function p5_buildPeriodData(){
+  const start=document.getElementById("p5_pStart").value;
+  const end  =document.getElementById("p5_pEnd").value;
+  if(!start||!end) return [];
+  const s=new Date(start+"T00:00:00"), e=new Date(end+"T00:00:00");
+  const map={};
+  p5_TYPES.forEach(t=>{map[t]={type:t,cost:0,trials:0,cl:0,imp:0};});
+  DATA.forEach(r=>{
+    const rd=new Date(r.d+"T00:00:00");
+    if(rd<s||rd>e) return;
+    const tp=derivedType(r);
+    if(!map[tp]) return;
+    map[tp].cost+=r.cost; map[tp].trials+=r.trials;
+    map[tp].cl+=r.cl;     map[tp].imp+=r.imp;
+  });
+  return Object.values(map).map(d=>({
+    type: d.type,
+    cost: d.cost,
+    cac:  d.trials>0 ? d.cost/d.trials : null,
+    ctr:  d.imp>0    ? d.cl/d.imp      : null,
+    cpc:  d.cl>0     ? d.cost/d.cl     : null,
+    cvr:  d.cl>0     ? d.trials/d.cl   : null,
+  }));
+}
+
+function p5_pSortBy(col){
+  if(p5_pSort.col===col){
+    p5_pSort.dir=p5_pSort.dir==="asc"?"desc":"asc";
+  } else {
+    p5_pSort={col, dir:col==="type"?"asc":"desc"};
+  }
+  p5_pUpdateSortHeaders();
+  p5_renderPeriodTable();
+}
+
+function p5_pUpdateSortHeaders(){
+  p5_PCOLS.forEach(c=>{
+    const hd=document.getElementById("p5_sh_p_"+c);
+    const si=document.getElementById("p5_si_p_"+c);
+    if(!hd||!si) return;
+    hd.classList.toggle("sort-active", c===p5_pSort.col);
+    si.textContent = c!==p5_pSort.col ? "⇅" : p5_pSort.dir==="asc" ? "▲" : "▼";
+  });
+}
+
+function p5_renderPeriodTable(){
+  const data=[...p5_pTableData];
+  const col=p5_pSort.col, dir=p5_pSort.dir;
+  data.sort((a,b)=>{
+    let av=a[col], bv=b[col];
+    if(col==="type"){
+      return dir==="asc"?(av||"").localeCompare(bv||""):(bv||"").localeCompare(av||"");
+    }
+    if(av===null&&bv===null) return 0;
+    if(av===null) return 1;
+    if(bv===null) return -1;
+    return dir==="asc"?av-bv:bv-av;
+  });
+
+  const start=document.getElementById("p5_pStart").value;
+  const end  =document.getElementById("p5_pEnd").value;
+
+  if(!start||!end){
+    document.getElementById("p5_pTableBody").innerHTML=
+      '<tr><td colspan="6" class="empty-state">Set a period above to view campaign type performance.</td></tr>';
+    return;
+  }
+  if(!data.length){
+    document.getElementById("p5_pTableBody").innerHTML=
+      '<tr><td colspan="6" class="empty-state">No data for selected period / filters.</td></tr>';
+    return;
+  }
+
+  const rows=data.map(r=>`
+    <tr>
+      <td>${r.type}</td>
+      <td class="num">${fmtD(r.cost,0)}</td>
+      <td class="num">${r.cac!==null?fmtD(r.cac,2):"—"}</td>
+      <td class="num">${r.ctr!==null?(r.ctr*100).toFixed(2)+"%":"—"}</td>
+      <td class="num">${r.cpc!==null?fmtD(r.cpc,2):"—"}</td>
+      <td class="num">${r.cvr!==null?(r.cvr*100).toFixed(2)+"%":"—"}</td>
+    </tr>`).join("");
+  document.getElementById("p5_pTableBody").innerHTML=rows;
+
+  document.getElementById("p5_pTableSubtitle").textContent=
+    `${start} → ${end}`;
+}
+
+function p5_recalc(){
+  p5_renderChart();
+  p5_tableData=p5_buildTableData();
+  p5_updateSortHeaders();
+  p5_renderTable();
+  p5_pTableData=p5_buildPeriodData();
+  p5_pUpdateSortHeaders();
+  p5_renderPeriodTable();
+}
+
+function p5_init(){
+  const latest=p0_latestDate();
+  document.getElementById("p5_day").value=latest;
+  document.getElementById("p5_pEnd").value=latest;
+  document.getElementById("p5_pStart").value=p0_addDays(latest,-6);
+  document.getElementById("p5_chartStart").value=p0_addDays(latest,-29);
+  document.getElementById("p5_chartEnd").value=latest;
+  p5_recalc();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PAGE 2 — PERIOD COMPARISON
+// ══════════════════════════════════════════════════════════════════════════════
+
+let p2_selCT=new Set(["Brand","NonBrand","BrandShopping","NonBrandShopping"]);
+let p2_selCamp=null;
+
+function p2_filterList(listId, q){
+  document.querySelectorAll(`#${listId} .dd-item`).forEach(el=>{
+    el.classList.toggle("hidden", !el.textContent.toLowerCase().includes(q.toLowerCase()));
+  });
+}
+function p2_selectAll(listId){
+  document.querySelectorAll(`#${listId} input`).forEach(x=>x.checked=true);
+  p2_selCamp=null; p2_updateCampLabel();
+  p2_recalc();
+}
+function p2_clearAll(listId){
+  document.querySelectorAll(`#${listId} input`).forEach(x=>x.checked=false);
+  p2_selCamp=new Set(); p2_updateCampLabel();
+  p2_recalc();
+}
+function p2_updateCampLabel(){
+  const checks=[...document.querySelectorAll("#p2_campList input:checked")].map(x=>x.value);
+  const total=document.querySelectorAll("#p2_campList input").length;
+  document.getElementById("p2_campLabel").textContent=
+    checks.length===0?"None":checks.length===total?"All Campaigns":`${checks.length} campaigns`;
+}
+function p2_onCTChange(){
+  p2_selCT=new Set([...document.querySelectorAll("#p2_ctPanel input:checked")].map(x=>x.value));
+  document.getElementById("p2_ctLabel").textContent=
+    p2_selCT.size===4?"All Types":p2_selCT.size===0?"None":[...p2_selCT].join(", ");
+  p2_rebuildCampList();
+  p2_recalc();
+}
+function p2_onCampChange(){
+  const checks=[...document.querySelectorAll("#p2_campList input:checked")].map(x=>x.value);
+  const total=document.querySelectorAll("#p2_campList input").length;
+  p2_selCamp=(checks.length===total)?null:new Set(checks);
+  p2_updateCampLabel();
+  p2_recalc();
+}
+
+function p2_shortName(n){
+  if(n.length<=38) return n;
+  return n.slice(0,36)+"…";
+}
+function p2_rebuildCampList(){
+  const list=document.getElementById("p2_campList");
+  const camps=new Set();
+  DATA.forEach(r=>{if(p2_selCT.has(derivedType(r))) camps.add(r.camp);});
+  const sorted=[...camps].sort();
+  list.innerHTML=sorted.map(c=>`<label class="dd-item"><input type="checkbox" value="${c.replace(/"/g,'&quot;')}" checked onchange="p2_onCampChange()"> <span title="${c.replace(/"/g,'&quot;')}">${p2_shortName(c)}</span></label>`).join("");
+  p2_selCamp=null;
+  p2_updateCampLabel();
+}
+
+function p2_sumPeriod(start, end){
+  const s=new Date(start+"T00:00:00"), e=new Date(end+"T00:00:00");
+  let imp=0,cl=0,cost=0,trials=0;
+  DATA.forEach(r=>{
+    const rd=new Date(r.d+"T00:00:00");
+    if(rd<s||rd>e) return;
+    if(!p2_selCT.has(derivedType(r))) return;
+    if(p2_selCamp && !p2_selCamp.has(r.camp)) return;
+    imp+=r.imp; cl+=r.cl; cost+=r.cost; trials+=r.trials;
+  });
+  return{imp,cl,cost,trials};
+}
+
+function fmtN(v,dec=0){if(!isFinite(v)||v===null)return"—";return v.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec})}
+function fmtD(v,dec=0){if(!isFinite(v)||v===null)return"—";return`$${v.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec})}`}
+function fmtP(v){if(!isFinite(v)||v===null)return"—";return(v*100).toFixed(2)+"%"}
+function fmtPP(v){if(!isFinite(v)||v===null)return"—";const s=v>=0?"+":"-";return s+Math.abs(v*100).toFixed(2)+"pp"}
+function fmtPct(v){if(!isFinite(v)||v===null)return"—";const s=v>=0?"+":"-";return s+Math.abs(v*100).toFixed(1)+"%"}
+function fmtDeltaN(v,dec=0){if(!isFinite(v)||v===null)return"—";const s=v>=0?"+":"";return s+v.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec})}
+function fmtDeltaD(v,dec=0){if(!isFinite(v)||v===null)return"—";const s=v>=0?"+":"-";return s+"$"+Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec})}
+
+function deltaClass(v, invert=false){
+  if(!isFinite(v)||v===0) return "delta-neu";
+  if(invert) return v>0?"delta-inv-pos":"delta-inv-neg";
+  return v>0?"delta-pos":"delta-neg";
+}
+function pillClass(v, invert=false){
+  if(!isFinite(v)||v===0) return "pill-neu";
+  if(invert) return v>0?"pill-neg":"pill-pos";
+  return v>0?"pill-pos":"pill-neg";
+}
+
+function p2_recalc(){
+  const aStart=document.getElementById("aStart").value;
+  const aEnd=document.getElementById("aEnd").value;
+  const bStart=document.getElementById("bStart").value;
+  const bEnd=document.getElementById("bEnd").value;
+  if(!aStart||!aEnd||!bStart||!bEnd) return;
+
+  const A=p2_sumPeriod(aStart,aEnd);
+  const B=p2_sumPeriod(bStart,bEnd);
+
+  const mk=(raw)=>({
+    ...raw,
+    ctr: raw.imp>0?raw.cl/raw.imp:null,
+    cpc: raw.cl>0?raw.cost/raw.cl:null,
+    tCVR: raw.cl>0?raw.trials/raw.cl:null,
+    tCAC: raw.trials>0?raw.cost/raw.trials:null,
+  });
+  const a=mk(A), b=mk(B);
+
+  function row(label, subLabel, aVal, bVal, fmt, fmtDelta, invert=false, isRate=false){
+    const delta=bVal-aVal;
+    const pct=(aVal!==0&&isFinite(aVal))?delta/Math.abs(aVal):null;
+    const dc=deltaClass(delta,invert);
+    const pc=pillClass(pct,invert);
+    const sub=subLabel?`<br><span class="sub">${subLabel}</span>`:"";
+    const pctStr=isRate?"":(pct!==null?`<span class="pct-pill ${pc}">${fmtPct(pct)}</span>`:"<span class='pct-pill pill-neu'>—</span>");
+    return`<tr>
+      <td class="metric">${label}${sub}</td>
+      <td class="num">${fmt(aVal)}</td>
+      <td class="num">${fmt(bVal)}</td>
+      <td class="num ${dc}">${fmtDelta(delta)}</td>
+      <td class="num">${pctStr}</td>
+    </tr>`;
+  }
+
+  const rows=[
+    row("Cost",null,a.cost,b.cost,v=>fmtD(v,2),v=>fmtDeltaD(v,2),false,false),
+    row("Impressions",null,a.imp,b.imp,fmtN,fmtDeltaN,false,false),
+    row("Clicks",null,a.cl,b.cl,fmtN,fmtDeltaN,false,false),
+    row("CTR","Clicks / Impressions",a.ctr,b.ctr,fmtP,fmtPP,false,true),
+    row("CPC","Cost / Click",a.cpc,b.cpc,v=>fmtD(v,2),v=>fmtDeltaD(v,2),true,false),
+    `<tr class="separator"><td colspan="5" style="padding:6px 16px;font-size:11px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Internal Attribution (Trials)</td></tr>`,
+    row("Trials","New customers (internal)",a.trials,b.trials,fmtN,fmtDeltaN,false,false),
+    row("Trials CVR","Trials / Click",a.tCVR,b.tCVR,fmtP,fmtPP,false,true),
+    row("Trials CAC","Cost / Trial",a.tCAC,b.tCAC,v=>fmtD(v,2),v=>fmtDeltaD(v,2),true,false),
+  ];
+
+  document.getElementById("p2_tableBody").innerHTML=rows.join("");
+
+  const campCount=p2_selCamp?p2_selCamp.size:document.querySelectorAll("#p2_campList input").length;
+  const totalCamp=document.querySelectorAll("#p2_campList input").length;
+  const campStr=(!p2_selCamp||p2_selCamp.size===totalCamp)?"All campaigns":`${campCount} campaigns`;
+  document.getElementById("p2_tableSubtitle").textContent=`${campStr}`;
+  p2_renderFunnel();
+}
+
+// ── VOLUME FUNNEL ─────────────────────────────────────────────────────────────
+function p2_renderFunnel(){
+  const aStart=document.getElementById("aStart").value;
+  const aEnd=document.getElementById("aEnd").value;
+  const bStart=document.getElementById("bStart").value;
+  const bEnd=document.getElementById("bEnd").value;
+  if(!aStart||!aEnd||!bStart||!bEnd) return;
+
+  const A=p2_sumPeriod(aStart,aEnd);
+  const B=p2_sumPeriod(bStart,bEnd);
+
+  const aRates={
+    ctr:  A.imp>0 ? A.cl/A.imp    : null,
+    tCVR: A.cl>0  ? A.trials/A.cl : null,
+  };
+  const bRates={
+    ctr:  B.imp>0 ? B.cl/B.imp    : null,
+    tCVR: B.cl>0  ? B.trials/B.cl : null,
+  };
+
+  function fmtRateDelta(v){
+    if(v===null||!isFinite(v)) return"—";
+    if(v===0) return"0.00pp";
+    const s=v>=0?"+":"-";
+    return s+Math.abs(v*100).toFixed(2)+"pp";
+  }
+
+  function frow(label, indent, aVol, bVol, fmtVol, aRate, bRate){
+    const volDelta=bVol-aVol;
+    const volPct=(aVol!==0&&isFinite(aVol))?volDelta/Math.abs(aVol):null;
+    const vdc=deltaClass(volDelta,false);
+    const rateDelta=(aRate!==null&&bRate!==null)?(bRate-aRate):null;
+    const rdc=rateDelta!==null?deltaClass(rateDelta,false):"delta-neu";
+    const prefix=indent?`<span style="color:#94a3b8;margin-right:3px">↳</span>`:"";
+    const padStyle=indent?` style="padding-left:28px"`:"";
+    return`<tr>
+      <td class="metric"${padStyle}>${prefix}${label}</td>
+      <td class="num">${fmtVol(aVol)}</td>
+      <td class="num">${fmtVol(bVol)}</td>
+      <td class="num ${vdc}">${fmtPct(volPct)}</td>
+      <td class="num">${aRate!==null?fmtP(aRate):"—"}</td>
+      <td class="num">${bRate!==null?fmtP(bRate):"—"}</td>
+      <td class="num ${rdc}">${fmtRateDelta(rateDelta)}</td>
+    </tr>`;
+  }
+
+  const rows=[
+    frow("Impressions",       false, A.imp,    B.imp,    v=>fmtN(v,0), null,       null),
+    frow("Clicks",            false, A.cl,     B.cl,     v=>fmtN(v,0), aRates.ctr, bRates.ctr),
+    frow("Trials (Internal)", true,  A.trials, B.trials, v=>fmtN(v,0), aRates.tCVR, bRates.tCVR),
+  ];
+  document.getElementById("p2_funnelBody").innerHTML=rows.join("");
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PAGE 3 — DEVICE BREAKDOWN
+// ══════════════════════════════════════════════════════════════════════════════
+
+let p3_selCT=new Set(["Brand","NonBrand","BrandShopping","NonBrandShopping"]);
+let p3_selCamp=null;
+
+function p3_filterList(listId,q){
+  document.querySelectorAll(`#${listId} .dd-item`).forEach(el=>{
+    el.classList.toggle("hidden",!el.textContent.toLowerCase().includes(q.toLowerCase()));
+  });
+}
+function p3_selectAll(listId){
+  document.querySelectorAll(`#${listId} input`).forEach(x=>x.checked=true);
+  p3_selCamp=null; p3_updateCampLabel();
+  p3_recalc();
+}
+function p3_clearAll(listId){
+  document.querySelectorAll(`#${listId} input`).forEach(x=>x.checked=false);
+  p3_selCamp=new Set(); p3_updateCampLabel();
+  p3_recalc();
+}
+function p3_updateCampLabel(){
+  const checks=[...document.querySelectorAll("#p3_campList input:checked")].map(x=>x.value);
+  const total=document.querySelectorAll("#p3_campList input").length;
+  document.getElementById("p3_campLabel").textContent=
+    checks.length===0?"None":checks.length===total?"All Campaigns":`${checks.length} campaigns`;
+}
+function p3_onCTChange(){
+  p3_selCT=new Set([...document.querySelectorAll("#p3_ctPanel input:checked")].map(x=>x.value));
+  document.getElementById("p3_ctLabel").textContent=
+    p3_selCT.size===4?"All Types":p3_selCT.size===0?"None":[...p3_selCT].join(", ");
+  p3_rebuildCampList();
+  p3_recalc();
+}
+function p3_onCampChange(){
+  const checks=[...document.querySelectorAll("#p3_campList input:checked")].map(x=>x.value);
+  const total=document.querySelectorAll("#p3_campList input").length;
+  p3_selCamp=(checks.length===total)?null:new Set(checks);
+  p3_updateCampLabel();
+  p3_recalc();
+}
+function p3_rebuildCampList(){
+  if(typeof DEVICE_DATA==="undefined") return;
+  const list=document.getElementById("p3_campList");
+  const camps=new Set();
+  DEVICE_DATA.forEach(r=>{if(p3_selCT.has(derivedType(r))) camps.add(r.camp);});
+  const sorted=[...camps].sort();
+  list.innerHTML=sorted.map(c=>`<label class="dd-item"><input type="checkbox" value="${c.replace(/"/g,'&quot;')}" checked onchange="p3_onCampChange()"> <span title="${c.replace(/"/g,'&quot;')}">${p2_shortName(c)}</span></label>`).join("");
+  p3_selCamp=null;
+  p3_updateCampLabel();
+}
+
+function p3_sumByDevice(start,end){
+  const s=new Date(start+"T00:00:00"),e=new Date(end+"T00:00:00");
+  const res={};
+  DEVICE_DATA.forEach(r=>{
+    const rd=new Date(r.d+"T00:00:00");
+    if(rd<s||rd>e) return;
+    if(!p3_selCT.has(derivedType(r))) return;
+    if(p3_selCamp&&!p3_selCamp.has(r.camp)) return;
+    const dev=r.dev;
+    if(!res[dev]) res[dev]={imp:0,cl:0,cost:0};
+    res[dev].imp+=r.imp;
+    res[dev].cl+=r.cl;
+    res[dev].cost+=r.cost;
+  });
+  return res;
+}
+
+function p3_recalc(){
+  const container=document.getElementById("p3_container");
+  if(typeof DEVICE_DATA==="undefined"){
+    container.innerHTML=`<div class="p2-section"><div class="empty-state">device-data.js not loaded — refresh the page.</div></div>`;
+    return;
+  }
+  const aStart=document.getElementById("p3_aStart").value;
+  const aEnd=document.getElementById("p3_aEnd").value;
+  const bStart=document.getElementById("p3_bStart").value;
+  const bEnd=document.getElementById("p3_bEnd").value;
+  if(!aStart||!aEnd||!bStart||!bEnd) return;
+
+  const byDevA=p3_sumByDevice(aStart,aEnd);
+  const byDevB=p3_sumByDevice(bStart,bEnd);
+  const zero={imp:0,cl:0,cost:0};
+
+  const devOrder=["Mobile","Desktop","Tablet"];
+  const allDevs=new Set([...Object.keys(byDevA),...Object.keys(byDevB)]);
+  const devs=[...devOrder.filter(d=>allDevs.has(d)),...[...allDevs].filter(d=>!devOrder.includes(d)).sort()];
+
+  // ── shared table shell ───────────────────────────────────────────────────
+  function buildSection(title, subtitle, bodyRows){
+    return`<div class="p2-section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">${title}</div>
+          ${subtitle?`<div style="font-size:11px;color:#94a3b8;margin-top:1px">${subtitle}</div>`:""}
+        </div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Device</th>
+          <th class="num"><span class="period-badge badge-a" style="font-size:10px">A</span></th>
+          <th class="num"><span class="period-badge badge-b" style="font-size:10px">B</span></th>
+          <th class="num">Δ Absolute</th>
+          <th class="num">Δ %</th>
+        </tr></thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </div>`;
+  }
+
+  // ── volume metric: nominal rows + share-of-total rows ────────────────────
+  function volumeSection(title, subtitle, getVal, fmtVal, fmtDelta, invert){
+    const aVals=devs.map(d=>getVal(byDevA[d]||zero));
+    const bVals=devs.map(d=>getVal(byDevB[d]||zero));
+    const aSum=aVals.reduce((a,b)=>a+b,0);
+    const bSum=bVals.reduce((a,b)=>a+b,0);
+    let rows="";
+    // nominal
+    devs.forEach((dev,i)=>{
+      const aVal=aVals[i], bVal=bVals[i];
+      const delta=bVal-aVal;
+      const pct=aVal!==0?delta/Math.abs(aVal):null;
+      const dc=deltaClass(delta,invert);
+      const pc=pillClass(pct,invert);
+      rows+=`<tr>
+        <td class="metric">${dev}</td>
+        <td class="num">${fmtVal(aVal)}</td>
+        <td class="num">${fmtVal(bVal)}</td>
+        <td class="num ${dc}">${fmtDelta(delta)}</td>
+        <td class="num">${pct!==null?`<span class="pct-pill ${pc}">${fmtPct(pct)}</span>`:`<span class="pct-pill pill-neu">—</span>`}</td>
+      </tr>`;
+    });
+    // share separator
+    rows+=`<tr class="separator"><td colspan="5" style="padding:4px 16px;font-size:10px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Share of total</td></tr>`;
+    // share rows
+    devs.forEach((dev,i)=>{
+      const aShare=aSum>0?aVals[i]/aSum:null;
+      const bShare=bSum>0?bVals[i]/bSum:null;
+      const sd=(aShare!==null&&bShare!==null)?bShare-aShare:null;
+      const sdc=sd!==null?deltaClass(sd,false):"delta-neu";
+      const sdStr=sd!==null?(sd>=0?"+":"-")+Math.abs(sd*100).toFixed(2)+"pp":"—";
+      rows+=`<tr>
+        <td class="metric" style="font-weight:400;color:#64748b">${dev} <span style="font-size:11px">share</span></td>
+        <td class="num">${aShare!==null?fmtP(aShare):"—"}</td>
+        <td class="num">${bShare!==null?fmtP(bShare):"—"}</td>
+        <td class="num ${sdc}">${sdStr}</td>
+        <td class="num"><span class="pct-pill pill-neu">—</span></td>
+      </tr>`;
+    });
+    return buildSection(title,subtitle,rows);
+  }
+
+  // ── rate metric: 3 device rows only (% share not meaningful) ─────────────
+  function rateSection(title, subtitle, getRate, fmtRate, fmtDelta, invert, showPill){
+    let rows="";
+    devs.forEach(dev=>{
+      const A=byDevA[dev]||zero, B=byDevB[dev]||zero;
+      const aVal=getRate(A), bVal=getRate(B);
+      const delta=(aVal!==null&&bVal!==null)?bVal-aVal:null;
+      const pct=showPill&&delta!==null&&aVal!==0?delta/Math.abs(aVal):null;
+      const dc=delta!==null?deltaClass(delta,invert):"delta-neu";
+      const pc=pct!==null?pillClass(pct,invert):"pill-neu";
+      rows+=`<tr>
+        <td class="metric">${dev}</td>
+        <td class="num">${aVal!==null?fmtRate(aVal):"—"}</td>
+        <td class="num">${bVal!==null?fmtRate(bVal):"—"}</td>
+        <td class="num ${dc}">${delta!==null?fmtDelta(delta):"—"}</td>
+        <td class="num">${showPill?pct!==null?`<span class="pct-pill ${pc}">${fmtPct(pct)}</span>`:`<span class="pct-pill pill-neu">—</span>`:""}</td>
+      </tr>`;
+    });
+    return buildSection(title,subtitle,rows);
+  }
+
+  const sections=[
+    volumeSection("Cost",        null,                   r=>r.cost, v=>fmtD(v,2), v=>fmtDeltaD(v,2), false),
+    volumeSection("Clicks",      null,                   r=>r.cl,   fmtN,         fmtDeltaN,          false),
+    volumeSection("Impressions", null,                   r=>r.imp,  fmtN,         fmtDeltaN,          false),
+    rateSection(  "CPC",         "Cost / Click",         r=>r.cl>0?r.cost/r.cl:null,   v=>fmtD(v,2), v=>fmtDeltaD(v,2), true,  true),
+    rateSection(  "CTR",         "Clicks / Impressions", r=>r.imp>0?r.cl/r.imp:null,   fmtP, fmtPP,                     false, false),
+  ];
+
+  container.innerHTML=sections.join("");
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PAGE 4 — CAC DECOMPOSITION
+// ══════════════════════════════════════════════════════════════════════════════
+
+let p4_selCT=new Set(["Brand","NonBrand","BrandShopping","NonBrandShopping"]);
+let p4_selCamp=null;
+let p4_chartInst=null;
+
+function p4_filterList(listId,q){
+  document.querySelectorAll(`#${listId} .dd-item`).forEach(el=>{
+    el.classList.toggle("hidden",!el.textContent.toLowerCase().includes(q.toLowerCase()));
+  });
+}
+function p4_selectAll(listId){
+  document.querySelectorAll(`#${listId} input`).forEach(x=>x.checked=true);
+  p4_selCamp=null; p4_updateCampLabel();
+  p4_recalc();
+}
+function p4_clearAll(listId){
+  document.querySelectorAll(`#${listId} input`).forEach(x=>x.checked=false);
+  p4_selCamp=new Set(); p4_updateCampLabel();
+  p4_recalc();
+}
+function p4_updateCampLabel(){
+  const checks=[...document.querySelectorAll("#p4_campList input:checked")].map(x=>x.value);
+  const total=document.querySelectorAll("#p4_campList input").length;
+  document.getElementById("p4_campLabel").textContent=
+    checks.length===0?"None":checks.length===total?"All Campaigns":`${checks.length} campaigns`;
+}
+function p4_onCTChange(){
+  p4_selCT=new Set([...document.querySelectorAll("#p4_ctPanel input:checked")].map(x=>x.value));
+  document.getElementById("p4_ctLabel").textContent=
+    p4_selCT.size===4?"All Types":p4_selCT.size===0?"None":[...p4_selCT].join(", ");
+  p4_rebuildCampList();
+  p4_recalc();
+}
+function p4_onCampChange(){
+  const checks=[...document.querySelectorAll("#p4_campList input:checked")].map(x=>x.value);
+  const total=document.querySelectorAll("#p4_campList input").length;
+  p4_selCamp=(checks.length===total)?null:new Set(checks);
+  p4_updateCampLabel();
+  p4_recalc();
+}
+
+function p4_rebuildCampList(){
+  const list=document.getElementById("p4_campList");
+  const camps=new Set();
+  DATA.forEach(r=>{if(p4_selCT.has(derivedType(r))) camps.add(r.camp);});
+  const sorted=[...camps].sort();
+  list.innerHTML=sorted.map(c=>`<label class="dd-item"><input type="checkbox" value="${c.replace(/"/g,'&quot;')}" checked onchange="p4_onCampChange()"> <span title="${c.replace(/"/g,'&quot;')}">${p2_shortName(c)}</span></label>`).join("");
+  p4_selCamp=null;
+  p4_updateCampLabel();
+}
+
+function p4_sumPeriod(start,end){
+  const s=new Date(start+"T00:00:00"),e=new Date(end+"T00:00:00");
+  let imp=0,cl=0,cost=0,trials=0;
+  DATA.forEach(r=>{
+    const rd=new Date(r.d+"T00:00:00");
+    if(rd<s||rd>e) return;
+    if(!p4_selCT.has(derivedType(r))) return;
+    if(p4_selCamp&&!p4_selCamp.has(r.camp)) return;
+    imp+=r.imp; cl+=r.cl; cost+=r.cost; trials+=r.trials;
+  });
+  return{imp,cl,cost,trials};
+}
+
+function p4_recalc(){
+  const aStart=document.getElementById("p4_aStart").value;
+  const aEnd=document.getElementById("p4_aEnd").value;
+  const bStart=document.getElementById("p4_bStart").value;
+  const bEnd=document.getElementById("p4_bEnd").value;
+  if(!aStart||!aEnd||!bStart||!bEnd) return;
+
+  const A=p4_sumPeriod(aStart,aEnd);
+  const B=p4_sumPeriod(bStart,bEnd);
+
+  // ── DERIVED METRICS ──────────────────────────────────────────────────────
+  const a_cpm = A.imp>0 ? A.cost/A.imp*1000 : null;
+  const b_cpm = B.imp>0 ? B.cost/B.imp*1000 : null;
+  const a_ctr = A.imp>0 ? A.cl/A.imp         : null;
+  const b_ctr = B.imp>0 ? B.cl/B.imp         : null;
+  const a_cpc = A.cl>0  ? A.cost/A.cl        : null;
+  const b_cpc = B.cl>0  ? B.cost/B.cl        : null;
+  const a_cvr = A.cl>0  ? A.trials/A.cl      : null;
+  const b_cvr = B.cl>0  ? B.trials/B.cl      : null;
+  const a_cac = A.trials>0 ? A.cost/A.trials : null;
+  const b_cac = B.trials>0 ? B.cost/B.trials : null;
+  const delta_cac = (a_cac!==null&&b_cac!==null) ? b_cac-a_cac : null;
+
+  // ── LOG-PROPORTIONAL ATTRIBUTION ─────────────────────────────────────────
+  // CAC = CPC / CVR  →  ln(CAC_B/CAC_A) = ln(CPC_B/CPC_A) − ln(CVR_B/CVR_A)
+  // CPC = CPM / (CTR×1000)  →  ln(CPC_B/CPC_A) = ln(CPM_B/CPM_A) − ln(CTR_B/CTR_A)
+  // Each log-ratio is proportionally attributed to Δ CAC in $ terms.
+  let eff_cpm=null, eff_ctr=null, eff_cvr=null, eff_cpc=null;
+  const canDecomp = a_cpm&&b_cpm&&a_ctr&&b_ctr&&a_cvr&&b_cvr&&a_cac&&b_cac&&delta_cac!==null;
+
+  if(canDecomp){
+    const l_cpm   =  Math.log(b_cpm/a_cpm);          // CPM up → CPC up → CAC up
+    const l_ctr   = -Math.log(b_ctr/a_ctr);          // CTR up → CPC down → CAC down (hence negative)
+    const l_cvr   = -Math.log(b_cvr/a_cvr);          // CVR up → CAC down (hence negative)
+    const l_cpc   = l_cpm + l_ctr;                   // = ln(CPC_B/CPC_A), exactly
+    const l_total = l_cpc + l_cvr;                   // = ln(CAC_B/CAC_A), exactly
+
+    if(Math.abs(l_total) > 1e-10){
+      eff_cpc = (l_cpc  / l_total) * delta_cac;
+      eff_cvr = (l_cvr  / l_total) * delta_cac;
+      if(Math.abs(l_cpc) > 1e-10){
+        eff_cpm = (l_cpm / l_cpc) * eff_cpc;
+        eff_ctr = (l_ctr / l_cpc) * eff_cpc;
+      } else {
+        eff_cpm=0; eff_ctr=0;
+      }
+    } else {
+      // CAC didn't change — zero out all effects
+      eff_cpc=0; eff_cvr=0; eff_cpm=0; eff_ctr=0;
+    }
+  }
+
+  // ── WATERFALL CHART ──────────────────────────────────────────────────────
+  const chartCanvas = document.getElementById("p4_chart");
+  if(canDecomp && eff_cpm!==null){
+    const r0 = a_cac;              // start of waterfall
+    const r1 = r0 + eff_cpm;      // after CPM effect
+    const r2 = r1 + eff_ctr;      // after CTR effect
+    const r3 = r2 + eff_cvr;      // after CVR effect (= b_cac by construction)
+
+    const effColor = v => v>0 ? "#dc2626" : v<0 ? "#16a34a" : "#94a3b8";
+
+    const chartData = {
+      labels: ["Period A","CPM","CTR","CVR","Period B"],
+      datasets:[{
+        data:[
+          [0, r0],
+          [Math.min(r0,r1), Math.max(r0,r1)],
+          [Math.min(r1,r2), Math.max(r1,r2)],
+          [Math.min(r2,r3), Math.max(r2,r3)],
+          [0, r3],
+        ],
+        backgroundColor:[
+          "#3b82f6",
+          effColor(eff_cpm),
+          effColor(eff_ctr),
+          effColor(eff_cvr),
+          "#f97316",
+        ],
+        borderRadius:4,
+        borderSkipped:false,
+      }]
+    };
+
+    const effects=[null, eff_cpm, eff_ctr, eff_cvr, null];
+    const fmtEff = v => (v>=0?"+":"-")+"$"+Math.abs(v).toFixed(2);
+
+    const chartOpts={
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          label: ctx => {
+            const i=ctx.dataIndex;
+            if(i===0) return `Period A CAC: $${r0.toFixed(2)}`;
+            if(i===4) return `Period B CAC: $${b_cac.toFixed(2)}`;
+            const names=["CPM effect","CTR effect","CVR effect"];
+            return `${names[i-1]}: ${fmtEff(effects[i])} on CAC`;
+          }
+        }}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:11}}},
+        y:{
+          grid:{color:"#f1f5f9"},
+          ticks:{font:{size:10},callback:v=>"$"+v.toFixed(0)},
+          title:{display:true,text:"Trials CAC ($)",font:{size:10},color:"#94a3b8"}
+        }
+      }
+    };
+
+    if(p4_chartInst){
+      p4_chartInst.data=chartData;
+      p4_chartInst.options=chartOpts;
+      p4_chartInst.update();
+    } else {
+      p4_chartInst=new Chart(chartCanvas.getContext("2d"),{type:"bar",data:chartData,options:chartOpts});
+    }
+  } else {
+    if(p4_chartInst){p4_chartInst.destroy();p4_chartInst=null;}
+  }
+
+  // ── DECOMPOSITION TABLE ──────────────────────────────────────────────────
+  // Helper: Δ% pill
+  function p4_pctCell(aVal,bVal,invert){
+    if(aVal===null||bVal===null||!isFinite(aVal)||aVal===0) return`<span class="pct-pill pill-neu">—</span>`;
+    const pct=(bVal-aVal)/Math.abs(aVal);
+    return`<span class="pct-pill ${pillClass(pct,invert)}">${fmtPct(pct)}</span>`;
+  }
+  // Helper: $ Effect cell — positive = CAC went up = bad (red); negative = good (green)
+  function p4_effCell(v){
+    if(v===null||!isFinite(v)) return{cls:"delta-neu",str:"—"};
+    const cls=v>0?"delta-inv-pos":v<0?"delta-inv-neg":"delta-neu";
+    const str=(v>=0?"+":"-")+"$"+Math.abs(v).toFixed(2);
+    return{cls,str};
+  }
+  // Helper: build a data row
+  function p4_row(label,sub,aVal,bVal,fmtVal,invert,eff){
+    const e=p4_effCell(eff);
+    const subHtml=sub?`<br><span class="sub">${sub}</span>`:"";
+    return`<tr>
+      <td class="metric">${label}${subHtml}</td>
+      <td class="num">${aVal!==null&&isFinite(aVal)?fmtVal(aVal):"—"}</td>
+      <td class="num">${bVal!==null&&isFinite(bVal)?fmtVal(bVal):"—"}</td>
+      <td class="num">${p4_pctCell(aVal,bVal,invert)}</td>
+      <td class="num ${e.cls}">${e.str}</td>
+    </tr>`;
+  }
+  // Separator row
+  function p4_sep(label){
+    return`<tr class="separator"><td colspan="5" style="padding:6px 16px;font-size:11px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.04em">${label}</td></tr>`;
+  }
+
+  // Headline CAC row (Δ$ = delta_cac itself, shown as $ effect)
+  const cacEff=p4_effCell(delta_cac);
+  const headlineRow=`<tr style="background:#fafafa;font-weight:700">
+    <td class="metric">Trials CAC<br><span class="sub" style="font-weight:400">Cost / Trial</span></td>
+    <td class="num">${a_cac!==null?fmtD(a_cac,2):"—"}</td>
+    <td class="num">${b_cac!==null?fmtD(b_cac,2):"—"}</td>
+    <td class="num">${p4_pctCell(a_cac,b_cac,true)}</td>
+    <td class="num ${cacEff.cls}">${cacEff.str}</td>
+  </tr>`;
+
+  const tableRows=[
+    headlineRow,
+    p4_sep("Primary Decomposition — CAC = CPC ÷ CVR"),
+    p4_row("CPC",       "Cost / Click",              a_cpc, b_cpc, v=>fmtD(v,2), true,  eff_cpc),
+    p4_row("CVR (Trials)","Trials / Click",           a_cvr, b_cvr, fmtP,        false, eff_cvr),
+    p4_sep("CPC Drill-Down — CPC = CPM ÷ (CTR × 1,000)"),
+    p4_row("CPM",       "Cost / 1,000 Impressions",  a_cpm, b_cpm, v=>fmtD(v,2), true,  eff_cpm),
+    p4_row("CTR",       "Clicks / Impressions",       a_ctr, b_ctr, fmtP,        false, eff_ctr),
+  ];
+
+  document.getElementById("p4_tableBody").innerHTML=tableRows.join("");
+
+  const campCount=p4_selCamp?p4_selCamp.size:document.querySelectorAll("#p4_campList input").length;
+  const totalCamp=document.querySelectorAll("#p4_campList input").length;
+  const campStr=(!p4_selCamp||p4_selCamp.size===totalCamp)?"All campaigns":`${campCount} campaigns`;
+  document.getElementById("p4_tableSubtitle").textContent=`${campStr}`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════════════════
+p0_init();
+p1_init();
+p5_init();
+p2_rebuildCampList();
+p2_recalc();
+if(typeof DEVICE_DATA!=="undefined"){
+  p3_rebuildCampList();
+  p3_recalc();
+}
+p4_rebuildCampList();
+p4_recalc();
+</script>
+</body>
+</html>
