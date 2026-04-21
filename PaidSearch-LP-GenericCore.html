@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PaidSearch — LP GenericCore Experiment</title>
+<script src="lp-data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;font-size:13px}
+
+/* ── HEADER ─────────────────────────────────────────────────────────────── */
+header{background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 28px;display:flex;align-items:center;gap:14px}
+.logo{width:38px;height:38px;background:#f5a623;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:11px;flex-shrink:0;letter-spacing:-.5px}
+.header-text h1{font-size:16px;font-weight:700;color:#0f172a;line-height:1.2}
+.header-text p{font-size:11px;color:#94a3b8;margin-top:2px}
+
+/* ── CONTROLS BAR ────────────────────────────────────────────────────────── */
+.controls-bar{background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 28px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.ctrl-group{display:flex;align-items:center;gap:8px}
+.ctrl-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.ctrl-sep{width:1px;height:24px;background:#e2e8f0;flex-shrink:0}
+.period-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;color:#fff;flex-shrink:0}
+.badge-a{background:#3b82f6}
+.badge-b{background:#f97316}
+.period-sep{font-size:11px;color:#94a3b8}
+.date-input{border:1px solid #cbd5e1;border-radius:5px;padding:4px 8px;font-size:12px;color:#1e293b;background:#fff;cursor:pointer}
+.date-input:focus{outline:none;border-color:#f5a623;box-shadow:0 0 0 2px rgba(245,166,35,.12)}
+
+/* ── MULTI-SELECT DROPDOWN ───────────────────────────────────────────────── */
+.dd-wrap{position:relative}
+.dd-btn{background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:8px;min-width:180px;max-width:320px;justify-content:space-between;color:#334155;white-space:nowrap}
+.dd-btn:hover{border-color:#94a3b8}
+.dd-btn-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:left}
+.dd-panel{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:400;min-width:280px;display:none;flex-direction:column}
+.dd-panel.open{display:flex}
+.dd-search{border:none;border-bottom:1px solid #e2e8f0;padding:8px 12px;font-size:12px;outline:none;border-radius:8px 8px 0 0;width:100%;color:#1e293b}
+.dd-list{max-height:220px;overflow-y:auto;padding:4px 0}
+.dd-item{padding:6px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#334155;user-select:none}
+.dd-item:hover{background:#f8fafc}
+.dd-item input[type=checkbox]{width:13px;height:13px;accent-color:#f5a623;cursor:pointer;flex-shrink:0}
+.dd-item.hidden{display:none}
+.dd-actions{border-top:1px solid #e2e8f0;padding:6px 12px;display:flex;gap:10px}
+.dd-act-btn{font-size:11px;color:#f5a623;cursor:pointer;background:none;border:none;padding:0;font-weight:600}
+.dd-act-btn:hover{color:#d97706}
+
+/* ── MAIN LAYOUT ─────────────────────────────────────────────────────────── */
+.main{padding:20px 28px;display:flex;flex-direction:column;gap:24px}
+
+/* ── SECTION CARD ────────────────────────────────────────────────────────── */
+.section{background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden}
+.section-header{padding:18px 24px;border-bottom:1px solid #e2e8f0}
+.section-title{font-size:14px;font-weight:700;color:#0f172a}
+.section-sub{font-size:11px;color:#94a3b8;margin-top:3px}
+.section-body{padding:20px 24px}
+
+/* ── CHART ───────────────────────────────────────────────────────────────── */
+.chart-wrap{position:relative;width:100%;height:300px}
+
+/* ── TABLES ──────────────────────────────────────────────────────────────── */
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:#f1f5f9}
+th{padding:9px 14px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;border-bottom:1px solid #e2e8f0}
+th.num{text-align:right}
+th.sort-hd{cursor:pointer;user-select:none;transition:color .12s,background .12s}
+th.sort-hd:hover{color:#f5a623;background:#fffbf5}
+th.sort-hd.sort-active{color:#f5a623}
+.sort-ind{font-size:8px;margin-left:2px;opacity:.4}
+th.sort-active .sort-ind{opacity:1}
+td{padding:9px 14px;font-size:12px;color:#1e293b;border-bottom:1px solid #f1f5f9;white-space:nowrap}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td.ag-name{font-weight:500;color:#334155;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fafc}
+tr.summary-row td{background:#f0f9ff;font-weight:700;color:#0f172a;border-bottom:2px solid #bae6fd}
+tr.summary-row:hover td{background:#e0f2fe}
+
+/* ── CVR highlight columns ──────────────────────────────────────────────── */
+td.cvr-col, th.cvr-col{background:#fffbeb;border-left:none}
+th.cvr-col:first-of-type, td.cvr-col:first-of-type{border-left:2px solid #f5a623}
+tr.summary-row td.cvr-col{background:#fef9c3}
+
+/* ── DELTA COLORS ────────────────────────────────────────────────────────── */
+.delta-good{color:#16a34a;font-weight:600}
+.delta-bad{color:#dc2626;font-weight:600}
+.delta-neu{color:#64748b}
+
+/* ── DATA NOT LOADED ─────────────────────────────────────────────────────── */
+.no-data{padding:60px;text-align:center;color:#94a3b8;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.no-data-icon{font-size:36px}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">CU</div>
+  <div class="header-text">
+    <h1>PaidSearch — LP GenericCore Experiment</h1>
+    <p>NonBrand &middot; LP change live: Apr 13, 2026</p>
+  </div>
+</header>
+
+<!-- ── CONTROLS BAR ───────────────────────────────────────────────────────── -->
+<div class="controls-bar">
+  <div class="ctrl-group">
+    <span class="ctrl-label">Period</span>
+    <span class="period-badge badge-a">A</span>
+    <input class="date-input" type="date" id="pA_start" value="2026-04-01">
+    <span class="period-sep">→</span>
+    <input class="date-input" type="date" id="pA_end" value="2026-04-12">
+  </div>
+  <div class="ctrl-sep"></div>
+  <div class="ctrl-group">
+    <span class="period-badge badge-b">B</span>
+    <input class="date-input" type="date" id="pB_start" value="2026-04-13">
+    <span class="period-sep">→</span>
+    <input class="date-input" type="date" id="pB_end">
+  </div>
+  <div class="ctrl-sep"></div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Control Ad Groups</span>
+    <div class="dd-wrap" id="ctrlDDWrap">
+      <button class="dd-btn" id="ctrlDDBtn" onclick="toggleControlDD()">
+        <span class="dd-btn-text" id="ctrlDDLabel">All control groups</span>
+        <span>&#9662;</span>
+      </button>
+      <div class="dd-panel" id="ctrlDDPanel">
+        <input class="dd-search" type="text" id="ctrlDDSearch" placeholder="Search ad groups…" oninput="filterControlDD(this.value)">
+        <div class="dd-list" id="ctrlDDList"></div>
+        <div class="dd-actions">
+          <button class="dd-act-btn" onclick="ctrlSelectAll()">Select all</button>
+          <button class="dd-act-btn" onclick="ctrlClearAll()">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN ────────────────────────────────────────────────────────────────── -->
+<div class="main" id="mainContent">
+  <!-- content injected by JS -->
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+const TEST_AG = new Set([
+  'nonbrand_search_genericcore_u_keyword_genericother',
+  'nonbrand_search_genericcore_u_keyword_mealdelivery',
+  'nonbrand_search_genericcore_u_keyword_mealdelivery_premium',
+  'nonbrand_search_genericcore_u_keyword_mealdeliveryservice',
+  'nonbrand_search_genericcore_u_keyword_mealdeliveryservice_premium',
+  'nonbrand_search_genericcore_u_keyword_mealkit',
+  'nonbrand_search_genericcore_u_keyword_mealplan',
+  'nonbrand_search_genericcore_u_keyword_mealprep',
+  'nonbrand_search_genericcore_u_keyword_mealprep_premium',
+  'nonbrand_search_genericcore_u_keyword_personalchef',
+  'nonbrand_search_genericcore_u_keyword_preparedmeals',
+  'nonbrand_search_genericcore_u_keyword_preparedmeals_premium',
+  'nonbrand_search_genericcore_u_keyword_subscription',
+]);
+
+const TEST_PREFIX = 'NonBrand_Search_GenericCore_U_Keyword_';
+const LP_CHANGE_DATE = '2026-04-13';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DATA AVAILABILITY CHECK
+// ─────────────────────────────────────────────────────────────────────────────
+function isDataLoaded() {
+  return typeof LP_DATA !== 'undefined' && Array.isArray(LP_DATA) && LP_DATA.length > 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UTILITY
+// ─────────────────────────────────────────────────────────────────────────────
+function isTest(ag) {
+  return TEST_AG.has(ag.toLowerCase());
+}
+
+function stripPrefix(ag) {
+  if (ag.startsWith(TEST_PREFIX)) return ag.slice(TEST_PREFIX.length);
+  if (ag.toLowerCase().startsWith(TEST_PREFIX.toLowerCase())) return ag.slice(TEST_PREFIX.length);
+  return ag;
+}
+
+function fmt(n, decimals = 0) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function fmtDollar(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return '$' + fmt(n, 2);
+}
+
+function fmtPct(n) {
+  if (n === null || n === undefined || isNaN(n) || !isFinite(n)) return '—';
+  return fmt(n, 2) + '%';
+}
+
+function calcDelta(a, b) {
+  if (!a || !b || a === 0) return null;
+  return ((b - a) / a) * 100;
+}
+
+function deltaHtml(pct, higherIsBetter) {
+  if (pct === null || pct === undefined || isNaN(pct) || !isFinite(pct)) return '<span class="delta-neu">—</span>';
+  const isGood = higherIsBetter ? pct > 0 : pct < 0;
+  const cls = isGood ? 'delta-good' : 'delta-bad';
+  const arrow = pct > 0 ? '↑' : '↓';
+  return `<span class="${cls}">${arrow} ${fmt(Math.abs(pct), 1)}%</span>`;
+}
+
+function aggregateRows(rows) {
+  const imp = rows.reduce((s, r) => s + (r.imp || 0), 0);
+  const cl = rows.reduce((s, r) => s + (r.cl || 0), 0);
+  const cost = rows.reduce((s, r) => s + (r.cost || 0), 0);
+  const trials = rows.reduce((s, r) => s + (r.trials || 0), 0);
+  const ctr = imp > 0 ? (cl / imp) * 100 : null;
+  const cpc = cl > 0 ? cost / cl : null;
+  const cvr = cl > 0 ? (trials / cl) * 100 : null;
+  const cac = trials > 0 ? cost / trials : null;
+  return { imp, cl, cost, trials, ctr, cpc, cvr, cac };
+}
+
+function getMetrics(rows, startDate, endDate) {
+  const filtered = rows.filter(r => r.d >= startDate && r.d <= endDate);
+  return aggregateRows(filtered);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTROL DROPDOWN STATE
+// ─────────────────────────────────────────────────────────────────────────────
+let controlAGs = [];       // all control ad groups from data
+let selectedControlAGs = new Set(); // currently selected
+
+function initControlDD() {
+  const agSet = new Set();
+  LP_DATA.forEach(r => {
+    if (!isTest(r.ag)) agSet.add(r.ag);
+  });
+  controlAGs = [...agSet].sort((a, b) => a.localeCompare(b));
+  selectedControlAGs = new Set(controlAGs);
+
+  const list = document.getElementById('ctrlDDList');
+  list.innerHTML = '';
+  controlAGs.forEach(ag => {
+    const label = document.createElement('label');
+    label.className = 'dd-item';
+    label.dataset.ag = ag.toLowerCase();
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = ag;
+    cb.checked = true;
+    cb.addEventListener('change', onControlChange);
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(ag));
+    list.appendChild(label);
+  });
+
+  updateControlDDLabel();
+}
+
+function updateControlDDLabel() {
+  const total = controlAGs.length;
+  const sel = selectedControlAGs.size;
+  const el = document.getElementById('ctrlDDLabel');
+  if (sel === 0) el.textContent = 'None selected';
+  else if (sel === total) el.textContent = 'All control groups';
+  else el.textContent = `${sel} of ${total} groups`;
+}
+
+function toggleControlDD() {
+  const panel = document.getElementById('ctrlDDPanel');
+  const isOpen = panel.classList.contains('open');
+  if (isOpen) {
+    panel.classList.remove('open');
+  } else {
+    panel.classList.add('open');
+    document.getElementById('ctrlDDSearch').focus();
+  }
+}
+
+function filterControlDD(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('#ctrlDDList .dd-item').forEach(item => {
+    const matches = item.dataset.ag.includes(q);
+    item.classList.toggle('hidden', !matches);
+  });
+}
+
+function onControlChange() {
+  selectedControlAGs = new Set();
+  document.querySelectorAll('#ctrlDDList input[type=checkbox]:checked').forEach(cb => {
+    selectedControlAGs.add(cb.value);
+  });
+  updateControlDDLabel();
+  render();
+}
+
+function ctrlSelectAll() {
+  selectedControlAGs = new Set(controlAGs);
+  document.querySelectorAll('#ctrlDDList input[type=checkbox]').forEach(cb => { cb.checked = true; });
+  updateControlDDLabel();
+  render();
+}
+
+function ctrlClearAll() {
+  selectedControlAGs = new Set();
+  document.querySelectorAll('#ctrlDDList input[type=checkbox]').forEach(cb => { cb.checked = false; });
+  updateControlDDLabel();
+  render();
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('ctrlDDWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('ctrlDDPanel').classList.remove('open');
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHART STATE
+// ─────────────────────────────────────────────────────────────────────────────
+let cvrChart = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+function getPeriods() {
+  const pA_start = document.getElementById('pA_start').value;
+  const pA_end = document.getElementById('pA_end').value;
+  const pB_start = document.getElementById('pB_start').value;
+  const pB_end = document.getElementById('pB_end').value;
+  return { pA_start, pA_end, pB_start, pB_end };
+}
+
+function render() {
+  if (!isDataLoaded()) {
+    renderNoData();
+    return;
+  }
+  renderChart();
+  renderTestTable();
+  renderControlTable();
+}
+
+function renderNoData() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="section">
+      <div class="no-data">
+        <div class="no-data-icon">&#128196;</div>
+        <div><strong>Data not loaded</strong></div>
+        <div style="font-size:12px">Make sure <code>lp-data.js</code> is in the same directory and defines <code>LP_DATA</code>.</div>
+      </div>
+    </div>`;
+}
+
+function buildLayout() {
+  document.getElementById('mainContent').innerHTML = `
+    <!-- Section 1: Chart -->
+    <div class="section" id="sec-chart">
+      <div class="section-header">
+        <div class="section-title">Daily CVR — Test vs Control</div>
+        <div class="section-sub">Trials / Clicks &middot; 7-day rolling average shown as dashed line</div>
+      </div>
+      <div class="section-body">
+        <div class="chart-wrap"><canvas id="cvrCanvas"></canvas></div>
+      </div>
+    </div>
+    <!-- Section 2: Test Table -->
+    <div class="section" id="sec-test">
+      <div class="section-header">
+        <div class="section-title">Test Ad Groups — Period A vs Period B</div>
+        <div class="section-sub">Ad groups on the new landing page since Apr 13</div>
+      </div>
+      <div id="testTableWrap"></div>
+    </div>
+    <!-- Section 3: Control Table -->
+    <div class="section" id="sec-control">
+      <div class="section-header">
+        <div class="section-title">Control Ad Groups — Period A vs Period B</div>
+        <div class="section-sub">Ad groups on the original landing page (filtered by dropdown above)</div>
+      </div>
+      <div id="controlTableWrap"></div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CVR CHART
+// ─────────────────────────────────────────────────────────────────────────────
+function movingAvg(arr, window) {
+  return arr.map((_, i) => {
+    const start = Math.max(0, i - window + 1);
+    const slice = arr.slice(start, i + 1).filter(v => v !== null);
+    if (slice.length === 0) return null;
+    return slice.reduce((s, v) => s + v, 0) / slice.length;
+  });
+}
+
+function renderChart() {
+  // Gather all dates from data
+  const dateSet = new Set(LP_DATA.map(r => r.d));
+  const allDates = [...dateSet].sort();
+
+  // Daily aggregates by group
+  function dailyCVR(rows) {
+    const byDate = {};
+    rows.forEach(r => {
+      if (!byDate[r.d]) byDate[r.d] = { cl: 0, trials: 0 };
+      byDate[r.d].cl += r.cl || 0;
+      byDate[r.d].trials += r.trials || 0;
+    });
+    return allDates.map(d => {
+      const v = byDate[d];
+      if (!v || v.cl === 0) return null;
+      return (v.trials / v.cl) * 100;
+    });
+  }
+
+  const testRows = LP_DATA.filter(r => isTest(r.ag));
+  const controlRows = LP_DATA.filter(r => !isTest(r.ag) && selectedControlAGs.has(r.ag));
+
+  const testCVR = dailyCVR(testRows);
+  const controlCVR = dailyCVR(controlRows);
+  const testMA = movingAvg(testCVR, 7);
+  const controlMA = movingAvg(controlCVR, 7);
+
+  // Annotation line index for LP change date
+  const lpChangeIdx = allDates.indexOf(LP_CHANGE_DATE);
+
+  // Custom plugin for vertical line
+  const vertLinePlugin = {
+    id: 'vertLine',
+    afterDraw(chart) {
+      if (lpChangeIdx < 0) return;
+      const ctx = chart.ctx;
+      const xScale = chart.scales.x;
+      const yScale = chart.scales.y;
+      const x = xScale.getPixelForValue(lpChangeIdx);
+      if (x === undefined || x === null) return;
+      ctx.save();
+      ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x, yScale.top);
+      ctx.lineTo(x, yScale.bottom);
+      ctx.stroke();
+      // Label
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#ef4444';
+      ctx.font = '600 10px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('LP Change', x + 5, yScale.top + 14);
+      ctx.restore();
+    }
+  };
+
+  const canvas = document.getElementById('cvrCanvas');
+  if (!canvas) return;
+
+  if (cvrChart) {
+    cvrChart.destroy();
+    cvrChart = null;
+  }
+
+  cvrChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: allDates.map(d => {
+        const parts = d.split('-');
+        return `${parts[1]}/${parts[2]}`;
+      }),
+      datasets: [
+        {
+          label: 'Test',
+          data: testCVR,
+          borderColor: '#f5a623',
+          backgroundColor: 'rgba(245,166,35,.08)',
+          borderWidth: 2,
+          tension: 0.3,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          fill: false,
+          spanGaps: true,
+        },
+        {
+          label: 'Control',
+          data: controlCVR,
+          borderColor: '#64748b',
+          backgroundColor: 'rgba(100,116,139,.06)',
+          borderWidth: 2,
+          tension: 0.3,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          fill: false,
+          spanGaps: true,
+        },
+        {
+          label: 'Test 7d MA',
+          data: testMA,
+          borderColor: '#f5a623',
+          borderWidth: 1.5,
+          borderDash: [5, 4],
+          tension: 0.3,
+          pointRadius: 0,
+          fill: false,
+          spanGaps: true,
+        },
+        {
+          label: 'Control 7d MA',
+          data: controlMA,
+          borderColor: '#64748b',
+          borderWidth: 1.5,
+          borderDash: [5, 4],
+          tension: 0.3,
+          pointRadius: 0,
+          fill: false,
+          spanGaps: true,
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'top',
+          align: 'end',
+          labels: {
+            boxWidth: 20,
+            font: { size: 11 },
+            color: '#475569',
+            usePointStyle: true,
+            pointStyleWidth: 16,
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label(ctx) {
+              const v = ctx.parsed.y;
+              if (v === null) return `${ctx.dataset.label}: —`;
+              return `${ctx.dataset.label}: ${v.toFixed(2)}%`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#f1f5f9' },
+          ticks: { font: { size: 10 }, color: '#94a3b8', maxTicksLimit: 20 }
+        },
+        y: {
+          grid: { color: '#f1f5f9' },
+          ticks: {
+            font: { size: 10 },
+            color: '#94a3b8',
+            callback: v => v.toFixed(1) + '%'
+          },
+          title: { display: true, text: 'CVR %', font: { size: 10 }, color: '#94a3b8' }
+        }
+      }
+    },
+    plugins: [vertLinePlugin]
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TABLES
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Sorting state: { col, dir } per table
+const sortState = {
+  test: { col: null, dir: 1 },
+  control: { col: null, dir: 1 }
+};
+
+function buildTableData(agList, rowsByAG) {
+  const { pA_start, pA_end, pB_start, pB_end } = getPeriods();
+  return agList.map(ag => {
+    const rows = rowsByAG[ag] || [];
+    const mA = getMetrics(rows, pA_start, pA_end);
+    const mB = getMetrics(rows, pB_start, pB_end);
+    return {
+      ag,
+      impA: mA.imp, impB: mB.imp,
+      clA: mA.cl, clB: mB.cl,
+      ctrA: mA.ctr, ctrB: mB.ctr,
+      costA: mA.cost, costB: mB.cost,
+      cpcA: mA.cpc, cpcB: mB.cpc,
+      cvrA: mA.cvr, cvrB: mB.cvr,
+      cacA: mA.cac, cacB: mB.cac,
+    };
+  });
+}
+
+function buildSummaryRow(rows) {
+  const { pA_start, pA_end, pB_start, pB_end } = getPeriods();
+  const allRows = rows.flat ? rows : Object.values(rows).flat();
+  const mA = getMetrics(allRows, pA_start, pA_end);
+  const mB = getMetrics(allRows, pB_start, pB_end);
+  return {
+    ag: 'TOTAL',
+    impA: mA.imp, impB: mB.imp,
+    clA: mA.cl, clB: mB.cl,
+    ctrA: mA.ctr, ctrB: mB.ctr,
+    costA: mA.cost, costB: mB.cost,
+    cpcA: mA.cpc, cpcB: mB.cpc,
+    cvrA: mA.cvr, cvrB: mB.cvr,
+    cacA: mA.cac, cacB: mB.cac,
+  };
+}
+
+const COL_DEFS = [
+  { key: 'ag',    label: 'Ad Group',  num: false, good: null },
+  { key: 'impA',  label: 'Imp A',     num: true,  good: null },
+  { key: 'impB',  label: 'Imp B',     num: true,  good: null },
+  { key: 'clA',   label: 'Clicks A',  num: true,  good: null },
+  { key: 'clB',   label: 'Clicks B',  num: true,  good: null },
+  { key: 'ctrA',  label: 'CTR A',     num: true,  good: null },
+  { key: 'ctrB',  label: 'CTR B',     num: true,  good: null },
+  { key: 'dctr',  label: '△ CTR',     num: true,  good: true  },
+  { key: 'costA', label: 'Cost A',    num: true,  good: null },
+  { key: 'costB', label: 'Cost B',    num: true,  good: null },
+  { key: 'cpcA',  label: 'CPC A',     num: true,  good: null },
+  { key: 'cpcB',  label: 'CPC B',     num: true,  good: null },
+  { key: 'dcpc',  label: '△ CPC',     num: true,  good: false },
+  { key: 'cvrA',  label: 'CVR A',     num: true,  good: null, cvr: true },
+  { key: 'cvrB',  label: 'CVR B',     num: true,  good: null, cvr: true },
+  { key: 'dcvr',  label: '△ CVR',     num: true,  good: true,  cvr: true },
+  { key: 'cacA',  label: 'CAC A',     num: true,  good: null },
+  { key: 'cacB',  label: 'CAC B',     num: true,  good: null },
+  { key: 'dcac',  label: '△ CAC',     num: true,  good: false },
+];
+
+function rowValue(row, key) {
+  switch(key) {
+    case 'dctr': return calcDelta(row.ctrA, row.ctrB);
+    case 'dcpc': return calcDelta(row.cpcA, row.cpcB);
+    case 'dcvr': return calcDelta(row.cvrA, row.cvrB);
+    case 'dcac': return calcDelta(row.cacA, row.cacB);
+    default: return row[key];
+  }
+}
+
+function cellHtml(row, col, isTest) {
+  const key = col.key;
+  const isCvr = col.cvr === true;
+
+  const cellClass = (col.num ? 'num' : (key === 'ag' ? 'ag-name' : '')) + (isCvr ? ' cvr-col' : '');
+
+  let content = '';
+  switch(key) {
+    case 'ag':
+      content = isTest ? `<span title="${row.ag}">${stripPrefix(row.ag)}</span>` : `<span title="${row.ag}">${row.ag}</span>`;
+      break;
+    case 'impA': case 'impB': case 'clA': case 'clB':
+      content = fmt(row[key]);
+      break;
+    case 'ctrA': case 'ctrB':
+      content = fmtPct(row[key]);
+      break;
+    case 'costA': case 'costB':
+      content = fmtDollar(row[key]);
+      break;
+    case 'cpcA': case 'cpcB':
+      content = fmtDollar(row[key]);
+      break;
+    case 'cvrA': case 'cvrB':
+      content = fmtPct(row[key]);
+      break;
+    case 'cacA': case 'cacB':
+      content = fmtDollar(row[key]);
+      break;
+    case 'dctr': case 'dcpc': case 'dcvr': case 'dcac': {
+      const delta = rowValue(row, key);
+      content = deltaHtml(delta, col.good);
+      break;
+    }
+    default:
+      content = row[key] !== null && row[key] !== undefined ? row[key] : '—';
+  }
+
+  return `<td class="${cellClass}">${content}</td>`;
+}
+
+function renderTable(containerId, tableData, summaryRow, tableId, isTest) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (!tableData.length && (!summaryRow || (summaryRow.impA === 0 && summaryRow.impB === 0))) {
+    container.innerHTML = `<div class="no-data"><div>No data for the selected filters.</div></div>`;
+    return;
+  }
+
+  const st = sortState[tableId];
+
+  // Sort data rows (not summary)
+  let sorted = [...tableData];
+  if (st.col !== null) {
+    sorted.sort((a, b) => {
+      const va = rowValue(a, st.col) ?? -Infinity;
+      const vb = rowValue(b, st.col) ?? -Infinity;
+      if (typeof va === 'string') return va.localeCompare(vb) * st.dir;
+      return (va - vb) * st.dir;
+    });
+  }
+
+  function thHtml(col) {
+    const isActive = st.col === col.key;
+    const sortDir = isActive ? (st.dir === 1 ? '▲' : '▼') : '▲';
+    const numCls = col.num ? ' num' : '';
+    const cvrCls = col.cvr ? ' cvr-col' : '';
+    const activeCls = isActive ? ' sort-active' : '';
+    return `<th class="sort-hd${numCls}${cvrCls}${activeCls}" onclick="sortTable('${tableId}','${col.key}')">${col.label}<span class="sort-ind">${sortDir}</span></th>`;
+  }
+
+  const thead = `<thead><tr>${COL_DEFS.map(thHtml).join('')}</tr></thead>`;
+
+  function trHtml(row, isSummary) {
+    const cells = COL_DEFS.map(col => cellHtml(row, col, isTest)).join('');
+    const cls = isSummary ? ' class="summary-row"' : '';
+    return `<tr${cls}>${cells}</tr>`;
+  }
+
+  let tbody = '<tbody>';
+  if (summaryRow) tbody += trHtml(summaryRow, true);
+  sorted.forEach(row => { tbody += trHtml(row, false); });
+  tbody += '</tbody>';
+
+  container.innerHTML = `<table>${thead}${tbody}</table>`;
+}
+
+function sortTable(tableId, col) {
+  const st = sortState[tableId];
+  if (st.col === col) {
+    st.dir = st.dir * -1;
+  } else {
+    st.col = col;
+    st.dir = 1;
+  }
+  if (tableId === 'test') renderTestTable();
+  else renderControlTable();
+}
+
+function renderTestTable() {
+  const agSet = new Set();
+  LP_DATA.forEach(r => { if (isTest(r.ag)) agSet.add(r.ag); });
+  const agList = [...agSet].sort();
+
+  const rowsByAG = {};
+  LP_DATA.forEach(r => {
+    if (!isTest(r.ag)) return;
+    if (!rowsByAG[r.ag]) rowsByAG[r.ag] = [];
+    rowsByAG[r.ag].push(r);
+  });
+
+  const allTestRows = LP_DATA.filter(r => isTest(r.ag));
+  const tableData = buildTableData(agList, rowsByAG);
+  const summary = buildSummaryRow(allTestRows);
+
+  renderTable('testTableWrap', tableData, summary, 'test', true);
+}
+
+function renderControlTable() {
+  const selectedArr = [...selectedControlAGs];
+  const agSet = new Set();
+  LP_DATA.forEach(r => {
+    if (!isTest(r.ag) && selectedControlAGs.has(r.ag)) agSet.add(r.ag);
+  });
+  const agList = [...agSet].sort();
+
+  const rowsByAG = {};
+  LP_DATA.forEach(r => {
+    if (isTest(r.ag) || !selectedControlAGs.has(r.ag)) return;
+    if (!rowsByAG[r.ag]) rowsByAG[r.ag] = [];
+    rowsByAG[r.ag].push(r);
+  });
+
+  const allControlRows = LP_DATA.filter(r => !isTest(r.ag) && selectedControlAGs.has(r.ag));
+  const tableData = buildTableData(agList, rowsByAG);
+  const summary = buildSummaryRow(allControlRows);
+
+  renderTable('controlTableWrap', tableData, summary, 'control', false);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DATE INPUTS
+// ─────────────────────────────────────────────────────────────────────────────
+function setupDateInputs() {
+  // Set Period B end to today
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+  document.getElementById('pB_end').value = todayStr;
+
+  ['pA_start','pA_end','pB_start','pB_end'].forEach(id => {
+    document.getElementById(id).addEventListener('change', render);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+function init() {
+  setupDateInputs();
+
+  if (!isDataLoaded()) {
+    renderNoData();
+    return;
+  }
+
+  initControlDD();
+  buildLayout();
+  render();
+}
+
+// Wait for DOM + data
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
