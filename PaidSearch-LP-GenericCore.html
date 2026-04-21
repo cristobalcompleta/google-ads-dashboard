@@ -200,6 +200,7 @@ function render() {
     return;
   }
   renderChart();
+  renderSummaryTable();
   renderTestTable();
   renderControlTable();
 }
@@ -227,7 +228,15 @@ function buildLayout() {
         <div class="chart-wrap"><canvas id="cvrCanvas"></canvas></div>
       </div>
     </div>
-    <!-- Section 2: Test Table -->
+    <!-- Section 2: Summary Table -->
+    <div class="section" id="sec-summary">
+      <div class="section-header">
+        <div class="section-title">Test vs Control — Summary</div>
+        <div class="section-sub">Aggregated across all ad groups / campaigns &middot; Δ rows compare Test to Control</div>
+      </div>
+      <div id="summaryTableWrap"></div>
+    </div>
+    <!-- Section 3: Test Table -->
     <div class="section" id="sec-test">
       <div class="section-header">
         <div class="section-title">Test — GenericCore Ad Groups</div>
@@ -579,12 +588,211 @@ function renderControlTable() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SUMMARY TABLE — Test vs Control aggregated, with 2 Δ rows
+// ─────────────────────────────────────────────────────────────────────────────
+function renderSummaryTable() {
+  const container = document.getElementById('summaryTableWrap');
+  if (!container) return;
+
+  const tRow = buildRow('Test (GenericCore)',   LP_TEST,    'Test (GenericCore)');
+  const cRow = buildRow('Control (NonBrand)',   LP_CONTROL, 'Control (NonBrand)');
+
+  // Pre-compute the within-group % changes (B vs A) for each metric
+  function grpDelta(row, metA, metB) {
+    const a = row[metA], b = row[metB];
+    if (a == null || b == null || a === 0) return null;
+    return ((b - a) / Math.abs(a)) * 100;
+  }
+
+  const METRIC_PAIRS = [
+    ['impA','impB'], ['clA','clB'], ['ctrA','ctrB'],
+    ['costA','costB'], ['cpcA','cpcB'], ['cvrA','cvrB'], ['cacA','cacB']
+  ];
+
+  // Rows: test, control, Δ nominal (test − control per metric), Δ % ((test−ctrl)/|ctrl|)
+  // For each metric A/B column: compare absolute values between test and control
+  // For each Δ column (dctr etc.): compare the % change between test and control (diff of diffs)
+  function diffVal(key) {
+    // Returns { nom, pct } comparing test vs control
+    const isDelta = ['dctr','dcpc','dcvr','dcac'].includes(key);
+    if (isDelta) {
+      const metPairs = { dctr: ['ctrA','ctrB'], dcpc: ['cpcA','cpcB'], dcvr: ['cvrA','cvrB'], dcac: ['cacA','cacB'] };
+      const [mA, mB] = metPairs[key];
+      const tD = grpDelta(tRow, mA, mB);
+      const cD = grpDelta(cRow, mA, mB);
+      const nom = (tD != null && cD != null) ? tD - cD : null;       // pp difference in period change
+      const pct = (nom != null && cD != null && cD !== 0) ? (nom / Math.abs(cD)) * 100 : null;
+      return { nom, pct };
+    } else {
+      const tv = tRow[key], cv = cRow[key];
+      if (tv == null || cv == null) return { nom: null, pct: null };
+      const nom = tv - cv;
+      const pct = cv !== 0 ? (nom / Math.abs(cv)) * 100 : null;
+      return { nom, pct };
+    }
+  }
+
+  // Summary COL_DEFS: same columns but label 'Group' instead of 'Name'
+  const SCOLS = COL_DEFS.map(c => c.key === 'name' ? { ...c, label: 'Group' } : c);
+
+  // Render a data row (test or control)
+  function dataRowHtml(row, rowClass) {
+    const cells = SCOLS.map(col => cellHtml(row, col)).join('');
+    return `<tr class="${rowClass}">${cells}</tr>`;
+  }
+
+  // Render a Δ row
+  function deltaRowHtml(label, valFn, bgColor) {
+    const cells = SCOLS.map(col => {
+      const key = col.key;
+      const isCvr = col.cvr === true;
+      const cellClass = 'num' + (isCvr ? ' cvr-col' : '');
+
+      if (key === 'name') {
+        return `<td class="name-col${isCvr ? ' cvr-col' : ''}" style="background:${bgColor};font-weight:700">${label}</td>`;
+      }
+
+      const isDeltaCol = ['dctr','dcpc','dcvr','dcac'].includes(key);
+      const val = valFn(key);
+
+      if (val === null || val === undefined || isNaN(val) || !isFinite(val)) {
+        return `<td class="${cellClass}" style="background:${bgColor}"><span class="delta-neu">—</span></td>`;
+      }
+
+      // Determine if positive is good for this column
+      // For metric columns: use col.good if set; otherwise no coloring
+      // For delta-of-delta columns: use the Δ col's good flag
+      let goodDir = col.good;
+      // All delta rows: color based on direction vs good flag
+      let colorHtml;
+      if (goodDir !== null) {
+        const isGood = goodDir ? val > 0 : val < 0;
+        const cls = isGood ? 'delta-good' : 'delta-bad';
+        const arrow = val > 0 ? '↑' : '↓';
+        colorHtml = `<span class="${cls}">${arrow} ${fmtDeltaVal(key, val, isDeltaCol)}</span>`;
+      } else {
+        colorHtml = `<span class="delta-neu">${fmtDeltaVal(key, val, isDeltaCol)}</span>`;
+      }
+
+      return `<td class="${cellClass}" style="background:${bgColor}">${colorHtml}</td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  }
+
+  function fmtDeltaVal(key, val, isDeltaCol) {
+    // For the Δ nominal row: use same unit as the source column
+    // For the Δ % row: caller handles (passes pct which we always format as %)
+    // This fn is shared — the caller already picks .nom or .pct from diffVal()
+    // So we just need to know: what type is val?
+    // We detect by checking what column type it is
+    if (['impA','impB','clA','clB'].includes(key)) return fmt(Math.round(val));
+    if (['ctrA','ctrB','cvrA','cvrB'].includes(key)) return fmtPct(val);
+    if (['costA','costB','cpcA','cpcB','cacA','cacB'].includes(key)) return fmtDollar(val);
+    // dctr, dcpc, dcvr, dcac — these are pp deltas
+    return fmt(val, 2) + 'pp';
+  }
+
+  // Build Δ nominal: raw difference in the same units
+  function nomVal(key) {
+    if (key === 'name') return null;
+    return diffVal(key).nom;
+  }
+
+  // Build Δ %: everything as a percentage change
+  function pctVal(key) {
+    if (key === 'name') return null;
+    return diffVal(key).pct;
+  }
+
+  // Override fmtDeltaVal for pct row — always %
+  function pctRowHtml() {
+    const cells = SCOLS.map(col => {
+      const key = col.key;
+      const isCvr = col.cvr === true;
+      const cellClass = 'num' + (isCvr ? ' cvr-col' : '');
+      const BG = '#fdf4e7';
+
+      if (key === 'name') {
+        return `<td class="name-col${isCvr ? ' cvr-col' : ''}" style="background:${BG};font-weight:700">Δ %</td>`;
+      }
+      const val = pctVal(key);
+      if (val === null || isNaN(val) || !isFinite(val)) {
+        return `<td class="${cellClass}" style="background:${BG}"><span class="delta-neu">—</span></td>`;
+      }
+      let goodDir = col.good;
+      let colorHtml;
+      if (goodDir !== null) {
+        const isGood = goodDir ? val > 0 : val < 0;
+        const cls = isGood ? 'delta-good' : 'delta-bad';
+        const arrow = val > 0 ? '↑' : '↓';
+        colorHtml = `<span class="${cls}">${arrow} ${fmt(Math.abs(val), 1)}%</span>`;
+      } else {
+        colorHtml = `<span class="delta-neu">${val > 0 ? '+' : ''}${fmt(val, 1)}%</span>`;
+      }
+      return `<td class="${cellClass}" style="background:${BG}">${colorHtml}</td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  }
+
+  // Header
+  const thead = `<thead><tr>${SCOLS.map(col => {
+    const numCls = col.num ? ' num' : '';
+    const cvrCls = col.cvr ? ' cvr-col' : '';
+    return `<th class="${numCls}${cvrCls}">${col.label}</th>`;
+  }).join('')}</tr></thead>`;
+
+  // Build nominal row
+  function nomRowHtml() {
+    const BG = '#f0fdf4';
+    const cells = SCOLS.map(col => {
+      const key = col.key;
+      const isCvr = col.cvr === true;
+      const cellClass = 'num' + (isCvr ? ' cvr-col' : '');
+
+      if (key === 'name') {
+        return `<td class="name-col${isCvr ? ' cvr-col' : ''}" style="background:${BG};font-weight:700">Δ Nominal</td>`;
+      }
+      const val = nomVal(key);
+      if (val === null || isNaN(val) || !isFinite(val)) {
+        return `<td class="${cellClass}" style="background:${BG}"><span class="delta-neu">—</span></td>`;
+      }
+      let goodDir = col.good;
+      let colorHtml;
+      if (goodDir !== null) {
+        const isGood = goodDir ? val > 0 : val < 0;
+        const cls = isGood ? 'delta-good' : 'delta-bad';
+        const arrow = val > 0 ? '↑' : '↓';
+        colorHtml = `<span class="${cls}">${arrow} ${fmtDeltaVal(key, val)}</span>`;
+      } else {
+        colorHtml = `<span class="delta-neu">${fmtDeltaVal(key, val)}</span>`;
+      }
+      return `<td class="${cellClass}" style="background:${BG}">${colorHtml}</td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  }
+
+  // Reconstruct tbody with all 4 rows (nomRowHtml is now defined)
+  const tbodyFinal = `<tbody>
+    ${dataRowHtml(tRow, 'summary-row')}
+    ${dataRowHtml(cRow, 'summary-row')}
+    ${nomRowHtml()}
+    ${pctRowHtml()}
+  </tbody>`;
+
+  container.innerHTML = `<table>${thead}${tbodyFinal}</table>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DATE INPUTS
 // ─────────────────────────────────────────────────────────────────────────────
 function setupDateInputs() {
   // Set Period B end to the latest date available in the data (excludes today)
+  // Also clamp all pickers to that max — prevents selecting future / today
   const allDates = [...new Set([...LP_TEST.map(r => r.d), ...LP_CONTROL.map(r => r.d)])].sort();
   const latestDate = allDates[allDates.length - 1] || '2026-04-20';
+  ['pA_start','pA_end','pB_start','pB_end'].forEach(id => {
+    document.getElementById(id).setAttribute('max', latestDate);
+  });
   document.getElementById('pB_end').value = latestDate;
 
   ['pA_start','pA_end','pB_start','pB_end'].forEach(id => {
