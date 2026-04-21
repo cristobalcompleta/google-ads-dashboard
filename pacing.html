@@ -565,6 +565,7 @@ CHART_CONFIGS.forEach(function(cfg) {
 
 // ── RENDER ───────────────────────────────────────────────────────────────────
 function render() {
+  if (typeof CHARTS === 'undefined' || Object.keys(CHARTS).length === 0) return;
   var result = computeHourly();
   var labels = result.hours.map(function(h){ return h + ':00'; });
 
