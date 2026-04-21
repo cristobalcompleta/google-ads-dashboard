@@ -79,36 +79,33 @@ canvas{max-height:260px}
 
 <div class="controls">
 
-  <!-- Week -->
+  <!-- Day (main line date) -->
   <div class="ctrl-group">
-    <span class="ctrl-label">Week</span>
-    <div class="dd-wrap" id="dd-week">
-      <button class="dd-btn" onclick="toggleDD('dd-week')">
-        <span class="dd-lbl">All</span><span>▾</span>
+    <span class="ctrl-label">Day</span>
+    <div class="dd-wrap" id="dd-day">
+      <button class="dd-btn" onclick="toggleDD('dd-day')">
+        <span class="dd-lbl">Today</span><span>▾</span>
       </button>
       <div class="dd-panel">
         <input class="dd-search" placeholder="Search…" oninput="filterDDSearch(this)">
-        <div class="dd-list" id="list-week"></div>
-        <div class="dd-actions">
-          <button class="dd-act-btn" onclick="ddAll('dd-week','weeks')">All</button>
-          <button class="dd-act-btn" onclick="ddClear('dd-week','weeks')">Clear</button>
-        </div>
+        <div class="dd-list" id="list-day"></div>
       </div>
     </div>
   </div>
 
-  <!-- Day of week -->
+  <!-- Comparison (exclude dates from avg lines) -->
   <div class="ctrl-group">
-    <span class="ctrl-label">Day of week</span>
-    <div class="dd-wrap" id="dd-dow">
-      <button class="dd-btn" onclick="toggleDD('dd-dow')">
-        <span class="dd-lbl">Today's</span><span>▾</span>
+    <span class="ctrl-label">Comparison</span>
+    <div class="dd-wrap" id="dd-comp">
+      <button class="dd-btn" onclick="toggleDD('dd-comp')">
+        <span class="dd-lbl">All dates</span><span>▾</span>
       </button>
       <div class="dd-panel">
-        <div class="dd-list" id="list-dow"></div>
+        <input class="dd-search" placeholder="Search…" oninput="filterDDSearch(this)">
+        <div class="dd-list" id="list-comp"></div>
         <div class="dd-actions">
-          <button class="dd-act-btn" onclick="ddAll('dd-dow','dows')">All</button>
-          <button class="dd-act-btn" onclick="ddClear('dd-dow','dows')">Clear</button>
+          <button class="dd-act-btn" onclick="compAll()">All</button>
+          <button class="dd-act-btn" onclick="compClear()">None</button>
         </div>
       </div>
     </div>
@@ -236,12 +233,12 @@ function weekLabel(dateStr) { return 'W' + String(isoWeek(dateStr)).padStart(2,'
 var DOW_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 // ── STATE ────────────────────────────────────────────────────────────────────
-var TODAY = todayStr();
+var TODAY     = todayStr();
 var TODAY_DOW = dowOf(TODAY);
 
 var state = {
-  weeks:    null,                  // null = all
-  dows:     new Set([TODAY_DOW]),  // default: today's day-of-week only
+  viewDate:    TODAY,       // the "main" date shown as the solid line
+  excludeDates: new Set(),  // dates excluded from comparison avg lines
   hrMin:    0,
   hrMax:    23,
   channels: null,
@@ -250,15 +247,15 @@ var state = {
 };
 
 // ── EXTRACT UNIQUE DIMENSION VALUES ─────────────────────────────────────────
-var weekSet = new Set(), chanSet = new Set(), campSet = new Set(), agMap = {};
+var allDatesSet = new Set(), chanSet = new Set(), campSet = new Set(), agMap = {};
 PACING_DATA.forEach(function(r) {
-  if (r[0] !== TODAY) weekSet.add(weekLabel(r[0]));
+  allDatesSet.add(r[0]);
   chanSet.add(r[2]);
   campSet.add(r[3]);
   if (!agMap[r[3]]) agMap[r[3]] = new Set();
   agMap[r[3]].add(r[4]);
 });
-var allWeeks    = Array.from(weekSet).sort();
+var allDates    = Array.from(allDatesSet).sort().reverse();
 var allChannels = Array.from(chanSet).sort();
 var allCamps    = Array.from(campSet).sort();
 
@@ -277,9 +274,7 @@ function buildCheckList(listId, items, defaultChecked, onChange) {
 }
 
 function getChecked(listId) {
-  var items = document.querySelectorAll('#' + listId + ' .dd-item:not(.hidden)');
-  // use all items (not just visible) for state
-  var all   = document.querySelectorAll('#' + listId + ' .dd-item');
+  var all     = document.querySelectorAll('#' + listId + ' .dd-item');
   var checked = Array.from(all).filter(function(i){ return i.querySelector('input').checked; })
                                .map(function(i){ return i.dataset.val; });
   return checked.length === 0 || checked.length === all.length ? null : new Set(checked);
@@ -294,32 +289,73 @@ function syncLabel(ddId, stateVal, defaultLabel) {
   btn.classList.add('active');
 }
 
-// Week
-buildCheckList('list-week', allWeeks, true, function() {
-  state.weeks = getChecked('list-week');
-  syncLabel('dd-week', state.weeks, 'All');
-  render();
-});
-
-// DOW
-DOW_LABELS.forEach(function(label, i) {
-  var el = document.getElementById('list-dow');
-  var div = document.createElement('div');
-  div.className = 'dd-item';
-  div.dataset.val = i;
-  div.innerHTML = '<input type="checkbox"' + (i === TODAY_DOW ? ' checked' : '') + '>' +
-                  '<span>' + label + '</span>';
-  div.querySelector('input').addEventListener('change', function() {
-    var checked = Array.from(document.querySelectorAll('#list-dow .dd-item input:checked'))
-                       .map(function(cb){ return parseInt(cb.closest('.dd-item').dataset.val); });
-    state.dows = checked.length === 0 || checked.length === 7 ? null : new Set(checked);
-    syncLabel('dd-dow', state.dows ? new Set(checked.map(function(i){ return DOW_LABELS[i]; })) : null, 'All days');
-    render();
+// Day filter — radio-style (single select), defaults to today
+(function() {
+  var el = document.getElementById('list-day');
+  allDates.forEach(function(date) {
+    var div = document.createElement('div');
+    div.className = 'dd-item';
+    div.dataset.val = date;
+    var label = date === TODAY ? date + ' (today)' : date;
+    div.innerHTML = '<input type="radio" name="day-radio"' + (date === TODAY ? ' checked' : '') + '>' +
+                    '<span>' + label + '</span>';
+    div.querySelector('input').addEventListener('change', function() {
+      state.viewDate = date;
+      var lbl = document.querySelector('#dd-day .dd-lbl');
+      lbl.textContent = date === TODAY ? 'Today' : date;
+      document.querySelector('#dd-day .dd-btn').classList.toggle('active', date !== TODAY);
+      rebuildCompList();
+      render();
+    });
+    el.appendChild(div);
   });
-  el.appendChild(div);
-});
-// Show today's day label initially
-syncLabel('dd-dow', new Set([DOW_LABELS[TODAY_DOW]]), 'All days');
+})();
+
+// Comparison filter — all historical dates for viewDate's DOW, all checked by default
+function rebuildCompList() {
+  var el = document.getElementById('list-comp');
+  el.innerHTML = '';
+  var vdow = dowOf(state.viewDate);
+  // All dates with same DOW, excluding viewDate itself
+  var compDates = allDates.filter(function(d){ return d !== state.viewDate && dowOf(d) === vdow; });
+  state.excludeDates = new Set();
+  compDates.forEach(function(date) {
+    var div = document.createElement('div');
+    div.className = 'dd-item';
+    div.dataset.val = date;
+    div.innerHTML = '<input type="checkbox" checked><span>' + date + '</span>';
+    div.querySelector('input').addEventListener('change', function() {
+      if (this.checked) state.excludeDates.delete(date);
+      else              state.excludeDates.add(date);
+      var excluded = state.excludeDates.size;
+      var total    = el.querySelectorAll('.dd-item').length;
+      var btn = document.querySelector('#dd-comp .dd-btn');
+      var lbl = document.querySelector('#dd-comp .dd-lbl');
+      if (excluded === 0)     { lbl.textContent = 'All dates'; btn.classList.remove('active'); }
+      else                    { lbl.textContent = (total - excluded) + ' of ' + total; btn.classList.add('active'); }
+      render();
+    });
+    el.appendChild(div);
+  });
+  document.querySelector('#dd-comp .dd-lbl').textContent = 'All dates';
+  document.querySelector('#dd-comp .dd-btn').classList.remove('active');
+}
+rebuildCompList();
+
+function compAll() {
+  document.querySelectorAll('#list-comp .dd-item input').forEach(function(cb){ cb.checked = true; });
+  state.excludeDates = new Set();
+  document.querySelector('#dd-comp .dd-lbl').textContent = 'All dates';
+  document.querySelector('#dd-comp .dd-btn').classList.remove('active');
+  render();
+}
+function compClear() {
+  var items = document.querySelectorAll('#list-comp .dd-item');
+  items.forEach(function(item){ item.querySelector('input').checked = false; state.excludeDates.add(item.dataset.val); });
+  document.querySelector('#dd-comp .dd-lbl').textContent = '0 of ' + items.length;
+  document.querySelector('#dd-comp .dd-btn').classList.add('active');
+  render();
+}
 
 // Channel
 buildCheckList('list-channel', allChannels, true, function() {
@@ -327,6 +363,7 @@ buildCheckList('list-channel', allChannels, true, function() {
   syncLabel('dd-channel', state.channels, 'All');
   render();
 });
+
 
 // Campaign
 buildCheckList('list-camp', allCamps, true, function() {
@@ -470,21 +507,20 @@ function avgCumulative(dateAgg, dates, hours) {
 }
 
 function computeHourly() {
-  var todayAgg = {};
-  // dateAgg: dateStr -> hour -> {sp,imp,cl,cv}  (all hist, no DOW/week filter here)
-  var dateAgg  = {};
+  var viewAgg  = {};   // hour -> {sp,imp,cl,cv} for viewDate
+  var dateAgg  = {};   // dateStr -> hour -> {sp,imp,cl,cv} for all other dates
 
   PACING_DATA.forEach(function(r) {
     var date = r[0], hour = +r[1];
     if (hour < state.hrMin || hour > state.hrMax) return;
     if (!passes(r)) return;
 
-    if (date === TODAY) {
-      if (!todayAgg[hour]) todayAgg[hour] = {sp:0,imp:0,cl:0,cv:0};
-      todayAgg[hour].sp  += +r[5];
-      todayAgg[hour].imp += +r[6];
-      todayAgg[hour].cl  += +r[7];
-      todayAgg[hour].cv  += +r[8];
+    if (date === state.viewDate) {
+      if (!viewAgg[hour]) viewAgg[hour] = {sp:0,imp:0,cl:0,cv:0};
+      viewAgg[hour].sp  += +r[5];
+      viewAgg[hour].imp += +r[6];
+      viewAgg[hour].cl  += +r[7];
+      viewAgg[hour].cv  += +r[8];
     } else {
       if (!dateAgg[date]) dateAgg[date] = {};
       if (!dateAgg[date][hour]) dateAgg[date][hour] = {sp:0,imp:0,cl:0,cv:0};
@@ -498,29 +534,29 @@ function computeHourly() {
   var hours = [];
   for (var h = state.hrMin; h <= state.hrMax; h++) hours.push(h);
 
-  // Today — cumulative
-  var todayRaw = hours.map(function(h) { return todayAgg[h] || null; });
-  var todayM   = cumulative(todayRaw);
+  // View date line — cumulative
+  var viewRaw = hours.map(function(h) { return viewAgg[h] || null; });
+  var viewM   = cumulative(viewRaw);
 
-  // All historical dates sorted descending
-  var allDates = Object.keys(dateAgg).sort().reverse();
+  // All hist dates sorted descending, excluding viewDate and user-excluded dates
+  var vdow    = dowOf(state.viewDate);
+  var histAll = Object.keys(dateAgg).sort().reverse()
+                  .filter(function(d){ return !state.excludeDates.has(d); });
 
-  // Line 1: last 4 occurrences of today's DOW
-  var dowDates = allDates.filter(function(d){ return dowOf(d) === TODAY_DOW; }).slice(0,4);
+  // Line 1: same DOW as viewDate (up to 4), excluding excluded dates
+  var dowDates  = histAll.filter(function(d){ return dowOf(d) === vdow; }).slice(0,4);
 
-  // Line 2: last 4 full weeks — all dates in the 28 days before today
-  var cutoff = new Date(new Date(TODAY+'T12:00:00').getTime() - 28*24*60*60*1000);
-  var weekDates = allDates.filter(function(d){
-    return new Date(d+'T12:00:00') >= cutoff;
-  });
+  // Line 2: last 4 weeks (28 days before viewDate), excluding excluded dates
+  var cutoff    = new Date(new Date(state.viewDate+'T12:00:00').getTime() - 28*24*60*60*1000);
+  var weekDates = histAll.filter(function(d){ return new Date(d+'T12:00:00') >= cutoff; });
 
   return {
-    hours:    hours,
-    today:    todayM,
-    dowAvg:   avgCumulative(dateAgg, dowDates, hours),
-    weekAvg:  avgCumulative(dateAgg, weekDates, hours),
-    dowLabel: 'Avg last 4 ' + DOW_LABELS[TODAY_DOW] + 's (' + dowDates.length + ')',
-    weekLabel:'Avg last 4 weeks'
+    hours:     hours,
+    today:     viewM,
+    dowAvg:    avgCumulative(dateAgg, dowDates,  hours),
+    weekAvg:   avgCumulative(dateAgg, weekDates, hours),
+    dowLabel:  'Avg ' + DOW_LABELS[vdow] + 's (' + dowDates.length + ')',
+    weekLabel: 'Avg last 4 weeks (' + weekDates.length + ' days)'
   };
 }
 
