@@ -28,23 +28,6 @@ header{background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 28px;display
 .date-input{border:1px solid #cbd5e1;border-radius:5px;padding:4px 8px;font-size:12px;color:#1e293b;background:#fff;cursor:pointer}
 .date-input:focus{outline:none;border-color:#f5a623;box-shadow:0 0 0 2px rgba(245,166,35,.12)}
 
-/* ── MULTI-SELECT DROPDOWN ───────────────────────────────────────────────── */
-.dd-wrap{position:relative}
-.dd-btn{background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:8px;min-width:180px;max-width:320px;justify-content:space-between;color:#334155;white-space:nowrap}
-.dd-btn:hover{border-color:#94a3b8}
-.dd-btn-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:left}
-.dd-panel{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:400;min-width:280px;display:none;flex-direction:column}
-.dd-panel.open{display:flex}
-.dd-search{border:none;border-bottom:1px solid #e2e8f0;padding:8px 12px;font-size:12px;outline:none;border-radius:8px 8px 0 0;width:100%;color:#1e293b}
-.dd-list{max-height:220px;overflow-y:auto;padding:4px 0}
-.dd-item{padding:6px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#334155;user-select:none}
-.dd-item:hover{background:#f8fafc}
-.dd-item input[type=checkbox]{width:13px;height:13px;accent-color:#f5a623;cursor:pointer;flex-shrink:0}
-.dd-item.hidden{display:none}
-.dd-actions{border-top:1px solid #e2e8f0;padding:6px 12px;display:flex;gap:10px}
-.dd-act-btn{font-size:11px;color:#f5a623;cursor:pointer;background:none;border:none;padding:0;font-weight:600}
-.dd-act-btn:hover{color:#d97706}
-
 /* ── MAIN LAYOUT ─────────────────────────────────────────────────────────── */
 .main{padding:20px 28px;display:flex;flex-direction:column;gap:24px}
 
@@ -70,14 +53,14 @@ th.sort-hd.sort-active{color:#f5a623}
 th.sort-active .sort-ind{opacity:1}
 td{padding:9px 14px;font-size:12px;color:#1e293b;border-bottom:1px solid #f1f5f9;white-space:nowrap}
 td.num{text-align:right;font-variant-numeric:tabular-nums}
-td.ag-name{font-weight:500;color:#334155;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+td.name-col{font-weight:500;color:#334155;max-width:260px;overflow:hidden;text-overflow:ellipsis}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#f8fafc}
 tr.summary-row td{background:#f0f9ff;font-weight:700;color:#0f172a;border-bottom:2px solid #bae6fd}
 tr.summary-row:hover td{background:#e0f2fe}
 
 /* ── CVR highlight columns ──────────────────────────────────────────────── */
-td.cvr-col, th.cvr-col{background:#fffbeb;border-left:none}
+td.cvr-col, th.cvr-col{background:#fffbeb}
 th.cvr-col:first-of-type, td.cvr-col:first-of-type{border-left:2px solid #f5a623}
 tr.summary-row td.cvr-col{background:#fef9c3}
 
@@ -118,24 +101,6 @@ tr.summary-row td.cvr-col{background:#fef9c3}
     <span class="period-sep">→</span>
     <input class="date-input" type="date" id="pB_end">
   </div>
-  <div class="ctrl-sep"></div>
-  <div class="ctrl-group">
-    <span class="ctrl-label">Control Ad Groups</span>
-    <div class="dd-wrap" id="ctrlDDWrap">
-      <button class="dd-btn" id="ctrlDDBtn" onclick="toggleControlDD()">
-        <span class="dd-btn-text" id="ctrlDDLabel">All control groups</span>
-        <span>&#9662;</span>
-      </button>
-      <div class="dd-panel" id="ctrlDDPanel">
-        <input class="dd-search" type="text" id="ctrlDDSearch" placeholder="Search ad groups…" oninput="filterControlDD(this.value)">
-        <div class="dd-list" id="ctrlDDList"></div>
-        <div class="dd-actions">
-          <button class="dd-act-btn" onclick="ctrlSelectAll()">Select all</button>
-          <button class="dd-act-btn" onclick="ctrlClearAll()">Clear</button>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- ── MAIN ────────────────────────────────────────────────────────────────── -->
@@ -147,43 +112,25 @@ tr.summary-row td.cvr-col{background:#fef9c3}
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
-const TEST_AG = new Set([
-  'nonbrand_search_genericcore_u_keyword_genericother',
-  'nonbrand_search_genericcore_u_keyword_mealdelivery',
-  'nonbrand_search_genericcore_u_keyword_mealdelivery_premium',
-  'nonbrand_search_genericcore_u_keyword_mealdeliveryservice',
-  'nonbrand_search_genericcore_u_keyword_mealdeliveryservice_premium',
-  'nonbrand_search_genericcore_u_keyword_mealkit',
-  'nonbrand_search_genericcore_u_keyword_mealplan',
-  'nonbrand_search_genericcore_u_keyword_mealprep',
-  'nonbrand_search_genericcore_u_keyword_mealprep_premium',
-  'nonbrand_search_genericcore_u_keyword_personalchef',
-  'nonbrand_search_genericcore_u_keyword_preparedmeals',
-  'nonbrand_search_genericcore_u_keyword_preparedmeals_premium',
-  'nonbrand_search_genericcore_u_keyword_subscription',
-]);
-
-const TEST_PREFIX = 'NonBrand_Search_GenericCore_U_Keyword_';
 const LP_CHANGE_DATE = '2026-04-13';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA AVAILABILITY CHECK
 // ─────────────────────────────────────────────────────────────────────────────
 function isDataLoaded() {
-  return typeof LP_DATA !== 'undefined' && Array.isArray(LP_DATA) && LP_DATA.length > 0;
+  return typeof LP_TEST !== 'undefined' && Array.isArray(LP_TEST) && LP_TEST.length > 0
+      && typeof LP_CONTROL !== 'undefined' && Array.isArray(LP_CONTROL) && LP_CONTROL.length > 0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTILITY
 // ─────────────────────────────────────────────────────────────────────────────
-function isTest(ag) {
-  return TEST_AG.has(ag.toLowerCase());
-}
+const TEST_PREFIX = 'nonbrand_search_genericcore_u_keyword_';
 
-function stripPrefix(ag) {
-  if (ag.startsWith(TEST_PREFIX)) return ag.slice(TEST_PREFIX.length);
-  if (ag.toLowerCase().startsWith(TEST_PREFIX.toLowerCase())) return ag.slice(TEST_PREFIX.length);
-  return ag;
+function stripPrefix(name) {
+  const n = name.toLowerCase();
+  if (n.startsWith(TEST_PREFIX)) return name.slice(TEST_PREFIX.length);
+  return name;
 }
 
 function fmt(n, decimals = 0) {
@@ -232,98 +179,6 @@ function getMetrics(rows, startDate, endDate) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONTROL DROPDOWN STATE
-// ─────────────────────────────────────────────────────────────────────────────
-let controlAGs = [];       // all control ad groups from data
-let selectedControlAGs = new Set(); // currently selected
-
-function initControlDD() {
-  const agSet = new Set();
-  LP_DATA.forEach(r => {
-    if (!isTest(r.ag)) agSet.add(r.ag);
-  });
-  controlAGs = [...agSet].sort((a, b) => a.localeCompare(b));
-  selectedControlAGs = new Set(controlAGs);
-
-  const list = document.getElementById('ctrlDDList');
-  list.innerHTML = '';
-  controlAGs.forEach(ag => {
-    const label = document.createElement('label');
-    label.className = 'dd-item';
-    label.dataset.ag = ag.toLowerCase();
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.value = ag;
-    cb.checked = true;
-    cb.addEventListener('change', onControlChange);
-    label.appendChild(cb);
-    label.appendChild(document.createTextNode(ag));
-    list.appendChild(label);
-  });
-
-  updateControlDDLabel();
-}
-
-function updateControlDDLabel() {
-  const total = controlAGs.length;
-  const sel = selectedControlAGs.size;
-  const el = document.getElementById('ctrlDDLabel');
-  if (sel === 0) el.textContent = 'None selected';
-  else if (sel === total) el.textContent = 'All control groups';
-  else el.textContent = `${sel} of ${total} groups`;
-}
-
-function toggleControlDD() {
-  const panel = document.getElementById('ctrlDDPanel');
-  const isOpen = panel.classList.contains('open');
-  if (isOpen) {
-    panel.classList.remove('open');
-  } else {
-    panel.classList.add('open');
-    document.getElementById('ctrlDDSearch').focus();
-  }
-}
-
-function filterControlDD(query) {
-  const q = query.toLowerCase();
-  document.querySelectorAll('#ctrlDDList .dd-item').forEach(item => {
-    const matches = item.dataset.ag.includes(q);
-    item.classList.toggle('hidden', !matches);
-  });
-}
-
-function onControlChange() {
-  selectedControlAGs = new Set();
-  document.querySelectorAll('#ctrlDDList input[type=checkbox]:checked').forEach(cb => {
-    selectedControlAGs.add(cb.value);
-  });
-  updateControlDDLabel();
-  render();
-}
-
-function ctrlSelectAll() {
-  selectedControlAGs = new Set(controlAGs);
-  document.querySelectorAll('#ctrlDDList input[type=checkbox]').forEach(cb => { cb.checked = true; });
-  updateControlDDLabel();
-  render();
-}
-
-function ctrlClearAll() {
-  selectedControlAGs = new Set();
-  document.querySelectorAll('#ctrlDDList input[type=checkbox]').forEach(cb => { cb.checked = false; });
-  updateControlDDLabel();
-  render();
-}
-
-// Close dropdown on outside click
-document.addEventListener('click', e => {
-  const wrap = document.getElementById('ctrlDDWrap');
-  if (wrap && !wrap.contains(e.target)) {
-    document.getElementById('ctrlDDPanel').classList.remove('open');
-  }
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // CHART STATE
 // ─────────────────────────────────────────────────────────────────────────────
 let cvrChart = null;
@@ -355,7 +210,7 @@ function renderNoData() {
       <div class="no-data">
         <div class="no-data-icon">&#128196;</div>
         <div><strong>Data not loaded</strong></div>
-        <div style="font-size:12px">Make sure <code>lp-data.js</code> is in the same directory and defines <code>LP_DATA</code>.</div>
+        <div style="font-size:12px">Make sure <code>lp-data.js</code> is in the same directory and defines <code>LP_TEST</code> and <code>LP_CONTROL</code>.</div>
       </div>
     </div>`;
 }
@@ -366,7 +221,7 @@ function buildLayout() {
     <div class="section" id="sec-chart">
       <div class="section-header">
         <div class="section-title">Daily CVR — Test vs Control</div>
-        <div class="section-sub">Trials / Clicks &middot; 7-day rolling average shown as dashed line</div>
+        <div class="section-sub">Trials / Clicks &middot; Test = GenericCore AGs on new LP &middot; Control = other NonBrand campaigns &middot; 7-day rolling average shown as dashed line</div>
       </div>
       <div class="section-body">
         <div class="chart-wrap"><canvas id="cvrCanvas"></canvas></div>
@@ -375,16 +230,16 @@ function buildLayout() {
     <!-- Section 2: Test Table -->
     <div class="section" id="sec-test">
       <div class="section-header">
-        <div class="section-title">Test Ad Groups — Period A vs Period B</div>
-        <div class="section-sub">Ad groups on the new landing page since Apr 13</div>
+        <div class="section-title">Test — GenericCore Ad Groups</div>
+        <div class="section-sub">13 ad groups on the new landing page since Apr 13</div>
       </div>
       <div id="testTableWrap"></div>
     </div>
     <!-- Section 3: Control Table -->
     <div class="section" id="sec-control">
       <div class="section-header">
-        <div class="section-title">Control Ad Groups — Period A vs Period B</div>
-        <div class="section-sub">Ad groups on the original landing page (filtered by dropdown above)</div>
+        <div class="section-title">Control — Other NonBrand Campaigns</div>
+        <div class="section-sub">All NonBrand SEM campaigns excluding GenericCore &middot; campaign-level aggregation</div>
       </div>
       <div id="controlTableWrap"></div>
     </div>
@@ -404,17 +259,20 @@ function movingAvg(arr, window) {
 }
 
 function renderChart() {
-  // Gather all dates from data
-  const dateSet = new Set(LP_DATA.map(r => r.d));
+  // Gather all dates from both datasets, sorted
+  const dateSet = new Set([
+    ...LP_TEST.map(r => r.d),
+    ...LP_CONTROL.map(r => r.d),
+  ]);
   const allDates = [...dateSet].sort();
 
-  // Daily aggregates by group
-  function dailyCVR(rows) {
+  function dailyCVR(rows, dateField) {
     const byDate = {};
     rows.forEach(r => {
-      if (!byDate[r.d]) byDate[r.d] = { cl: 0, trials: 0 };
-      byDate[r.d].cl += r.cl || 0;
-      byDate[r.d].trials += r.trials || 0;
+      const d = r[dateField] || r.d;
+      if (!byDate[d]) byDate[d] = { cl: 0, trials: 0 };
+      byDate[d].cl += r.cl || 0;
+      byDate[d].trials += r.trials || 0;
     });
     return allDates.map(d => {
       const v = byDate[d];
@@ -423,18 +281,13 @@ function renderChart() {
     });
   }
 
-  const testRows = LP_DATA.filter(r => isTest(r.ag));
-  const controlRows = LP_DATA.filter(r => !isTest(r.ag) && selectedControlAGs.has(r.ag));
+  const testCVR    = dailyCVR(LP_TEST, 'd');
+  const controlCVR = dailyCVR(LP_CONTROL, 'd');
+  const testMA     = movingAvg(testCVR, 7);
+  const controlMA  = movingAvg(controlCVR, 7);
 
-  const testCVR = dailyCVR(testRows);
-  const controlCVR = dailyCVR(controlRows);
-  const testMA = movingAvg(testCVR, 7);
-  const controlMA = movingAvg(controlCVR, 7);
-
-  // Annotation line index for LP change date
   const lpChangeIdx = allDates.indexOf(LP_CHANGE_DATE);
 
-  // Custom plugin for vertical line
   const vertLinePlugin = {
     id: 'vertLine',
     afterDraw(chart) {
@@ -452,7 +305,6 @@ function renderChart() {
       ctx.moveTo(x, yScale.top);
       ctx.lineTo(x, yScale.bottom);
       ctx.stroke();
-      // Label
       ctx.setLineDash([]);
       ctx.fillStyle = '#ef4444';
       ctx.font = '600 10px -apple-system, sans-serif';
@@ -465,21 +317,15 @@ function renderChart() {
   const canvas = document.getElementById('cvrCanvas');
   if (!canvas) return;
 
-  if (cvrChart) {
-    cvrChart.destroy();
-    cvrChart = null;
-  }
+  if (cvrChart) { cvrChart.destroy(); cvrChart = null; }
 
   cvrChart = new Chart(canvas, {
     type: 'line',
     data: {
-      labels: allDates.map(d => {
-        const parts = d.split('-');
-        return `${parts[1]}/${parts[2]}`;
-      }),
+      labels: allDates.map(d => { const p = d.split('-'); return `${p[1]}/${p[2]}`; }),
       datasets: [
         {
-          label: 'Test',
+          label: 'Test (GenericCore)',
           data: testCVR,
           borderColor: '#f5a623',
           backgroundColor: 'rgba(245,166,35,.08)',
@@ -491,7 +337,7 @@ function renderChart() {
           spanGaps: true,
         },
         {
-          label: 'Control',
+          label: 'Control (Other NonBrand)',
           data: controlCVR,
           borderColor: '#64748b',
           backgroundColor: 'rgba(100,116,139,.06)',
@@ -534,13 +380,7 @@ function renderChart() {
         legend: {
           position: 'top',
           align: 'end',
-          labels: {
-            boxWidth: 20,
-            font: { size: 11 },
-            color: '#475569',
-            usePointStyle: true,
-            pointStyleWidth: 16,
-          }
+          labels: { boxWidth: 20, font: { size: 11 }, color: '#475569', usePointStyle: true, pointStyleWidth: 16 }
         },
         tooltip: {
           callbacks: {
@@ -559,11 +399,7 @@ function renderChart() {
         },
         y: {
           grid: { color: '#f1f5f9' },
-          ticks: {
-            font: { size: 10 },
-            color: '#94a3b8',
-            callback: v => v.toFixed(1) + '%'
-          },
+          ticks: { font: { size: 10 }, color: '#94a3b8', callback: v => v.toFixed(1) + '%' },
           title: { display: true, text: 'CVR %', font: { size: 10 }, color: '#94a3b8' }
         }
       }
@@ -573,71 +409,35 @@ function renderChart() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TABLES
+// TABLES — shared rendering
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Sorting state: { col, dir } per table
 const sortState = {
-  test: { col: null, dir: 1 },
+  test:    { col: null, dir: 1 },
   control: { col: null, dir: 1 }
 };
 
-function buildTableData(agList, rowsByAG) {
-  const { pA_start, pA_end, pB_start, pB_end } = getPeriods();
-  return agList.map(ag => {
-    const rows = rowsByAG[ag] || [];
-    const mA = getMetrics(rows, pA_start, pA_end);
-    const mB = getMetrics(rows, pB_start, pB_end);
-    return {
-      ag,
-      impA: mA.imp, impB: mB.imp,
-      clA: mA.cl, clB: mB.cl,
-      ctrA: mA.ctr, ctrB: mB.ctr,
-      costA: mA.cost, costB: mB.cost,
-      cpcA: mA.cpc, cpcB: mB.cpc,
-      cvrA: mA.cvr, cvrB: mB.cvr,
-      cacA: mA.cac, cacB: mB.cac,
-    };
-  });
-}
-
-function buildSummaryRow(rows) {
-  const { pA_start, pA_end, pB_start, pB_end } = getPeriods();
-  const allRows = rows.flat ? rows : Object.values(rows).flat();
-  const mA = getMetrics(allRows, pA_start, pA_end);
-  const mB = getMetrics(allRows, pB_start, pB_end);
-  return {
-    ag: 'TOTAL',
-    impA: mA.imp, impB: mB.imp,
-    clA: mA.cl, clB: mB.cl,
-    ctrA: mA.ctr, ctrB: mB.ctr,
-    costA: mA.cost, costB: mB.cost,
-    cpcA: mA.cpc, cpcB: mB.cpc,
-    cvrA: mA.cvr, cvrB: mB.cvr,
-    cacA: mA.cac, cacB: mB.cac,
-  };
-}
-
+// COL_DEFS: key 'name' is the generic row identifier (ag or camp)
 const COL_DEFS = [
-  { key: 'ag',    label: 'Ad Group',  num: false, good: null },
-  { key: 'impA',  label: 'Imp A',     num: true,  good: null },
-  { key: 'impB',  label: 'Imp B',     num: true,  good: null },
-  { key: 'clA',   label: 'Clicks A',  num: true,  good: null },
-  { key: 'clB',   label: 'Clicks B',  num: true,  good: null },
-  { key: 'ctrA',  label: 'CTR A',     num: true,  good: null },
-  { key: 'ctrB',  label: 'CTR B',     num: true,  good: null },
-  { key: 'dctr',  label: '△ CTR',     num: true,  good: true  },
-  { key: 'costA', label: 'Cost A',    num: true,  good: null },
-  { key: 'costB', label: 'Cost B',    num: true,  good: null },
-  { key: 'cpcA',  label: 'CPC A',     num: true,  good: null },
-  { key: 'cpcB',  label: 'CPC B',     num: true,  good: null },
-  { key: 'dcpc',  label: '△ CPC',     num: true,  good: false },
-  { key: 'cvrA',  label: 'CVR A',     num: true,  good: null, cvr: true },
-  { key: 'cvrB',  label: 'CVR B',     num: true,  good: null, cvr: true },
-  { key: 'dcvr',  label: '△ CVR',     num: true,  good: true,  cvr: true },
-  { key: 'cacA',  label: 'CAC A',     num: true,  good: null },
-  { key: 'cacB',  label: 'CAC B',     num: true,  good: null },
-  { key: 'dcac',  label: '△ CAC',     num: true,  good: false },
+  { key: 'name',  label: 'Name',     num: false, good: null },
+  { key: 'impA',  label: 'Imp A',    num: true,  good: null },
+  { key: 'impB',  label: 'Imp B',    num: true,  good: null },
+  { key: 'clA',   label: 'Clicks A', num: true,  good: null },
+  { key: 'clB',   label: 'Clicks B', num: true,  good: null },
+  { key: 'ctrA',  label: 'CTR A',    num: true,  good: null },
+  { key: 'ctrB',  label: 'CTR B',    num: true,  good: null },
+  { key: 'dctr',  label: '△ CTR',    num: true,  good: true  },
+  { key: 'costA', label: 'Cost A',   num: true,  good: null },
+  { key: 'costB', label: 'Cost B',   num: true,  good: null },
+  { key: 'cpcA',  label: 'CPC A',    num: true,  good: null },
+  { key: 'cpcB',  label: 'CPC B',    num: true,  good: null },
+  { key: 'dcpc',  label: '△ CPC',    num: true,  good: false },
+  { key: 'cvrA',  label: 'CVR A',    num: true,  good: null, cvr: true },
+  { key: 'cvrB',  label: 'CVR B',    num: true,  good: null, cvr: true },
+  { key: 'dcvr',  label: '△ CVR',    num: true,  good: true,  cvr: true },
+  { key: 'cacA',  label: 'CAC A',    num: true,  good: null },
+  { key: 'cacB',  label: 'CAC B',    num: true,  good: null },
+  { key: 'dcac',  label: '△ CAC',    num: true,  good: false },
 ];
 
 function rowValue(row, key) {
@@ -650,59 +450,50 @@ function rowValue(row, key) {
   }
 }
 
-function cellHtml(row, col, isTest) {
+// Build one table data row from a list of raw data rows
+function buildRow(name, rawRows, displayName) {
+  const { pA_start, pA_end, pB_start, pB_end } = getPeriods();
+  const mA = getMetrics(rawRows, pA_start, pA_end);
+  const mB = getMetrics(rawRows, pB_start, pB_end);
+  return {
+    name: displayName || name,
+    impA: mA.imp,  impB: mB.imp,
+    clA:  mA.cl,   clB:  mB.cl,
+    ctrA: mA.ctr,  ctrB: mB.ctr,
+    costA: mA.cost, costB: mB.cost,
+    cpcA: mA.cpc,  cpcB: mB.cpc,
+    cvrA: mA.cvr,  cvrB: mB.cvr,
+    cacA: mA.cac,  cacB: mB.cac,
+  };
+}
+
+function cellHtml(row, col) {
   const key = col.key;
   const isCvr = col.cvr === true;
-
-  const cellClass = (col.num ? 'num' : (key === 'ag' ? 'ag-name' : '')) + (isCvr ? ' cvr-col' : '');
+  const cellClass = (col.num ? 'num' : (key === 'name' ? 'name-col' : '')) + (isCvr ? ' cvr-col' : '');
 
   let content = '';
   switch(key) {
-    case 'ag':
-      content = isTest ? `<span title="${row.ag}">${stripPrefix(row.ag)}</span>` : `<span title="${row.ag}">${row.ag}</span>`;
-      break;
-    case 'impA': case 'impB': case 'clA': case 'clB':
-      content = fmt(row[key]);
-      break;
-    case 'ctrA': case 'ctrB':
-      content = fmtPct(row[key]);
-      break;
-    case 'costA': case 'costB':
-      content = fmtDollar(row[key]);
-      break;
-    case 'cpcA': case 'cpcB':
-      content = fmtDollar(row[key]);
-      break;
-    case 'cvrA': case 'cvrB':
-      content = fmtPct(row[key]);
-      break;
-    case 'cacA': case 'cacB':
-      content = fmtDollar(row[key]);
-      break;
-    case 'dctr': case 'dcpc': case 'dcvr': case 'dcac': {
-      const delta = rowValue(row, key);
-      content = deltaHtml(delta, col.good);
-      break;
-    }
-    default:
-      content = row[key] !== null && row[key] !== undefined ? row[key] : '—';
+    case 'name':   content = `<span title="${row.name}">${row.name}</span>`; break;
+    case 'impA': case 'impB': case 'clA': case 'clB': content = fmt(row[key]); break;
+    case 'ctrA': case 'ctrB': case 'cvrA': case 'cvrB': content = fmtPct(row[key]); break;
+    case 'costA': case 'costB': case 'cpcA': case 'cpcB': case 'cacA': case 'cacB': content = fmtDollar(row[key]); break;
+    case 'dctr': case 'dcpc': case 'dcvr': case 'dcac': content = deltaHtml(rowValue(row, key), col.good); break;
+    default: content = row[key] !== null && row[key] !== undefined ? row[key] : '—';
   }
-
   return `<td class="${cellClass}">${content}</td>`;
 }
 
-function renderTable(containerId, tableData, summaryRow, tableId, isTest) {
+function renderTable(containerId, tableData, summaryRow, tableId) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  if (!tableData.length && (!summaryRow || (summaryRow.impA === 0 && summaryRow.impB === 0))) {
+  if (!tableData.length) {
     container.innerHTML = `<div class="no-data"><div>No data for the selected filters.</div></div>`;
     return;
   }
 
   const st = sortState[tableId];
-
-  // Sort data rows (not summary)
   let sorted = [...tableData];
   if (st.col !== null) {
     sorted.sort((a, b) => {
@@ -725,7 +516,7 @@ function renderTable(containerId, tableData, summaryRow, tableId, isTest) {
   const thead = `<thead><tr>${COL_DEFS.map(thHtml).join('')}</tr></thead>`;
 
   function trHtml(row, isSummary) {
-    const cells = COL_DEFS.map(col => cellHtml(row, col, isTest)).join('');
+    const cells = COL_DEFS.map(col => cellHtml(row, col)).join('');
     const cls = isSummary ? ' class="summary-row"' : '';
     return `<tr${cls}>${cells}</tr>`;
   }
@@ -740,68 +531,61 @@ function renderTable(containerId, tableData, summaryRow, tableId, isTest) {
 
 function sortTable(tableId, col) {
   const st = sortState[tableId];
-  if (st.col === col) {
-    st.dir = st.dir * -1;
-  } else {
-    st.col = col;
-    st.dir = 1;
-  }
+  if (st.col === col) { st.dir = st.dir * -1; } else { st.col = col; st.dir = 1; }
   if (tableId === 'test') renderTestTable();
   else renderControlTable();
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// TEST TABLE — ad group level
+// ─────────────────────────────────────────────────────────────────────────────
 function renderTestTable() {
-  const agSet = new Set();
-  LP_DATA.forEach(r => { if (isTest(r.ag)) agSet.add(r.ag); });
-  const agList = [...agSet].sort();
-
-  const rowsByAG = {};
-  LP_DATA.forEach(r => {
-    if (!isTest(r.ag)) return;
-    if (!rowsByAG[r.ag]) rowsByAG[r.ag] = [];
-    rowsByAG[r.ag].push(r);
+  // Group LP_TEST rows by ag
+  const byAG = {};
+  LP_TEST.forEach(r => {
+    if (!byAG[r.ag]) byAG[r.ag] = [];
+    byAG[r.ag].push(r);
   });
 
-  const allTestRows = LP_DATA.filter(r => isTest(r.ag));
-  const tableData = buildTableData(agList, rowsByAG);
-  const summary = buildSummaryRow(allTestRows);
+  const agList = Object.keys(byAG).sort();
+  const tableData = agList.map(ag =>
+    buildRow(ag, byAG[ag], stripPrefix(ag))
+  );
 
-  renderTable('testTableWrap', tableData, summary, 'test', true);
+  const summaryRow = buildRow('TOTAL', LP_TEST, 'TOTAL');
+
+  renderTable('testTableWrap', tableData, summaryRow, 'test');
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTROL TABLE — campaign level
+// ─────────────────────────────────────────────────────────────────────────────
 function renderControlTable() {
-  const selectedArr = [...selectedControlAGs];
-  const agSet = new Set();
-  LP_DATA.forEach(r => {
-    if (!isTest(r.ag) && selectedControlAGs.has(r.ag)) agSet.add(r.ag);
-  });
-  const agList = [...agSet].sort();
-
-  const rowsByAG = {};
-  LP_DATA.forEach(r => {
-    if (isTest(r.ag) || !selectedControlAGs.has(r.ag)) return;
-    if (!rowsByAG[r.ag]) rowsByAG[r.ag] = [];
-    rowsByAG[r.ag].push(r);
+  // Group LP_CONTROL rows by camp
+  const byCamp = {};
+  LP_CONTROL.forEach(r => {
+    if (!byCamp[r.camp]) byCamp[r.camp] = [];
+    byCamp[r.camp].push(r);
   });
 
-  const allControlRows = LP_DATA.filter(r => !isTest(r.ag) && selectedControlAGs.has(r.ag));
-  const tableData = buildTableData(agList, rowsByAG);
-  const summary = buildSummaryRow(allControlRows);
+  const campList = Object.keys(byCamp).sort();
+  const tableData = campList.map(camp =>
+    buildRow(camp, byCamp[camp])
+  );
 
-  renderTable('controlTableWrap', tableData, summary, 'control', false);
+  const summaryRow = buildRow('TOTAL', LP_CONTROL, 'TOTAL');
+
+  renderTable('controlTableWrap', tableData, summaryRow, 'control');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATE INPUTS
 // ─────────────────────────────────────────────────────────────────────────────
 function setupDateInputs() {
-  // Set Period B end to today
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  const todayStr = `${yyyy}-${mm}-${dd}`;
-  document.getElementById('pB_end').value = todayStr;
+  // Set Period B end to the latest date available in the data (excludes today)
+  const allDates = [...new Set([...LP_TEST.map(r => r.d), ...LP_CONTROL.map(r => r.d)])].sort();
+  const latestDate = allDates[allDates.length - 1] || '2026-04-20';
+  document.getElementById('pB_end').value = latestDate;
 
   ['pA_start','pA_end','pB_start','pB_end'].forEach(id => {
     document.getElementById(id).addEventListener('change', render);
@@ -812,19 +596,17 @@ function setupDateInputs() {
 // INIT
 // ─────────────────────────────────────────────────────────────────────────────
 function init() {
-  setupDateInputs();
-
   if (!isDataLoaded()) {
+    setupDateInputs();
     renderNoData();
     return;
   }
 
-  initControlDD();
+  setupDateInputs();
   buildLayout();
   render();
 }
 
-// Wait for DOM + data
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
