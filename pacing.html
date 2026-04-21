@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CookUnity — Pacing Dashboard</title>
+<script src="pacing-data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;font-size:13px}
+
+/* ── HEADER ─────────────────────────────────────────────────────────────── */
+header{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 28px;display:flex;align-items:center;gap:12px}
+.logo{width:36px;height:36px;background:#f5a623;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:12px;flex-shrink:0}
+.ht h1{font-size:16px;font-weight:700;color:#0f172a}
+.ht p{font-size:11px;color:#94a3b8;margin-top:1px}
+
+/* ── FILTER BAR ─────────────────────────────────────────────────────────── */
+.controls{background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 28px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.ctrl-group{display:flex;align-items:center;gap:8px}
+.ctrl-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.ctrl-sep{width:1px;height:24px;background:#e2e8f0;flex-shrink:0}
+
+/* ── DROPDOWNS ──────────────────────────────────────────────────────────── */
+.dd-wrap{position:relative}
+.dd-btn{background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;min-width:120px;justify-content:space-between;color:#334155;white-space:nowrap;height:28px}
+.dd-btn:hover{border-color:#94a3b8}
+.dd-btn.active{border-color:#f5a623;color:#f5a623}
+.dd-panel{position:absolute;top:calc(100%+4px);left:0;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:300;min-width:220px;display:none;flex-direction:column}
+.dd-panel.open{display:flex}
+.dd-search{border:none;border-bottom:1px solid #e2e8f0;padding:8px 12px;font-size:12px;outline:none;border-radius:8px 8px 0 0;width:100%}
+.dd-list{max-height:200px;overflow-y:auto;padding:4px 0}
+.dd-item{padding:6px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#334155;user-select:none}
+.dd-item:hover{background:#f8fafc}
+.dd-item input[type=checkbox]{width:13px;height:13px;accent-color:#f5a623;cursor:pointer;flex-shrink:0}
+.dd-item.hidden{display:none}
+.dd-actions{border-top:1px solid #e2e8f0;padding:6px 12px;display:flex;gap:8px}
+.dd-act-btn{font-size:11px;color:#f5a623;cursor:pointer;background:none;border:none;padding:0;font-weight:600}
+.dd-act-btn:hover{color:#d97706}
+
+/* ── DUAL RANGE SLIDER ──────────────────────────────────────────────────── */
+.rs-wrap{position:relative;width:140px;height:20px}
+.rs-track{position:absolute;top:50%;transform:translateY(-50%);left:0;right:0;height:4px;background:#e2e8f0;border-radius:2px}
+.rs-fill{position:absolute;top:50%;transform:translateY(-50%);height:4px;background:#f5a623;border-radius:2px}
+.rs-wrap input[type=range]{position:absolute;width:100%;height:100%;background:none;pointer-events:none;-webkit-appearance:none;appearance:none;outline:none}
+.rs-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#f5a623;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25);pointer-events:all;cursor:pointer}
+.rs-wrap input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#f5a623;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25);pointer-events:all;cursor:pointer;border:none}
+.rs-label{font-size:11px;color:#64748b;min-width:52px;text-align:center}
+
+/* ── MAIN ───────────────────────────────────────────────────────────────── */
+.main{padding:20px 28px;display:flex;flex-direction:column;gap:20px}
+.legend{display:flex;gap:20px;align-items:center}
+.leg-item{display:flex;align-items:center;gap:7px;font-size:11px;color:#64748b}
+.leg-line{width:24px;height:3px;border-radius:2px}
+.leg-today{background:#f5a623}
+.leg-hist{background:#94a3b8}
+.leg-hist-dashed{background:repeating-linear-gradient(90deg,#94a3b8 0 4px,transparent 4px 8px)}
+
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.chart-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px 24px}
+.chart-title{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px}
+.chart-sub{font-size:11px;color:#94a3b8;margin-bottom:16px}
+canvas{max-height:260px}
+
+.no-data{padding:60px 40px;text-align:center;color:#94a3b8}
+.no-data h2{font-size:16px;color:#334155;margin-bottom:8px}
+.no-data p{font-size:12px;line-height:1.7}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CU</div>
+  <div class="ht">
+    <h1>Pacing Dashboard</h1>
+    <p id="lbl-updated">Loading...</p>
+  </div>
+</header>
+
+<div class="controls">
+
+  <!-- Week -->
+  <div class="ctrl-group">
+    <span class="ctrl-label">Week</span>
+    <div class="dd-wrap" id="dd-week">
+      <button class="dd-btn" onclick="toggleDD('dd-week')">
+        <span class="dd-lbl">All</span><span>▾</span>
+      </button>
+      <div class="dd-panel">
+        <input class="dd-search" placeholder="Search…" oninput="filterDDSearch(this)">
+        <div class="dd-list" id="list-week"></div>
+        <div class="dd-actions">
+          <button class="dd-act-btn" onclick="ddAll('dd-week','weeks')">All</button>
+          <button class="dd-act-btn" onclick="ddClear('dd-week','weeks')">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day of week -->
+  <div class="ctrl-group">
+    <span class="ctrl-label">Day of week</span>
+    <div class="dd-wrap" id="dd-dow">
+      <button class="dd-btn" onclick="toggleDD('dd-dow')">
+        <span class="dd-lbl">Today's</span><span>▾</span>
+      </button>
+      <div class="dd-panel">
+        <div class="dd-list" id="list-dow"></div>
+        <div class="dd-actions">
+          <button class="dd-act-btn" onclick="ddAll('dd-dow','dows')">All</button>
+          <button class="dd-act-btn" onclick="ddClear('dd-dow','dows')">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hour of day -->
+  <div class="ctrl-group">
+    <span class="ctrl-label">Hour of day</span>
+    <div class="rs-wrap" id="rs-hour">
+      <div class="rs-track"></div>
+      <div class="rs-fill" id="rs-fill"></div>
+      <input type="range" id="sl-min" min="0" max="23" value="0">
+      <input type="range" id="sl-max" min="0" max="23" value="23">
+    </div>
+    <span class="rs-label" id="rs-lbl">0 – 23</span>
+  </div>
+
+  <div class="ctrl-sep"></div>
+
+  <!-- Channel -->
+  <div class="ctrl-group">
+    <span class="ctrl-label">Channel</span>
+    <div class="dd-wrap" id="dd-channel">
+      <button class="dd-btn" onclick="toggleDD('dd-channel')">
+        <span class="dd-lbl">All</span><span>▾</span>
+      </button>
+      <div class="dd-panel">
+        <div class="dd-list" id="list-channel"></div>
+        <div class="dd-actions">
+          <button class="dd-act-btn" onclick="ddAll('dd-channel','channels')">All</button>
+          <button class="dd-act-btn" onclick="ddClear('dd-channel','channels')">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Campaign -->
+  <div class="ctrl-group">
+    <span class="ctrl-label">Campaign</span>
+    <div class="dd-wrap" id="dd-camp">
+      <button class="dd-btn" onclick="toggleDD('dd-camp')">
+        <span class="dd-lbl">All</span><span>▾</span>
+      </button>
+      <div class="dd-panel">
+        <input class="dd-search" placeholder="Search…" oninput="filterDDSearch(this)">
+        <div class="dd-list" id="list-camp"></div>
+        <div class="dd-actions">
+          <button class="dd-act-btn" onclick="ddAll('dd-camp','camps')">All</button>
+          <button class="dd-act-btn" onclick="ddClear('dd-camp','camps')">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ad Group -->
+  <div class="ctrl-group">
+    <span class="ctrl-label">Ad Group</span>
+    <div class="dd-wrap" id="dd-ag">
+      <button class="dd-btn" onclick="toggleDD('dd-ag')">
+        <span class="dd-lbl">All</span><span>▾</span>
+      </button>
+      <div class="dd-panel">
+        <input class="dd-search" placeholder="Search…" oninput="filterDDSearch(this)">
+        <div class="dd-list" id="list-ag"></div>
+        <div class="dd-actions">
+          <button class="dd-act-btn" onclick="ddAll('dd-ag','ags')">All</button>
+          <button class="dd-act-btn" onclick="ddClear('dd-ag','ags')">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /controls -->
+
+<div class="main">
+  <div class="legend">
+    <div class="leg-item"><div class="leg-line leg-today"></div> Today</div>
+    <div class="leg-item"><div class="leg-line leg-hist-dashed"></div> Historical avg (filtered weeks &amp; days)</div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Cost</div>
+      <div class="chart-sub">Spend per hour ($) — today vs historical avg</div>
+      <canvas id="cCost"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">CPC</div>
+      <div class="chart-sub">Cost per click per hour ($) — today vs historical avg</div>
+      <canvas id="cCPC"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">CTR</div>
+      <div class="chart-sub">Click-through rate per hour (%) — today vs historical avg</div>
+      <canvas id="cCTR"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">CVR</div>
+      <div class="chart-sub">Conversion rate per hour (%) — today vs historical avg</div>
+      <canvas id="cCVR"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── GUARD ────────────────────────────────────────────────────────────────────
+if (typeof PACING_DATA === 'undefined') {
+  document.querySelector('.main').innerHTML =
+    '<div class="no-data"><h2>No data loaded</h2>' +
+    '<p>pacing-data.js was not found.<br>Run the Google Ads Script first, then push pacing-data.js to the repo.</p></div>';
+  throw new Error('pacing-data.js missing');
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth()+1).padStart(2,'0') + '-' +
+    String(d.getDate()).padStart(2,'0');
+}
+function isoWeek(dateStr) {
+  var d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + 3 - (d.getDay()+6)%7);
+  var w1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d - w1)/86400000 - 3 + (w1.getDay()+6)%7)/7);
+}
+function dowOf(dateStr)  { return new Date(dateStr + 'T12:00:00').getDay(); }
+function weekLabel(dateStr) { return 'W' + String(isoWeek(dateStr)).padStart(2,'0'); }
+var DOW_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+var TODAY = todayStr();
+var TODAY_DOW = dowOf(TODAY);
+
+var state = {
+  weeks:    null,                  // null = all
+  dows:     new Set([TODAY_DOW]),  // default: today's day-of-week only
+  hrMin:    0,
+  hrMax:    23,
+  channels: null,
+  camps:    null,
+  ags:      null
+};
+
+// ── EXTRACT UNIQUE DIMENSION VALUES ─────────────────────────────────────────
+var weekSet = new Set(), chanSet = new Set(), campSet = new Set(), agMap = {};
+PACING_DATA.forEach(function(r) {
+  if (r[0] !== TODAY) weekSet.add(weekLabel(r[0]));
+  chanSet.add(r[2]);
+  campSet.add(r[3]);
+  if (!agMap[r[3]]) agMap[r[3]] = new Set();
+  agMap[r[3]].add(r[4]);
+});
+var allWeeks    = Array.from(weekSet).sort();
+var allChannels = Array.from(chanSet).sort();
+var allCamps    = Array.from(campSet).sort();
+
+// ── BUILD DROPDOWNS ──────────────────────────────────────────────────────────
+function buildCheckList(listId, items, defaultChecked, onChange) {
+  var el = document.getElementById(listId);
+  items.forEach(function(val) {
+    var div = document.createElement('div');
+    div.className = 'dd-item';
+    div.dataset.val = val;
+    div.innerHTML = '<input type="checkbox"' + (defaultChecked ? ' checked' : '') + '>' +
+                    '<span>' + val + '</span>';
+    div.querySelector('input').addEventListener('change', onChange);
+    el.appendChild(div);
+  });
+}
+
+function getChecked(listId) {
+  var items = document.querySelectorAll('#' + listId + ' .dd-item:not(.hidden)');
+  // use all items (not just visible) for state
+  var all   = document.querySelectorAll('#' + listId + ' .dd-item');
+  var checked = Array.from(all).filter(function(i){ return i.querySelector('input').checked; })
+                               .map(function(i){ return i.dataset.val; });
+  return checked.length === 0 || checked.length === all.length ? null : new Set(checked);
+}
+
+function syncLabel(ddId, stateVal, defaultLabel) {
+  var lbl = document.querySelector('#' + ddId + ' .dd-lbl');
+  var btn = document.querySelector('#' + ddId + ' .dd-btn');
+  if (!stateVal) { lbl.textContent = defaultLabel; btn.classList.remove('active'); return; }
+  var n = stateVal.size !== undefined ? stateVal.size : stateVal.length;
+  lbl.textContent = n === 1 ? Array.from(stateVal)[0].toString().slice(0,18) : '(' + n + ') selected';
+  btn.classList.add('active');
+}
+
+// Week
+buildCheckList('list-week', allWeeks, true, function() {
+  state.weeks = getChecked('list-week');
+  syncLabel('dd-week', state.weeks, 'All');
+  render();
+});
+
+// DOW
+DOW_LABELS.forEach(function(label, i) {
+  var el = document.getElementById('list-dow');
+  var div = document.createElement('div');
+  div.className = 'dd-item';
+  div.dataset.val = i;
+  div.innerHTML = '<input type="checkbox"' + (i === TODAY_DOW ? ' checked' : '') + '>' +
+                  '<span>' + label + '</span>';
+  div.querySelector('input').addEventListener('change', function() {
+    var checked = Array.from(document.querySelectorAll('#list-dow .dd-item input:checked'))
+                       .map(function(cb){ return parseInt(cb.closest('.dd-item').dataset.val); });
+    state.dows = checked.length === 0 || checked.length === 7 ? null : new Set(checked);
+    syncLabel('dd-dow', state.dows ? new Set(checked.map(function(i){ return DOW_LABELS[i]; })) : null, 'All days');
+    render();
+  });
+  el.appendChild(div);
+});
+// Show today's day label initially
+syncLabel('dd-dow', new Set([DOW_LABELS[TODAY_DOW]]), 'All days');
+
+// Channel
+buildCheckList('list-channel', allChannels, true, function() {
+  state.channels = getChecked('list-channel');
+  syncLabel('dd-channel', state.channels, 'All');
+  render();
+});
+
+// Campaign
+buildCheckList('list-camp', allCamps, true, function() {
+  state.camps = getChecked('list-camp');
+  syncLabel('dd-camp', state.camps, 'All');
+  rebuildAGList();
+  render();
+});
+
+// Ad Group (cascades from campaign)
+function rebuildAGList() {
+  var el = document.getElementById('list-ag');
+  el.innerHTML = '';
+  var visibleCamps = state.camps ? Array.from(state.camps) : allCamps;
+  visibleCamps.forEach(function(camp) {
+    if (!agMap[camp]) return;
+    Array.from(agMap[camp]).sort().forEach(function(ag) {
+      var div = document.createElement('div');
+      div.className = 'dd-item';
+      div.dataset.val = ag;
+      div.innerHTML = '<input type="checkbox" checked><span>' + ag + '</span>';
+      div.querySelector('input').addEventListener('change', function() {
+        state.ags = getChecked('list-ag');
+        syncLabel('dd-ag', state.ags, 'All');
+        render();
+      });
+      el.appendChild(div);
+    });
+  });
+  state.ags = null;
+  syncLabel('dd-ag', null, 'All');
+}
+rebuildAGList();
+
+// ── DROPDOWN TOGGLE / SEARCH / ALL / CLEAR ───────────────────────────────────
+function toggleDD(id) {
+  var panel = document.querySelector('#' + id + ' .dd-panel');
+  var wasOpen = panel.classList.contains('open');
+  document.querySelectorAll('.dd-panel.open').forEach(function(p){ p.classList.remove('open'); });
+  if (!wasOpen) panel.classList.add('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.dd-wrap')) {
+    document.querySelectorAll('.dd-panel.open').forEach(function(p){ p.classList.remove('open'); });
+  }
+});
+function filterDDSearch(input) {
+  var q = input.value.toLowerCase();
+  input.closest('.dd-panel').querySelectorAll('.dd-item').forEach(function(item) {
+    item.classList.toggle('hidden', q && !item.dataset.val.toLowerCase().includes(q));
+  });
+}
+
+var DD_STATE_KEYS = {'dd-week':'weeks','dd-dow':'dows','dd-channel':'channels','dd-camp':'camps','dd-ag':'ags'};
+var DD_LABELS     = {'dd-week':'All','dd-dow':'All days','dd-channel':'All','dd-camp':'All','dd-ag':'All'};
+
+function ddAll(ddId, key) {
+  document.querySelectorAll('#' + ddId + ' .dd-item input').forEach(function(cb){ cb.checked = true; });
+  state[key] = null;
+  syncLabel(ddId, null, DD_LABELS[ddId]);
+  render();
+}
+function ddClear(ddId, key) {
+  document.querySelectorAll('#' + ddId + ' .dd-item input').forEach(function(cb){ cb.checked = false; });
+  state[key] = null; // empty = treat as all
+  syncLabel(ddId, null, DD_LABELS[ddId]);
+  render();
+}
+
+// ── DUAL RANGE SLIDER ────────────────────────────────────────────────────────
+(function() {
+  var slMin = document.getElementById('sl-min');
+  var slMax = document.getElementById('sl-max');
+  var fill  = document.getElementById('rs-fill');
+  var lbl   = document.getElementById('rs-lbl');
+
+  function update(e) {
+    var mn = parseInt(slMin.value);
+    var mx = parseInt(slMax.value);
+    if (mn > mx) {
+      if (e && e.target === slMin) { slMin.value = mx; mn = mx; }
+      else                         { slMax.value = mn; mx = mn; }
+    }
+    fill.style.left  = (mn/23*100) + '%';
+    fill.style.width = ((mx-mn)/23*100) + '%';
+    lbl.textContent  = mn + ' – ' + mx;
+    state.hrMin = mn;
+    state.hrMax = mx;
+    render();
+  }
+  slMin.addEventListener('input', update);
+  slMax.addEventListener('input', update);
+  update(null);
+})();
+
+// ── DATA PROCESSING ──────────────────────────────────────────────────────────
+function passes(r) {
+  if (state.channels && !state.channels.has(r[2])) return false;
+  if (state.camps    && !state.camps.has(r[3]))    return false;
+  if (state.ags      && !state.ags.has(r[4]))      return false;
+  return true;
+}
+
+function computeHourly() {
+  // todayAgg: hour -> {sp, imp, cl, cv}
+  // histAgg:  hour -> {dateStr -> {sp, imp, cl, cv}}
+  var todayAgg = {}, histAgg = {};
+
+  PACING_DATA.forEach(function(r) {
+    var date = r[0], hour = r[1];
+    if (hour < state.hrMin || hour > state.hrMax) return;
+    if (!passes(r)) return;
+
+    if (date === TODAY) {
+      if (!todayAgg[hour]) todayAgg[hour] = {sp:0,imp:0,cl:0,cv:0};
+      todayAgg[hour].sp  += +r[5];
+      todayAgg[hour].imp += +r[6];
+      todayAgg[hour].cl  += +r[7];
+      todayAgg[hour].cv  += +r[8];
+    } else {
+      var wk  = weekLabel(date);
+      var dow = dowOf(date);
+      if (state.weeks && !state.weeks.has(wk))   return;
+      if (state.dows  && !state.dows.has(dow))    return;
+      if (!histAgg[hour]) histAgg[hour] = {};
+      if (!histAgg[hour][date]) histAgg[hour][date] = {sp:0,imp:0,cl:0,cv:0};
+      histAgg[hour][date].sp  += +r[5];
+      histAgg[hour][date].imp += +r[6];
+      histAgg[hour][date].cl  += +r[7];
+      histAgg[hour][date].cv  += +r[8];
+    }
+  });
+
+  var hours = [];
+  for (var h = state.hrMin; h <= state.hrMax; h++) hours.push(h);
+
+  function metrics(a) {
+    if (!a) return null;
+    return {
+      cost: a.sp,
+      cpc:  a.cl  > 0 ? a.sp / a.cl  : null,
+      ctr:  a.imp > 0 ? a.cl / a.imp  : null,
+      cvr:  a.cl  > 0 ? a.cv / a.cl   : null
+    };
+  }
+
+  var todayM = hours.map(function(h) {
+    return metrics(todayAgg[h] && todayAgg[h].sp > 0 ? todayAgg[h] : null);
+  });
+
+  var histM = hours.map(function(h) {
+    var dates = histAgg[h] ? Object.values(histAgg[h]) : [];
+    if (dates.length === 0) return null;
+    var n = dates.length;
+    return metrics({
+      sp:  dates.reduce(function(s,d){ return s+d.sp;  },0)/n,
+      imp: dates.reduce(function(s,d){ return s+d.imp; },0)/n,
+      cl:  dates.reduce(function(s,d){ return s+d.cl;  },0)/n,
+      cv:  dates.reduce(function(s,d){ return s+d.cv;  },0)/n
+    });
+  });
+
+  return { hours: hours, today: todayM, hist: histM };
+}
+
+// ── CHARTS ───────────────────────────────────────────────────────────────────
+var CHARTS = {};
+
+function makeDataset(label, color, dashed) {
+  return {
+    label: label,
+    data: [],
+    borderColor: color,
+    backgroundColor: color.replace(')', ',.08)').replace('rgb','rgba'),
+    borderWidth: dashed ? 1.5 : 2.5,
+    borderDash: dashed ? [5,4] : [],
+    pointRadius: dashed ? 2 : 3,
+    pointHoverRadius: dashed ? 3 : 5,
+    tension: 0.3,
+    spanGaps: false,
+    fill: false
+  };
+}
+
+var CHART_CONFIGS = [
+  { id:'cCost', key:'cost', label:'Cost ($)',  fmt:function(v){ return '$'+v.toFixed(0); } },
+  { id:'cCPC',  key:'cpc',  label:'CPC ($)',   fmt:function(v){ return '$'+v.toFixed(2); } },
+  { id:'cCTR',  key:'ctr',  label:'CTR (%)',   fmt:function(v){ return (v*100).toFixed(2)+'%'; } },
+  { id:'cCVR',  key:'cvr',  label:'CVR (%)',   fmt:function(v){ return (v*100).toFixed(2)+'%'; } }
+];
+
+CHART_CONFIGS.forEach(function(cfg) {
+  var ctx = document.getElementById(cfg.id).getContext('2d');
+  CHARTS[cfg.id] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        makeDataset('Today',         '#f5a623', false),
+        makeDataset('Historical Avg','#94a3b8', true)
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              var v = ctx.raw;
+              return ctx.dataset.label + ': ' + (v !== null ? cfg.fmt(v) : '—');
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color:'#f1f5f9' },
+          ticks: { font:{size:11}, color:'#94a3b8' }
+        },
+        y: {
+          grid: { color:'#f1f5f9' },
+          ticks: {
+            font:{size:11}, color:'#94a3b8',
+            callback: function(v) { return cfg.fmt(v); }
+          }
+        }
+      }
+    }
+  });
+});
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+  var result = computeHourly();
+  var labels = result.hours.map(function(h){ return h + ':00'; });
+
+  CHART_CONFIGS.forEach(function(cfg) {
+    var todayVals = result.today.map(function(m){ return m ? m[cfg.key] : null; });
+    var histVals  = result.hist.map(function(m){ return m ? m[cfg.key] : null; });
+    var chart = CHARTS[cfg.id];
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = todayVals;
+    chart.data.datasets[1].data = histVals;
+    chart.update('none');
+  });
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById('lbl-updated').textContent =
+  typeof PACING_UPDATED !== 'undefined'
+    ? 'Last updated: ' + PACING_UPDATED + ' · Pacing Dashboard'
+    : 'Pacing Dashboard';
+
+render();
+</script>
+</body>
+</html>
