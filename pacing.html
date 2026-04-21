@@ -448,10 +448,31 @@ function cumulative(hourlyArr) {
   });
 }
 
+function avgCumulative(dateAgg, dates, hours) {
+  // For each hour, sum raw values across dates then divide by n, then run cumulative
+  var n = dates.length;
+  if (n === 0) return hours.map(function(){ return null; });
+  var raw = hours.map(function(h) {
+    var totals = {sp:0,imp:0,cl:0,cv:0}, found = false;
+    dates.forEach(function(d) {
+      if (dateAgg[d] && dateAgg[d][h]) {
+        totals.sp  += dateAgg[d][h].sp;
+        totals.imp += dateAgg[d][h].imp;
+        totals.cl  += dateAgg[d][h].cl;
+        totals.cv  += dateAgg[d][h].cv;
+        found = true;
+      }
+    });
+    if (!found) return null;
+    return { sp:totals.sp/n, imp:totals.imp/n, cl:totals.cl/n, cv:totals.cv/n };
+  });
+  return cumulative(raw);
+}
+
 function computeHourly() {
   var todayAgg = {};
-  // histAgg: dateStr -> hour -> {sp,imp,cl,cv}
-  var histAgg  = {};
+  // dateAgg: dateStr -> hour -> {sp,imp,cl,cv}  (all hist, no DOW/week filter here)
+  var dateAgg  = {};
 
   PACING_DATA.forEach(function(r) {
     var date = r[0], hour = +r[1];
@@ -465,16 +486,12 @@ function computeHourly() {
       todayAgg[hour].cl  += +r[7];
       todayAgg[hour].cv  += +r[8];
     } else {
-      var wk  = weekLabel(date);
-      var dow = dowOf(date);
-      if (state.weeks && !state.weeks.has(wk))  return;
-      if (state.dows  && !state.dows.has(dow))  return;
-      if (!histAgg[date]) histAgg[date] = {};
-      if (!histAgg[date][hour]) histAgg[date][hour] = {sp:0,imp:0,cl:0,cv:0};
-      histAgg[date][hour].sp  += +r[5];
-      histAgg[date][hour].imp += +r[6];
-      histAgg[date][hour].cl  += +r[7];
-      histAgg[date][hour].cv  += +r[8];
+      if (!dateAgg[date]) dateAgg[date] = {};
+      if (!dateAgg[date][hour]) dateAgg[date][hour] = {sp:0,imp:0,cl:0,cv:0};
+      dateAgg[date][hour].sp  += +r[5];
+      dateAgg[date][hour].imp += +r[6];
+      dateAgg[date][hour].cl  += +r[7];
+      dateAgg[date][hour].cv  += +r[8];
     }
   });
 
@@ -485,30 +502,41 @@ function computeHourly() {
   var todayRaw = hours.map(function(h) { return todayAgg[h] || null; });
   var todayM   = cumulative(todayRaw);
 
-  // Historical — up to 4 most recent dates, cumulative each
-  var histDates = Object.keys(histAgg).sort().reverse().slice(0, 4);
-  var histLines = histDates.map(function(date) {
-    var raw = hours.map(function(h) { return histAgg[date][h] || null; });
-    return { date: date, data: cumulative(raw) };
+  // All historical dates sorted descending
+  var allDates = Object.keys(dateAgg).sort().reverse();
+
+  // Line 1: last 4 occurrences of today's DOW
+  var dowDates = allDates.filter(function(d){ return dowOf(d) === TODAY_DOW; }).slice(0,4);
+
+  // Line 2: last 4 full weeks — all dates in the 28 days before today
+  var cutoff = new Date(new Date(TODAY+'T12:00:00').getTime() - 28*24*60*60*1000);
+  var weekDates = allDates.filter(function(d){
+    return new Date(d+'T12:00:00') >= cutoff;
   });
 
-  return { hours: hours, today: todayM, histLines: histLines };
+  return {
+    hours:    hours,
+    today:    todayM,
+    dowAvg:   avgCumulative(dateAgg, dowDates, hours),
+    weekAvg:  avgCumulative(dateAgg, weekDates, hours),
+    dowLabel: 'Avg last 4 ' + DOW_LABELS[TODAY_DOW] + 's (' + dowDates.length + ')',
+    weekLabel:'Avg last 4 weeks'
+  };
 }
 
 // ── CHARTS ───────────────────────────────────────────────────────────────────
 var CHARTS = {};
-var HIST_COLORS = ['#64748b','#94a3b8','#b0bec5','#cfd8dc']; // most recent → lightest
 
-function makeDataset(label, color, dashed, width) {
+function makeDataset(label, color, dash) {
   return {
     label: label,
     data: [],
     borderColor: color,
     backgroundColor: 'transparent',
-    borderWidth: width || (dashed ? 1.5 : 2.5),
-    borderDash: dashed ? [5,4] : [],
-    pointRadius: dashed ? 2 : 3,
-    pointHoverRadius: dashed ? 3 : 5,
+    borderWidth: dash ? 1.5 : 2.5,
+    borderDash: dash || [],
+    pointRadius: dash.length ? 2 : 3,
+    pointHoverRadius: dash.length ? 3 : 5,
     tension: 0.3,
     spanGaps: false,
     fill: false
@@ -516,23 +544,25 @@ function makeDataset(label, color, dashed, width) {
 }
 
 var CHART_CONFIGS = [
-  { id:'cCost', key:'cost', label:'Cost ($)',  fmt:function(v){ return '$'+v.toFixed(0); } },
-  { id:'cCPC',  key:'cpc',  label:'CPC ($)',   fmt:function(v){ return '$'+v.toFixed(2); } },
-  { id:'cCTR',  key:'ctr',  label:'CTR (%)',   fmt:function(v){ return (v*100).toFixed(2)+'%'; } },
-  { id:'cCVR',  key:'cvr',  label:'CVR (%)',   fmt:function(v){ return (v*100).toFixed(2)+'%'; } }
+  { id:'cCost', key:'cost', fmt:function(v){ return '$'+v.toFixed(0); } },
+  { id:'cCPC',  key:'cpc',  fmt:function(v){ return '$'+v.toFixed(2); } },
+  { id:'cCTR',  key:'ctr',  fmt:function(v){ return (v*100).toFixed(2)+'%'; } },
+  { id:'cCVR',  key:'cvr',  fmt:function(v){ return (v*100).toFixed(2)+'%'; } }
 ];
 
 CHART_CONFIGS.forEach(function(cfg) {
   var ctx = document.getElementById(cfg.id).getContext('2d');
-  // 1 today + 4 hist slots
-  var datasets = [ makeDataset('Today', '#f5a623', false) ];
-  for (var i = 0; i < 4; i++) {
-    datasets.push(makeDataset('', HIST_COLORS[i], true));
-  }
   var fmtRef = cfg.fmt;
   CHARTS[cfg.id] = new Chart(ctx, {
     type: 'line',
-    data: { labels: [], datasets: datasets },
+    data: {
+      labels: [],
+      datasets: [
+        makeDataset('Today',            '#f5a623', []),
+        makeDataset('Avg same DOW',     '#3b82f6', [5,4]),
+        makeDataset('Avg last 4 weeks', '#94a3b8', [3,3])
+      ]
+    },
     options: {
       responsive: true,
       maintainAspectRatio: true,
@@ -557,37 +587,29 @@ CHART_CONFIGS.forEach(function(cfg) {
 });
 
 // ── LEGEND ───────────────────────────────────────────────────────────────────
-function buildLegend(histLines) {
-  var el = document.getElementById('legend');
-  el.innerHTML = '<div class="leg-item"><div class="leg-line leg-today"></div> Today</div>';
-  histLines.forEach(function(hl, i) {
-    var color = HIST_COLORS[i];
-    el.innerHTML +=
-      '<div class="leg-item">' +
-      '<div class="leg-line" style="background:repeating-linear-gradient(90deg,' + color + ' 0 4px,transparent 4px 8px)"></div>' +
-      ' ' + hl.date + '</div>';
-  });
+function buildLegend(dowLabel, weekLabel) {
+  document.getElementById('legend').innerHTML =
+    '<div class="leg-item"><div class="leg-line leg-today"></div> Today</div>' +
+    '<div class="leg-item"><div class="leg-line" style="background:repeating-linear-gradient(90deg,#3b82f6 0 5px,transparent 5px 9px);height:2px"></div> ' + dowLabel + '</div>' +
+    '<div class="leg-item"><div class="leg-line" style="background:repeating-linear-gradient(90deg,#94a3b8 0 3px,transparent 3px 6px);height:2px"></div> ' + weekLabel + '</div>';
 }
 
 // ── RENDER ───────────────────────────────────────────────────────────────────
 function render() {
   if (typeof CHARTS === 'undefined' || Object.keys(CHARTS).length === 0) return;
   var result = computeHourly();
-  var labels  = result.hours.map(function(h){ return h + ':00'; });
+  var labels = result.hours.map(function(h){ return h + ':00'; });
 
-  buildLegend(result.histLines);
+  buildLegend(result.dowLabel, result.weekLabel);
 
   CHART_CONFIGS.forEach(function(cfg) {
-    var chart    = CHARTS[cfg.id];
+    var chart = CHARTS[cfg.id];
     chart.data.labels = labels;
-    // Today
     chart.data.datasets[0].data = result.today.map(function(m){ return m ? m[cfg.key] : null; });
-    // Historical lines (slots 1-4)
-    for (var i = 0; i < 4; i++) {
-      var hl = result.histLines[i];
-      chart.data.datasets[i+1].label = hl ? hl.date : '';
-      chart.data.datasets[i+1].data  = hl ? hl.data.map(function(m){ return m ? m[cfg.key] : null; }) : [];
-    }
+    chart.data.datasets[1].label = result.dowLabel;
+    chart.data.datasets[1].data  = result.dowAvg.map(function(m){ return m ? m[cfg.key] : null; });
+    chart.data.datasets[2].label = result.weekLabel;
+    chart.data.datasets[2].data  = result.weekAvg.map(function(m){ return m ? m[cfg.key] : null; });
     chart.update('none');
   });
 }
