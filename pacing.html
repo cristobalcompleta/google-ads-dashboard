@@ -184,10 +184,7 @@ canvas{max-height:260px}
 </div><!-- /controls -->
 
 <div class="main">
-  <div class="legend">
-    <div class="leg-item"><div class="leg-line leg-today"></div> Today</div>
-    <div class="leg-item"><div class="leg-line leg-hist-dashed"></div> Historical avg (filtered weeks &amp; days)</div>
-  </div>
+  <div class="legend" id="legend"></div>
   <div class="charts-grid">
     <div class="chart-card">
       <div class="chart-title">Cost</div>
@@ -433,13 +430,31 @@ function passes(r) {
   return true;
 }
 
+// Cumulative running sum of raw values per hour, then derive metrics from totals
+function cumulative(hourlyArr) {
+  var run = {sp:0,imp:0,cl:0,cv:0};
+  return hourlyArr.map(function(a) {
+    if (!a) return null;
+    run.sp  += a.sp;
+    run.imp += a.imp;
+    run.cl  += a.cl;
+    run.cv  += a.cv;
+    return {
+      cost: run.sp,
+      cpc:  run.cl  > 0 ? run.sp / run.cl  : null,
+      ctr:  run.imp > 0 ? run.cl / run.imp  : null,
+      cvr:  run.cl  > 0 ? run.cv / run.cl   : null
+    };
+  });
+}
+
 function computeHourly() {
-  // todayAgg: hour -> {sp, imp, cl, cv}
-  // histAgg:  hour -> {dateStr -> {sp, imp, cl, cv}}
-  var todayAgg = {}, histAgg = {};
+  var todayAgg = {};
+  // histAgg: dateStr -> hour -> {sp,imp,cl,cv}
+  var histAgg  = {};
 
   PACING_DATA.forEach(function(r) {
-    var date = r[0], hour = r[1];
+    var date = r[0], hour = +r[1];
     if (hour < state.hrMin || hour > state.hrMax) return;
     if (!passes(r)) return;
 
@@ -452,59 +467,45 @@ function computeHourly() {
     } else {
       var wk  = weekLabel(date);
       var dow = dowOf(date);
-      if (state.weeks && !state.weeks.has(wk))   return;
-      if (state.dows  && !state.dows.has(dow))    return;
-      if (!histAgg[hour]) histAgg[hour] = {};
-      if (!histAgg[hour][date]) histAgg[hour][date] = {sp:0,imp:0,cl:0,cv:0};
-      histAgg[hour][date].sp  += +r[5];
-      histAgg[hour][date].imp += +r[6];
-      histAgg[hour][date].cl  += +r[7];
-      histAgg[hour][date].cv  += +r[8];
+      if (state.weeks && !state.weeks.has(wk))  return;
+      if (state.dows  && !state.dows.has(dow))  return;
+      if (!histAgg[date]) histAgg[date] = {};
+      if (!histAgg[date][hour]) histAgg[date][hour] = {sp:0,imp:0,cl:0,cv:0};
+      histAgg[date][hour].sp  += +r[5];
+      histAgg[date][hour].imp += +r[6];
+      histAgg[date][hour].cl  += +r[7];
+      histAgg[date][hour].cv  += +r[8];
     }
   });
 
   var hours = [];
   for (var h = state.hrMin; h <= state.hrMax; h++) hours.push(h);
 
-  function metrics(a) {
-    if (!a) return null;
-    return {
-      cost: a.sp,
-      cpc:  a.cl  > 0 ? a.sp / a.cl  : null,
-      ctr:  a.imp > 0 ? a.cl / a.imp  : null,
-      cvr:  a.cl  > 0 ? a.cv / a.cl   : null
-    };
-  }
+  // Today — cumulative
+  var todayRaw = hours.map(function(h) { return todayAgg[h] || null; });
+  var todayM   = cumulative(todayRaw);
 
-  var todayM = hours.map(function(h) {
-    return metrics(todayAgg[h] && todayAgg[h].sp > 0 ? todayAgg[h] : null);
+  // Historical — up to 4 most recent dates, cumulative each
+  var histDates = Object.keys(histAgg).sort().reverse().slice(0, 4);
+  var histLines = histDates.map(function(date) {
+    var raw = hours.map(function(h) { return histAgg[date][h] || null; });
+    return { date: date, data: cumulative(raw) };
   });
 
-  var histM = hours.map(function(h) {
-    var dates = histAgg[h] ? Object.values(histAgg[h]) : [];
-    if (dates.length === 0) return null;
-    var n = dates.length;
-    return metrics({
-      sp:  dates.reduce(function(s,d){ return s+d.sp;  },0)/n,
-      imp: dates.reduce(function(s,d){ return s+d.imp; },0)/n,
-      cl:  dates.reduce(function(s,d){ return s+d.cl;  },0)/n,
-      cv:  dates.reduce(function(s,d){ return s+d.cv;  },0)/n
-    });
-  });
-
-  return { hours: hours, today: todayM, hist: histM };
+  return { hours: hours, today: todayM, histLines: histLines };
 }
 
 // ── CHARTS ───────────────────────────────────────────────────────────────────
 var CHARTS = {};
+var HIST_COLORS = ['#64748b','#94a3b8','#b0bec5','#cfd8dc']; // most recent → lightest
 
-function makeDataset(label, color, dashed) {
+function makeDataset(label, color, dashed, width) {
   return {
     label: label,
     data: [],
     borderColor: color,
-    backgroundColor: color.replace(')', ',.08)').replace('rgb','rgba'),
-    borderWidth: dashed ? 1.5 : 2.5,
+    backgroundColor: 'transparent',
+    borderWidth: width || (dashed ? 1.5 : 2.5),
     borderDash: dashed ? [5,4] : [],
     pointRadius: dashed ? 2 : 3,
     pointHoverRadius: dashed ? 3 : 5,
@@ -523,15 +524,15 @@ var CHART_CONFIGS = [
 
 CHART_CONFIGS.forEach(function(cfg) {
   var ctx = document.getElementById(cfg.id).getContext('2d');
+  // 1 today + 4 hist slots
+  var datasets = [ makeDataset('Today', '#f5a623', false) ];
+  for (var i = 0; i < 4; i++) {
+    datasets.push(makeDataset('', HIST_COLORS[i], true));
+  }
+  var fmtRef = cfg.fmt;
   CHARTS[cfg.id] = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels: [],
-      datasets: [
-        makeDataset('Today',         '#f5a623', false),
-        makeDataset('Historical Avg','#94a3b8', true)
-      ]
-    },
+    data: { labels: [], datasets: datasets },
     options: {
       responsive: true,
       maintainAspectRatio: true,
@@ -541,41 +542,52 @@ CHART_CONFIGS.forEach(function(cfg) {
           callbacks: {
             label: function(ctx) {
               var v = ctx.raw;
-              return ctx.dataset.label + ': ' + (v !== null ? cfg.fmt(v) : '—');
+              return ctx.dataset.label + ': ' + (v !== null ? fmtRef(v) : '—');
             }
           }
         }
       },
       scales: {
-        x: {
-          grid: { color:'#f1f5f9' },
-          ticks: { font:{size:11}, color:'#94a3b8' }
-        },
-        y: {
-          grid: { color:'#f1f5f9' },
-          ticks: {
-            font:{size:11}, color:'#94a3b8',
-            callback: function(v) { return cfg.fmt(v); }
-          }
-        }
+        x: { grid:{color:'#f1f5f9'}, ticks:{font:{size:11},color:'#94a3b8'} },
+        y: { grid:{color:'#f1f5f9'}, ticks:{font:{size:11},color:'#94a3b8',
+               callback: function(v){ return fmtRef(v); } } }
       }
     }
   });
 });
 
+// ── LEGEND ───────────────────────────────────────────────────────────────────
+function buildLegend(histLines) {
+  var el = document.getElementById('legend');
+  el.innerHTML = '<div class="leg-item"><div class="leg-line leg-today"></div> Today</div>';
+  histLines.forEach(function(hl, i) {
+    var color = HIST_COLORS[i];
+    el.innerHTML +=
+      '<div class="leg-item">' +
+      '<div class="leg-line" style="background:repeating-linear-gradient(90deg,' + color + ' 0 4px,transparent 4px 8px)"></div>' +
+      ' ' + hl.date + '</div>';
+  });
+}
+
 // ── RENDER ───────────────────────────────────────────────────────────────────
 function render() {
   if (typeof CHARTS === 'undefined' || Object.keys(CHARTS).length === 0) return;
   var result = computeHourly();
-  var labels = result.hours.map(function(h){ return h + ':00'; });
+  var labels  = result.hours.map(function(h){ return h + ':00'; });
+
+  buildLegend(result.histLines);
 
   CHART_CONFIGS.forEach(function(cfg) {
-    var todayVals = result.today.map(function(m){ return m ? m[cfg.key] : null; });
-    var histVals  = result.hist.map(function(m){ return m ? m[cfg.key] : null; });
-    var chart = CHARTS[cfg.id];
+    var chart    = CHARTS[cfg.id];
     chart.data.labels = labels;
-    chart.data.datasets[0].data = todayVals;
-    chart.data.datasets[1].data = histVals;
+    // Today
+    chart.data.datasets[0].data = result.today.map(function(m){ return m ? m[cfg.key] : null; });
+    // Historical lines (slots 1-4)
+    for (var i = 0; i < 4; i++) {
+      var hl = result.histLines[i];
+      chart.data.datasets[i+1].label = hl ? hl.date : '';
+      chart.data.datasets[i+1].data  = hl ? hl.data.map(function(m){ return m ? m[cfg.key] : null; }) : [];
+    }
     chart.update('none');
   });
 }
