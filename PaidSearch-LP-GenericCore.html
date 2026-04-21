@@ -89,14 +89,14 @@ tr.summary-row td.cvr-col{background:#fef9c3}
 <div class="controls-bar">
   <div class="ctrl-group">
     <span class="ctrl-label">Period</span>
-    <span class="period-badge badge-a">A</span>
+    <span class="period-badge badge-a">Pre</span>
     <input class="date-input" type="date" id="pA_start" value="2026-04-01">
     <span class="period-sep">→</span>
     <input class="date-input" type="date" id="pA_end" value="2026-04-12">
   </div>
   <div class="ctrl-sep"></div>
   <div class="ctrl-group">
-    <span class="period-badge badge-b">B</span>
+    <span class="period-badge badge-b">Post</span>
     <input class="date-input" type="date" id="pB_start" value="2026-04-13">
     <span class="period-sep">→</span>
     <input class="date-input" type="date" id="pB_end">
@@ -428,35 +428,49 @@ const sortState = {
 
 // COL_DEFS: key 'name' is the generic row identifier (ag or camp)
 const COL_DEFS = [
-  { key: 'name',  label: 'Name',     num: false, good: null },
-  { key: 'impA',  label: 'Imp A',    num: true,  good: null },
-  { key: 'impB',  label: 'Imp B',    num: true,  good: null },
-  { key: 'clA',   label: 'Clicks A', num: true,  good: null },
-  { key: 'clB',   label: 'Clicks B', num: true,  good: null },
-  { key: 'ctrA',  label: 'CTR A',    num: true,  good: null },
-  { key: 'ctrB',  label: 'CTR B',    num: true,  good: null },
-  { key: 'dctr',  label: '△ CTR',    num: true,  good: true  },
-  { key: 'costA', label: 'Cost A',   num: true,  good: null },
-  { key: 'costB', label: 'Cost B',   num: true,  good: null },
-  { key: 'cpcA',  label: 'CPC A',    num: true,  good: null },
-  { key: 'cpcB',  label: 'CPC B',    num: true,  good: null },
-  { key: 'dcpc',  label: '△ CPC',    num: true,  good: false },
-  { key: 'cvrA',  label: 'CVR A',    num: true,  good: null, cvr: true },
-  { key: 'cvrB',  label: 'CVR B',    num: true,  good: null, cvr: true },
-  { key: 'dcvr',  label: '△ CVR',    num: true,  good: true,  cvr: true },
-  { key: 'cacA',  label: 'CAC A',    num: true,  good: null },
-  { key: 'cacB',  label: 'CAC B',    num: true,  good: null },
-  { key: 'dcac',  label: '△ CAC',    num: true,  good: false },
+  { key: 'name',  label: 'Name',       num: false, good: null },
+  { key: 'ctrA',  label: 'CTR Pre',    num: true,  good: null },
+  { key: 'ctrB',  label: 'CTR Post',   num: true,  good: null },
+  { key: 'dctr',  label: '△ CTR',      num: true,  good: true,  fmt: 'pp'     },
+  { key: 'costA', label: 'Cost Pre',   num: true,  good: null },
+  { key: 'costB', label: 'Cost Post',  num: true,  good: null },
+  { key: 'cpcA',  label: 'CPC Pre',    num: true,  good: null },
+  { key: 'cpcB',  label: 'CPC Post',   num: true,  good: null },
+  { key: 'dcpc',  label: '△ CPC',      num: true,  good: false, fmt: 'dollar' },
+  { key: 'cvrA',  label: 'CVR Pre',    num: true,  good: null,  cvr: true },
+  { key: 'cvrB',  label: 'CVR Post',   num: true,  good: null,  cvr: true },
+  { key: 'dcvr',  label: '△ CVR',      num: true,  good: true,  cvr: true, fmt: 'pp'     },
+  { key: 'cacA',  label: 'CAC Pre',    num: true,  good: null },
+  { key: 'cacB',  label: 'CAC Post',   num: true,  good: null },
+  { key: 'dcac',  label: '△ CAC',      num: true,  good: false, fmt: 'dollar' },
 ];
 
 function rowValue(row, key) {
+  // Delta columns return nominal (Post − Pre) in native units: pp for rates, $ for costs
   switch(key) {
-    case 'dctr': return calcDelta(row.ctrA, row.ctrB);
-    case 'dcpc': return calcDelta(row.cpcA, row.cpcB);
-    case 'dcvr': return calcDelta(row.cvrA, row.cvrB);
-    case 'dcac': return calcDelta(row.cacA, row.cacB);
+    case 'dctr': { const a = row.ctrA,  b = row.ctrB;  return (a != null && b != null) ? b - a : null; }
+    case 'dcpc': { const a = row.cpcA,  b = row.cpcB;  return (a != null && b != null) ? b - a : null; }
+    case 'dcvr': { const a = row.cvrA,  b = row.cvrB;  return (a != null && b != null) ? b - a : null; }
+    case 'dcac': { const a = row.cacA,  b = row.cacB;  return (a != null && b != null) ? b - a : null; }
     default: return row[key];
   }
+}
+
+// Format a nominal delta value with sign + unit, colored by goodDir
+function fmtNominalDelta(val, fmtType, goodDir) {
+  if (val === null || val === undefined || isNaN(val) || !isFinite(val)) return '<span class="delta-neu">—</span>';
+  const isGood = goodDir !== null ? (goodDir ? val > 0 : val < 0) : null;
+  const cls = isGood === null ? 'delta-neu' : (isGood ? 'delta-good' : 'delta-bad');
+  let text;
+  if (fmtType === 'pp') {
+    const sign = val > 0 ? '+' : '';
+    text = sign + fmt(val, 2) + 'pp';
+  } else if (fmtType === 'dollar') {
+    text = (val < 0 ? '−$' : '+$') + fmt(Math.abs(val), 2);
+  } else {
+    text = (val > 0 ? '+' : '') + fmt(val, 2);
+  }
+  return `<span class="${cls}">${text}</span>`;
 }
 
 // Build one table data row from a list of raw data rows
@@ -484,10 +498,10 @@ function cellHtml(row, col) {
   let content = '';
   switch(key) {
     case 'name':   content = `<span title="${row.name}">${row.name}</span>`; break;
-    case 'impA': case 'impB': case 'clA': case 'clB': content = fmt(row[key]); break;
     case 'ctrA': case 'ctrB': case 'cvrA': case 'cvrB': content = fmtPct(row[key]); break;
     case 'costA': case 'costB': case 'cpcA': case 'cpcB': case 'cacA': case 'cacB': content = fmtDollar(row[key]); break;
-    case 'dctr': case 'dcpc': case 'dcvr': case 'dcac': content = deltaHtml(rowValue(row, key), col.good); break;
+    case 'dctr': case 'dcpc': case 'dcvr': case 'dcac':
+      content = fmtNominalDelta(rowValue(row, key), col.fmt, col.good); break;
     default: content = row[key] !== null && row[key] !== undefined ? row[key] : '—';
   }
   return `<td class="${cellClass}">${content}</td>`;
@@ -614,13 +628,12 @@ function renderSummaryTable() {
   // For each Δ column (dctr etc.): compare the % change between test and control (diff of diffs)
   function diffVal(key) {
     // Returns { nom, pct } comparing test vs control
+    // For delta keys: rowValue() already returns nominal (Post−Pre), so diff = test_nominal − ctrl_nominal
     const isDelta = ['dctr','dcpc','dcvr','dcac'].includes(key);
     if (isDelta) {
-      const metPairs = { dctr: ['ctrA','ctrB'], dcpc: ['cpcA','cpcB'], dcvr: ['cvrA','cvrB'], dcac: ['cacA','cacB'] };
-      const [mA, mB] = metPairs[key];
-      const tD = grpDelta(tRow, mA, mB);
-      const cD = grpDelta(cRow, mA, mB);
-      const nom = (tD != null && cD != null) ? tD - cD : null;       // pp difference in period change
+      const tD = rowValue(tRow, key);
+      const cD = rowValue(cRow, key);
+      const nom = (tD != null && cD != null) ? tD - cD : null;
       const pct = (nom != null && cD != null && cD !== 0) ? (nom / Math.abs(cD)) * 100 : null;
       return { nom, pct };
     } else {
@@ -679,17 +692,15 @@ function renderSummaryTable() {
     return `<tr>${cells}</tr>`;
   }
 
-  function fmtDeltaVal(key, val, isDeltaCol) {
-    // For the Δ nominal row: use same unit as the source column
-    // For the Δ % row: caller handles (passes pct which we always format as %)
-    // This fn is shared — the caller already picks .nom or .pct from diffVal()
-    // So we just need to know: what type is val?
-    // We detect by checking what column type it is
-    if (['impA','impB','clA','clB'].includes(key)) return fmt(Math.round(val));
+  function fmtDeltaVal(key, val) {
+    // Used by Δ Nominal row — format in same units as the source column
     if (['ctrA','ctrB','cvrA','cvrB'].includes(key)) return fmtPct(val);
     if (['costA','costB','cpcA','cpcB','cacA','cacB'].includes(key)) return fmtDollar(val);
-    // dctr, dcpc, dcvr, dcac — these are pp deltas
-    return fmt(val, 2) + 'pp';
+    // delta keys (dctr/dcvr → pp, dcpc/dcac → $)
+    const col = COL_DEFS.find(c => c.key === key);
+    if (col && col.fmt === 'pp') return fmt(val, 2) + 'pp';
+    if (col && col.fmt === 'dollar') return '$' + fmt(Math.abs(val), 2);
+    return fmt(val, 2);
   }
 
   // Build Δ nominal: raw difference in the same units
