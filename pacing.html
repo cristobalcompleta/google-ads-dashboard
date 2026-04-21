@@ -574,12 +574,17 @@ function computeHourly() {
   var cutoff    = new Date(new Date(state.viewDate+'T12:00:00').getTime() - 28*24*60*60*1000);
   var weekDates = histAll.filter(function(d){ return new Date(d+'T12:00:00') >= cutoff; });
 
-  // Raw totals for table (sum across all hours in range)
+  // Last hour that has data for the view date — cap comparisons to this
+  var lastViewHour = state.hrMin;
+  hours.forEach(function(h) { if (viewAgg[h]) lastViewHour = h; });
+  var tableHours = hours.filter(function(h){ return h <= lastViewHour; });
+
+  // Raw totals for table — capped to lastViewHour so comparison is apples-to-apples
   function rawTotals(agg, dates) {
     if (!dates || dates.length === 0) return null;
     var n = dates.length;
     var sp=0, imp=0, cl=0, cv=0;
-    hours.forEach(function(h) {
+    tableHours.forEach(function(h) {
       dates.forEach(function(d) {
         if (agg[d] && agg[d][h]) {
           sp  += agg[d][h].sp;
@@ -589,13 +594,13 @@ function computeHourly() {
         }
       });
     });
-    return { imp: imp/n, cl: cl/n };
+    return { imp: imp/n, cl: cl/n, sp: sp/n, cpc: cl > 0 ? (sp/n)/(cl/n) : null, ctr: imp > 0 ? (cl/n)/(imp/n) : null };
   }
 
   var todayTotals = (function() {
     var sp=0, imp=0, cl=0;
-    hours.forEach(function(h) { if (viewAgg[h]) { sp+=viewAgg[h].sp; imp+=viewAgg[h].imp; cl+=viewAgg[h].cl; } });
-    return { imp: imp, cl: cl };
+    tableHours.forEach(function(h) { if (viewAgg[h]) { sp+=viewAgg[h].sp; imp+=viewAgg[h].imp; cl+=viewAgg[h].cl; } });
+    return { imp: imp, cl: cl, sp: sp, cpc: cl > 0 ? sp/cl : null, ctr: imp > 0 ? cl/imp : null };
   })();
 
   return {
@@ -606,6 +611,7 @@ function computeHourly() {
     todayTotals: todayTotals,
     dowTotals:   rawTotals(dateAgg, dowDates),
     weekTotals:  rawTotals(dateAgg, weekDates),
+    lastViewHour: lastViewHour,
     dowLabel:    'Avg ' + DOW_LABELS[vdow] + 's (' + dowDates.length + ')',
     weekLabel:   'Avg last 4 weeks (' + weekDates.length + ' days)'
   };
@@ -701,21 +707,13 @@ function renderTable(result) {
   }
 
   var rows = [
-    { label:'Impressions', key:'imp',  fmt:function(v){ return v === null ? '—' : Math.round(v).toLocaleString(); },       invert:false, raw:true },
-    { label:'Clicks',      key:'cl',   fmt:function(v){ return v === null ? '—' : Math.round(v).toLocaleString(); },       invert:false, raw:true },
-    { label:'Cost',        key:'cost', fmt:function(v){ return v === null ? '—' : '$'+v.toFixed(0); },                     invert:false, raw:false },
-    { label:'CTR',         key:'ctr',  fmt:function(v){ return v === null ? '—' : (v*100).toFixed(2)+'%'; },               invert:false, raw:false },
-    { label:'CPC',         key:'cpc',  fmt:function(v){ return v === null ? '—' : '$'+v.toFixed(2); },                     invert:true,  raw:false }
+    { label:'Impressions', key:'imp', fmt:function(v){ return v === null ? '—' : Math.round(v).toLocaleString(); }, invert:false },
+    { label:'Clicks',      key:'cl',  fmt:function(v){ return v === null ? '—' : Math.round(v).toLocaleString(); }, invert:false },
+    { label:'Cost',        key:'sp',  fmt:function(v){ return v === null ? '—' : '$'+v.toFixed(0); },               invert:false },
+    { label:'CTR',         key:'ctr', fmt:function(v){ return v === null ? '—' : (v*100).toFixed(2)+'%'; },         invert:false },
+    { label:'CPC',         key:'cpc', fmt:function(v){ return v === null ? '—' : '$'+v.toFixed(2); },               invert:true  }
   ];
 
-  // For raw counts (imp, cl) pull directly from viewAgg totals
-  var todayRawTotals = { imp:0, cl:0 };
-  var dowRawTotals   = { imp:0, cl:0 };
-  var weekRawTotals  = { imp:0, cl:0 };
-
-  result.today.forEach(function(m)   { if (m) { todayRawTotals.imp += 0; todayRawTotals.cl += 0; } });
-  // Use the last cumulative cost-derived point to back out imp/cl from CTR/CPC
-  // Simpler: expose raw sums from compute — store them on result
   var tToday = result.todayTotals, tDow = result.dowTotals, tWeek = result.weekTotals;
 
   var html = '<table><thead><tr>' +
@@ -728,16 +726,9 @@ function renderTable(result) {
     '</tr></thead><tbody>';
 
   rows.forEach(function(row) {
-    var tv, dv, wv;
-    if (row.raw) {
-      tv = tToday ? tToday[row.key] : null;
-      dv = tDow   ? tDow[row.key]   : null;
-      wv = tWeek  ? tWeek[row.key]  : null;
-    } else {
-      tv = lastVal(result.today,   row.key);
-      dv = lastVal(result.dowAvg,  row.key);
-      wv = lastVal(result.weekAvg, row.key);
-    }
+    var tv = tToday ? tToday[row.key] : null;
+    var dv = tDow   ? tDow[row.key]   : null;
+    var wv = tWeek  ? tWeek[row.key]  : null;
     html += '<tr><td>' + row.label + '</td>' +
       '<td>' + row.fmt(tv) + '</td>' +
       '<td>' + row.fmt(dv) + '</td>' +
@@ -750,7 +741,7 @@ function renderTable(result) {
   html += '</tbody></table>';
   document.getElementById('summary-table').innerHTML = html;
   document.getElementById('tbl-sub').textContent =
-    'Up to hour ' + (state.hrMax === 23 ? 'now' : state.hrMax) + ' · ' + result.dowLabel + ' · ' + result.weekLabel;
+    'Through ' + result.lastViewHour + ':00 · ' + result.dowLabel + ' · ' + result.weekLabel;
 }
 
 // ── RENDER ───────────────────────────────────────────────────────────────────
