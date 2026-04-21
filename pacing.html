@@ -65,6 +65,19 @@ canvas{max-height:260px}
 .no-data{padding:60px 40px;text-align:center;color:#94a3b8}
 .no-data h2{font-size:16px;color:#334155;margin-bottom:8px}
 .no-data p{font-size:12px;line-height:1.7}
+
+/* ── SUMMARY TABLE ──────────────────────────────────────────────────────────── */
+#summary-table{overflow-x:auto;margin-top:4px}
+#summary-table table{width:100%;border-collapse:collapse;font-size:12px}
+#summary-table th{padding:7px 10px;text-align:right;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #e2e8f0;white-space:nowrap}
+#summary-table th:first-child{text-align:left}
+#summary-table td{padding:7px 10px;text-align:right;border-bottom:1px solid #f1f5f9;color:#1e293b;font-variant-numeric:tabular-nums;white-space:nowrap}
+#summary-table td:first-child{text-align:left;font-weight:600;color:#374151}
+#summary-table tr:last-child td{border-bottom:none}
+#summary-table tr:hover td{background:#f8fafc}
+.td-pos{color:#16a34a;font-weight:600}
+.td-neg{color:#dc2626;font-weight:600}
+.td-neu{color:#94a3b8}
 </style>
 </head>
 <body>
@@ -91,6 +104,16 @@ canvas{max-height:260px}
         <div class="dd-list" id="list-day"></div>
       </div>
     </div>
+  </div>
+
+  <!-- DOW count -->
+  <div class="ctrl-group">
+    <span class="ctrl-label">Same-DOW days</span>
+    <select id="sel-dow-count" onchange="state.dowCount=+this.value;render()" style="border:1px solid #cbd5e1;border-radius:6px;padding:4px 8px;font-size:12px;color:#334155;background:#fff;height:28px;cursor:pointer">
+      <option value="6" selected>6</option>
+      <option value="5">5</option>
+      <option value="4">4</option>
+    </select>
   </div>
 
   <!-- Comparison (exclude dates from avg lines) -->
@@ -185,23 +208,23 @@ canvas{max-height:260px}
   <div class="charts-grid">
     <div class="chart-card">
       <div class="chart-title">Cost</div>
-      <div class="chart-sub">Spend per hour ($) — today vs historical avg</div>
+      <div class="chart-sub">Cumulative spend per hour ($) — today vs historical avg</div>
       <canvas id="cCost"></canvas>
     </div>
     <div class="chart-card">
-      <div class="chart-title">CPC</div>
-      <div class="chart-sub">Cost per click per hour ($) — today vs historical avg</div>
-      <canvas id="cCPC"></canvas>
+      <div class="chart-title">Summary</div>
+      <div class="chart-sub" id="tbl-sub">Today vs historical averages</div>
+      <div id="summary-table"></div>
     </div>
     <div class="chart-card">
       <div class="chart-title">CTR</div>
-      <div class="chart-sub">Click-through rate per hour (%) — today vs historical avg</div>
+      <div class="chart-sub">Cumulative CTR per hour (%) — today vs historical avg</div>
       <canvas id="cCTR"></canvas>
     </div>
     <div class="chart-card">
-      <div class="chart-title">CVR</div>
-      <div class="chart-sub">Conversion rate per hour (%) — today vs historical avg</div>
-      <canvas id="cCVR"></canvas>
+      <div class="chart-title">CPC</div>
+      <div class="chart-sub">Cumulative CPC per hour ($) — today vs historical avg</div>
+      <canvas id="cCPC"></canvas>
     </div>
   </div>
 </div>
@@ -237,13 +260,14 @@ var TODAY     = todayStr();
 var TODAY_DOW = dowOf(TODAY);
 
 var state = {
-  viewDate:    TODAY,       // the "main" date shown as the solid line
-  excludeDates: new Set(),  // dates excluded from comparison avg lines
-  hrMin:    0,
-  hrMax:    23,
-  channels: null,
-  camps:    null,
-  ags:      null
+  viewDate:     TODAY,
+  excludeDates: new Set(),
+  hrMin:        0,
+  hrMax:        23,
+  channels:     null,
+  camps:        null,
+  ags:          null,
+  dowCount:     6
 };
 
 // ── EXTRACT UNIQUE DIMENSION VALUES ─────────────────────────────────────────
@@ -543,20 +567,47 @@ function computeHourly() {
   var histAll = Object.keys(dateAgg).sort().reverse()
                   .filter(function(d){ return !state.excludeDates.has(d); });
 
-  // Line 1: same DOW as viewDate (up to 4), excluding excluded dates
-  var dowDates  = histAll.filter(function(d){ return dowOf(d) === vdow; }).slice(0,4);
+  // Line 1: same DOW as viewDate (up to dowCount), excluding excluded dates
+  var dowDates  = histAll.filter(function(d){ return dowOf(d) === vdow; }).slice(0, state.dowCount);
 
   // Line 2: last 4 weeks (28 days before viewDate), excluding excluded dates
   var cutoff    = new Date(new Date(state.viewDate+'T12:00:00').getTime() - 28*24*60*60*1000);
   var weekDates = histAll.filter(function(d){ return new Date(d+'T12:00:00') >= cutoff; });
 
+  // Raw totals for table (sum across all hours in range)
+  function rawTotals(agg, dates) {
+    if (!dates || dates.length === 0) return null;
+    var n = dates.length;
+    var sp=0, imp=0, cl=0, cv=0;
+    hours.forEach(function(h) {
+      dates.forEach(function(d) {
+        if (agg[d] && agg[d][h]) {
+          sp  += agg[d][h].sp;
+          imp += agg[d][h].imp;
+          cl  += agg[d][h].cl;
+          cv  += agg[d][h].cv;
+        }
+      });
+    });
+    return { imp: imp/n, cl: cl/n };
+  }
+
+  var todayTotals = (function() {
+    var sp=0, imp=0, cl=0;
+    hours.forEach(function(h) { if (viewAgg[h]) { sp+=viewAgg[h].sp; imp+=viewAgg[h].imp; cl+=viewAgg[h].cl; } });
+    return { imp: imp, cl: cl };
+  })();
+
   return {
-    hours:     hours,
-    today:     viewM,
-    dowAvg:    avgCumulative(dateAgg, dowDates,  hours),
-    weekAvg:   avgCumulative(dateAgg, weekDates, hours),
-    dowLabel:  'Avg ' + DOW_LABELS[vdow] + 's (' + dowDates.length + ')',
-    weekLabel: 'Avg last 4 weeks (' + weekDates.length + ' days)'
+    hours:       hours,
+    today:       viewM,
+    dowAvg:      avgCumulative(dateAgg, dowDates,  hours),
+    weekAvg:     avgCumulative(dateAgg, weekDates, hours),
+    todayTotals: todayTotals,
+    dowTotals:   rawTotals(dateAgg, dowDates),
+    weekTotals:  rawTotals(dateAgg, weekDates),
+    dowLabel:    'Avg ' + DOW_LABELS[vdow] + 's (' + dowDates.length + ')',
+    weekLabel:   'Avg last 4 weeks (' + weekDates.length + ' days)'
   };
 }
 
@@ -581,9 +632,8 @@ function makeDataset(label, color, dash) {
 
 var CHART_CONFIGS = [
   { id:'cCost', key:'cost', fmt:function(v){ return '$'+v.toFixed(0); } },
-  { id:'cCPC',  key:'cpc',  fmt:function(v){ return '$'+v.toFixed(2); } },
   { id:'cCTR',  key:'ctr',  fmt:function(v){ return (v*100).toFixed(2)+'%'; } },
-  { id:'cCVR',  key:'cvr',  fmt:function(v){ return (v*100).toFixed(2)+'%'; } }
+  { id:'cCPC',  key:'cpc',  fmt:function(v){ return '$'+v.toFixed(2); } }
 ];
 
 CHART_CONFIGS.forEach(function(cfg) {
@@ -630,6 +680,79 @@ function buildLegend(dowLabel, weekLabel) {
     '<div class="leg-item"><div class="leg-line" style="background:repeating-linear-gradient(90deg,#94a3b8 0 3px,transparent 3px 6px);height:2px"></div> ' + weekLabel + '</div>';
 }
 
+// ── SUMMARY TABLE ────────────────────────────────────────────────────────────
+function renderTable(result) {
+  // Get last known non-null value from a cumulative series
+  function lastVal(series, key) {
+    for (var i = series.length - 1; i >= 0; i--) {
+      if (series[i] && series[i][key] !== null) return series[i][key];
+    }
+    return null;
+  }
+
+  function fmtDelta(today, hist, invert) {
+    if (today === null || hist === null || hist === 0) return '<span class="td-neu">—</span>';
+    var d = (today - hist) / Math.abs(hist);
+    var pct = (d * 100).toFixed(1) + '%';
+    var pos = invert ? d < 0 : d > 0;
+    var cls = d === 0 ? 'td-neu' : (pos ? 'td-pos' : 'td-neg');
+    var sign = d > 0 ? '+' : '';
+    return '<span class="' + cls + '">' + sign + pct + '</span>';
+  }
+
+  var rows = [
+    { label:'Impressions', key:'imp',  fmt:function(v){ return v === null ? '—' : Math.round(v).toLocaleString(); },       invert:false, raw:true },
+    { label:'Clicks',      key:'cl',   fmt:function(v){ return v === null ? '—' : Math.round(v).toLocaleString(); },       invert:false, raw:true },
+    { label:'Cost',        key:'cost', fmt:function(v){ return v === null ? '—' : '$'+v.toFixed(0); },                     invert:false, raw:false },
+    { label:'CTR',         key:'ctr',  fmt:function(v){ return v === null ? '—' : (v*100).toFixed(2)+'%'; },               invert:false, raw:false },
+    { label:'CPC',         key:'cpc',  fmt:function(v){ return v === null ? '—' : '$'+v.toFixed(2); },                     invert:true,  raw:false }
+  ];
+
+  // For raw counts (imp, cl) pull directly from viewAgg totals
+  var todayRawTotals = { imp:0, cl:0 };
+  var dowRawTotals   = { imp:0, cl:0 };
+  var weekRawTotals  = { imp:0, cl:0 };
+
+  result.today.forEach(function(m)   { if (m) { todayRawTotals.imp += 0; todayRawTotals.cl += 0; } });
+  // Use the last cumulative cost-derived point to back out imp/cl from CTR/CPC
+  // Simpler: expose raw sums from compute — store them on result
+  var tToday = result.todayTotals, tDow = result.dowTotals, tWeek = result.weekTotals;
+
+  var html = '<table><thead><tr>' +
+    '<th>Metric</th>' +
+    '<th>Today</th>' +
+    '<th>' + result.dowLabel + '</th>' +
+    '<th>Δ% DOW</th>' +
+    '<th>' + result.weekLabel + '</th>' +
+    '<th>Δ% 4W</th>' +
+    '</tr></thead><tbody>';
+
+  rows.forEach(function(row) {
+    var tv, dv, wv;
+    if (row.raw) {
+      tv = tToday ? tToday[row.key] : null;
+      dv = tDow   ? tDow[row.key]   : null;
+      wv = tWeek  ? tWeek[row.key]  : null;
+    } else {
+      tv = lastVal(result.today,   row.key);
+      dv = lastVal(result.dowAvg,  row.key);
+      wv = lastVal(result.weekAvg, row.key);
+    }
+    html += '<tr><td>' + row.label + '</td>' +
+      '<td>' + row.fmt(tv) + '</td>' +
+      '<td>' + row.fmt(dv) + '</td>' +
+      '<td>' + fmtDelta(tv, dv, row.invert) + '</td>' +
+      '<td>' + row.fmt(wv) + '</td>' +
+      '<td>' + fmtDelta(tv, wv, row.invert) + '</td>' +
+      '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('summary-table').innerHTML = html;
+  document.getElementById('tbl-sub').textContent =
+    'Up to hour ' + (state.hrMax === 23 ? 'now' : state.hrMax) + ' · ' + result.dowLabel + ' · ' + result.weekLabel;
+}
+
 // ── RENDER ───────────────────────────────────────────────────────────────────
 function render() {
   if (typeof CHARTS === 'undefined' || Object.keys(CHARTS).length === 0) return;
@@ -637,6 +760,7 @@ function render() {
   var labels = result.hours.map(function(h){ return h + ':00'; });
 
   buildLegend(result.dowLabel, result.weekLabel);
+  renderTable(result);
 
   CHART_CONFIGS.forEach(function(cfg) {
     var chart = CHARTS[cfg.id];
