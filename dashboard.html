@@ -2469,11 +2469,11 @@ function p2_recalc(){
     row("Cost",null,a.cost,b.cost,v=>fmtD(v,2),v=>fmtDeltaD(v,2),false,false),
     row("Impressions",null,a.imp,b.imp,fmtN,fmtDeltaN,false,false),
     row("Clicks",null,a.cl,b.cl,fmtN,fmtDeltaN,false,false),
-    row("CTR","Clicks / Impressions",a.ctr,b.ctr,fmtP,fmtPP,false,true),
+    row("CTR","Clicks / Impressions",a.ctr,b.ctr,fmtP,fmtPP,false,false),
     row("CPC","Cost / Click",a.cpc,b.cpc,v=>fmtD(v,2),v=>fmtDeltaD(v,2),true,false),
     `<tr class="separator"><td colspan="5" style="padding:6px 16px;font-size:11px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Internal Attribution (Trials)</td></tr>`,
     row("Trials","New customers (internal)",a.trials,b.trials,fmtN,fmtDeltaN,false,false),
-    row("Trials CVR","Trials / Click",a.tCVR,b.tCVR,fmtP,fmtPP,false,true),
+    row("Trials CVR","Trials / Click",a.tCVR,b.tCVR,fmtP,fmtPP,false,false),
     row("Trials CAC","Cost / Trial",a.tCAC,b.tCAC,v=>fmtD(v,2),v=>fmtDeltaD(v,2),true,false),
   ];
 
