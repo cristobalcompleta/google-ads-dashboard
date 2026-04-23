@@ -441,61 +441,83 @@ tr:hover td{background:#f8fafc}
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <div id="tab4" class="tab-pane">
 
-  <!-- PERIOD INPUTS -->
-  <div class="periods">
-    <div class="period-group">
-      <span class="period-badge badge-a">A</span>
-      <span class="period-label">Start</span>
-      <input class="date-input" type="date" id="p3_aStart" value="2026-03-20" onchange="p3_recalc()">
-      <span class="period-sep">→</span>
-      <span class="period-label">End</span>
-      <input class="date-input" type="date" id="p3_aEnd" value="2026-03-26" onchange="p3_recalc()">
-    </div>
-    <div style="width:1px;height:24px;background:#e2e8f0"></div>
-    <div class="period-group">
-      <span class="period-badge badge-b">B</span>
-      <span class="period-label">Start</span>
-      <input class="date-input" type="date" id="p3_bStart" value="2026-03-27" onchange="p3_recalc()">
-      <span class="period-sep">→</span>
-      <span class="period-label">End</span>
-      <input class="date-input" type="date" id="p3_bEnd" value="2026-04-02" onchange="p3_recalc()">
-    </div>
-  </div>
-
-  <!-- FILTERS -->
+  <!-- CONTROLS -->
   <div class="controls">
-    <span class="ctrl-label">Filters</span>
-
-    <div class="dd-wrap">
-      <button class="dd-btn" onclick="toggleDD('p3_ctPanel')"><span id="p3_ctLabel">All Types</span><span>▾</span></button>
-      <div class="dd-panel" id="p3_ctPanel">
-        <div class="dd-list">
-          <label class="dd-item"><input type="checkbox" value="Brand" checked onchange="p3_onCTChange()"> Brand</label>
-          <label class="dd-item"><input type="checkbox" value="NonBrand" checked onchange="p3_onCTChange()"> NonBrand</label>
-          <label class="dd-item"><input type="checkbox" value="BrandShopping" checked onchange="p3_onCTChange()"> BrandShopping</label>
-          <label class="dd-item"><input type="checkbox" value="NonBrandShopping" checked onchange="p3_onCTChange()"> NonBrandShopping</label>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Date Range</span>
+      <input class="date-input" type="date" id="p3_chartStart" onchange="p3_recalc()">
+      <span class="period-sep-inline">→</span>
+      <input class="date-input" type="date" id="p3_chartEnd" onchange="p3_recalc()">
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Campaign Type</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('p3_ctPanel')"><span id="p3_ctLabel">All Types</span><span>▾</span></button>
+        <div class="dd-panel" id="p3_ctPanel">
+          <div class="dd-list">
+            <label class="dd-item"><input type="checkbox" value="Brand" checked onchange="p3_onCTChange()"> Brand</label>
+            <label class="dd-item"><input type="checkbox" value="NonBrand" checked onchange="p3_onCTChange()"> NonBrand</label>
+            <label class="dd-item"><input type="checkbox" value="BrandShopping" checked onchange="p3_onCTChange()"> BrandShopping</label>
+            <label class="dd-item"><input type="checkbox" value="NonBrandShopping" checked onchange="p3_onCTChange()"> NonBrandShopping</label>
+          </div>
         </div>
       </div>
     </div>
-
-    <div class="dd-wrap">
-      <button class="dd-btn" onclick="toggleDD('p3_campPanel')"><span id="p3_campLabel">All Campaigns</span><span>▾</span></button>
-      <div class="dd-panel" id="p3_campPanel">
-        <input class="dd-search" type="text" placeholder="Search campaigns..." oninput="p3_filterList('p3_campList',this.value)">
-        <div class="dd-list" id="p3_campList"></div>
-        <div class="dd-actions">
-          <button class="dd-act-btn" onclick="p3_selectAll('p3_campList')">Select all</button>
-          <button class="dd-act-btn" onclick="p3_clearAll('p3_campList')">Clear</button>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Campaign</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('p3_campPanel')"><span id="p3_campLabel">All Campaigns</span><span>▾</span></button>
+        <div class="dd-panel" id="p3_campPanel">
+          <input class="dd-search" type="text" placeholder="Search campaigns…" oninput="p3_filterList('p3_campList',this.value)">
+          <div class="dd-list" id="p3_campList"></div>
+          <div class="dd-actions">
+            <button class="dd-act-btn" onclick="p3_selectAll('p3_campList')">Select all</button>
+            <button class="dd-act-btn" onclick="p3_clearAll('p3_campList')">Clear</button>
+          </div>
         </div>
       </div>
     </div>
-
   </div>
 
-  <!-- DEVICE TABLES — one per metric, dynamically rendered -->
-  <div id="p3_container" class="p2-main">
-    <div class="p2-section"><div class="empty-state">Loading device data…</div></div>
+  <!-- CHARTS -->
+  <div class="main">
+    <div class="section">
+      <div class="section-title">% of Cost by Device</div>
+      <div class="section-sub">Share of total spend going to each device · Filters above apply</div>
+      <div class="charts-row">
+        <div><div class="chart-label">Daily</div><canvas id="p3_chartD"></canvas></div>
+        <div><div class="chart-label">Weekly</div><canvas id="p3_chartW"></canvas></div>
+      </div>
+    </div>
   </div>
+
+  <!-- TABLE -->
+  <div class="p2-main">
+    <div class="p2-section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Device Performance Summary</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:1px" id="p3_tableSubtitle">Aggregated for selected date range · Filters above apply</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="p3_table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th class="num">Mobile</th>
+              <th class="num">Desktop</th>
+              <th class="num">Tablet</th>
+            </tr>
+          </thead>
+          <tbody id="p3_tableBody">
+            <tr><td colspan="4" class="empty-state">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
@@ -1152,6 +1174,7 @@ function showTab(n){
   if(n===0) { if(p0_chartInst) p0_chartInst.resize(); }
   if(n===1) Object.values(p5_charts).forEach(c=>c.resize());
   if(n===2) Object.values(p1_charts).forEach(c=>c.resize());
+  if(n===4) Object.values(p3_charts).forEach(c=>c.resize());
   // Close any open dropdowns
   document.querySelectorAll(".dd-panel").forEach(x=>x.classList.remove("open"));
 }
@@ -2549,6 +2572,9 @@ function p2_renderFunnel(){
 
 let p3_selCT=new Set(["Brand","NonBrand","BrandShopping","NonBrandShopping"]);
 let p3_selCamp=null;
+const p3_charts={};
+const DEV_COLORS={Mobile:"#f97316",Desktop:"#3b82f6",Tablet:"#8b5cf6"};
+const DEV_ORDER=["Mobile","Desktop","Tablet"];
 
 function p3_filterList(listId,q){
   document.querySelectorAll(`#${listId} .dd-item`).forEach(el=>{
@@ -2569,7 +2595,7 @@ function p3_updateCampLabel(){
   const checks=[...document.querySelectorAll("#p3_campList input:checked")].map(x=>x.value);
   const total=document.querySelectorAll("#p3_campList input").length;
   document.getElementById("p3_campLabel").textContent=
-    checks.length===0?"None":checks.length===total?"All Campaigns":`${checks.length} campaigns`;
+    checks.length===0?"None":checks.length===total?"All Campaigns":`${checks.length} selected`;
 }
 function p3_onCTChange(){
   p3_selCT=new Set([...document.querySelectorAll("#p3_ctPanel input:checked")].map(x=>x.value));
@@ -2581,152 +2607,137 @@ function p3_onCTChange(){
 function p3_onCampChange(){
   const checks=[...document.querySelectorAll("#p3_campList input:checked")].map(x=>x.value);
   const total=document.querySelectorAll("#p3_campList input").length;
-  p3_selCamp=(checks.length===total)?null:new Set(checks);
+  p3_selCamp=checks.length===total?null:new Set(checks);
   p3_updateCampLabel();
   p3_recalc();
 }
 function p3_rebuildCampList(){
   if(typeof DEVICE_DATA==="undefined") return;
   const list=document.getElementById("p3_campList");
-  const camps=new Set();
-  DEVICE_DATA.forEach(r=>{if(p3_selCT.has(derivedType(r))) camps.add(r.camp);});
-  const sorted=[...camps].sort();
-  list.innerHTML=sorted.map(c=>`<label class="dd-item"><input type="checkbox" value="${c.replace(/"/g,'&quot;')}" checked onchange="p3_onCampChange()"> <span title="${c.replace(/"/g,'&quot;')}">${p2_shortName(c)}</span></label>`).join("");
+  const cats=new Set();
+  DEVICE_DATA.forEach(r=>{if(p3_selCT.has(derivedType(r))) cats.add(r.cat);});
+  const sorted=[...cats].sort();
+  list.innerHTML=sorted.map(c=>`<label class="dd-item"><input type="checkbox" value="${c}" checked onchange="p3_onCampChange()"> ${c}</label>`).join("");
   p3_selCamp=null;
   p3_updateCampLabel();
 }
 
-function p3_sumByDevice(start,end){
-  const s=new Date(start+"T00:00:00"),e=new Date(end+"T00:00:00");
-  const res={};
-  DEVICE_DATA.forEach(r=>{
-    const rd=new Date(r.d+"T00:00:00");
-    if(rd<s||rd>e) return;
-    if(!p3_selCT.has(derivedType(r))) return;
-    if(p3_selCamp&&!p3_selCamp.has(r.camp)) return;
-    const dev=r.dev;
-    if(!res[dev]) res[dev]={imp:0,cl:0,cost:0};
-    res[dev].imp+=r.imp;
-    res[dev].cl+=r.cl;
-    res[dev].cost+=r.cost;
+function p3_filteredRows(){
+  if(typeof DEVICE_DATA==="undefined") return [];
+  const start=document.getElementById("p3_chartStart").value;
+  const end=document.getElementById("p3_chartEnd").value;
+  const s=start?new Date(start+"T00:00:00"):null;
+  const e=end?new Date(end+"T00:00:00"):null;
+  return DEVICE_DATA.filter(r=>{
+    if(!p3_selCT.has(derivedType(r))) return false;
+    if(p3_selCamp&&!p3_selCamp.has(r.cat)) return false;
+    if(s||e){
+      const rd=new Date(r.d+"T00:00:00");
+      if(s&&rd<s) return false;
+      if(e&&rd>e) return false;
+    }
+    return true;
   });
-  return res;
+}
+
+function p3_upsertChart(id, data){
+  const cfg={
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{position:"bottom",labels:{font:{size:10},padding:8,boxWidth:10,boxHeight:10}},
+      tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}}
+    },
+    scales:{
+      x:{stacked:true,grid:{display:false},ticks:{font:{size:9},maxRotation:45,minRotation:45}},
+      y:{stacked:true,min:0,max:100,grid:{color:"#f1f5f9"},ticks:{font:{size:10},callback:v=>v+"%"}}
+    }
+  };
+  if(p3_charts[id]){
+    p3_charts[id].data=data;
+    p3_charts[id].update();
+    return;
+  }
+  p3_charts[id]=new Chart(document.getElementById(id).getContext("2d"),{type:"bar",data,options:cfg});
+}
+
+function p3_renderCharts(rows){
+  const mapD={}, mapW={};
+  rows.forEach(r=>{
+    const wk=monday(r.d);
+    if(!mapD[r.d]) mapD[r.d]={};
+    mapD[r.d][r.dev]=(mapD[r.d][r.dev]||0)+r.cost;
+    if(!mapW[wk]) mapW[wk]={};
+    mapW[wk][r.dev]=(mapW[wk][r.dev]||0)+r.cost;
+  });
+  function buildData(map){
+    const dates=Object.keys(map).sort();
+    const datasets=DEV_ORDER.map(dev=>({
+      label:dev,
+      data:dates.map(d=>{
+        const row=map[d]||{};
+        const total=Object.values(row).reduce((a,b)=>a+b,0);
+        return total>0?(row[dev]||0)/total*100:0;
+      }),
+      backgroundColor:DEV_COLORS[dev]||"#ccc",
+      stack:"s"
+    }));
+    return{labels:dates,datasets};
+  }
+  p3_upsertChart("p3_chartD",buildData(mapD));
+  p3_upsertChart("p3_chartW",buildData(mapW));
+  // sync resize handles
+  p3_charts["p3_chartD"]=p3_charts["p3_chartD"];
+  p3_charts["p3_chartW"]=p3_charts["p3_chartW"];
+}
+
+function p3_renderTable(rows){
+  const totals={};
+  rows.forEach(r=>{
+    if(!totals[r.dev]) totals[r.dev]={imp:0,cl:0,cost:0,trials:0};
+    totals[r.dev].imp+=r.imp;
+    totals[r.dev].cl+=r.cl;
+    totals[r.dev].cost+=r.cost;
+    totals[r.dev].trials+=(r.conv||0);
+  });
+  const devs=DEV_ORDER;
+  const totalCost=devs.reduce((s,d)=>s+(totals[d]?totals[d].cost:0),0);
+  const z={imp:0,cl:0,cost:0,trials:0};
+
+  function cell(v){return`<td class="num">${v}</td>`;}
+  function row(label, vals, cls=""){
+    return`<tr class="${cls}"><td class="metric">${label}</td>${vals.map(cell).join("")}</tr>`;
+  }
+  const safe=(d)=>totals[d]||z;
+
+  const tableRows=[
+    row("Impressions", devs.map(d=>fmtN(safe(d).imp))),
+    row("Clicks",      devs.map(d=>fmtN(safe(d).cl))),
+    row("Cost",        devs.map(d=>"$"+fmtD(safe(d).cost,2))),
+    row("Cost %",      devs.map(d=>totalCost>0?fmtP(safe(d).cost/totalCost):"—"), "separator"),
+    row("Trials",      devs.map(d=>fmtN(safe(d).trials))),
+    row("CTR",         devs.map(d=>safe(d).imp>0?fmtP(safe(d).cl/safe(d).imp):"—")),
+    row("CPC",         devs.map(d=>safe(d).cl>0?"$"+fmtD(safe(d).cost/safe(d).cl,2):"—")),
+    row("CVR",         devs.map(d=>safe(d).cl>0?fmtP(safe(d).trials/safe(d).cl):"—")),
+    row("CAC",         devs.map(d=>safe(d).trials>0?"$"+fmtD(safe(d).cost/safe(d).trials,2):"—")),
+  ];
+  document.getElementById("p3_tableBody").innerHTML=tableRows.join("");
 }
 
 function p3_recalc(){
-  const container=document.getElementById("p3_container");
-  if(typeof DEVICE_DATA==="undefined"){
-    container.innerHTML=`<div class="p2-section"><div class="empty-state">device-data.js not loaded — refresh the page.</div></div>`;
-    return;
-  }
-  const aStart=document.getElementById("p3_aStart").value;
-  const aEnd=document.getElementById("p3_aEnd").value;
-  const bStart=document.getElementById("p3_bStart").value;
-  const bEnd=document.getElementById("p3_bEnd").value;
-  if(!aStart||!aEnd||!bStart||!bEnd) return;
+  if(typeof DEVICE_DATA==="undefined") return;
+  const rows=p3_filteredRows();
+  p3_renderCharts(rows);
+  p3_renderTable(rows);
+}
 
-  const byDevA=p3_sumByDevice(aStart,aEnd);
-  const byDevB=p3_sumByDevice(bStart,bEnd);
-  const zero={imp:0,cl:0,cost:0};
-
-  const devOrder=["Mobile","Desktop","Tablet"];
-  const allDevs=new Set([...Object.keys(byDevA),...Object.keys(byDevB)]);
-  const devs=[...devOrder.filter(d=>allDevs.has(d)),...[...allDevs].filter(d=>!devOrder.includes(d)).sort()];
-
-  // ── shared table shell ───────────────────────────────────────────────────
-  function buildSection(title, subtitle, bodyRows){
-    return`<div class="p2-section">
-      <div class="section-header">
-        <div>
-          <div class="section-title">${title}</div>
-          ${subtitle?`<div style="font-size:11px;color:#94a3b8;margin-top:1px">${subtitle}</div>`:""}
-        </div>
-      </div>
-      <table>
-        <thead><tr>
-          <th>Device</th>
-          <th class="num"><span class="period-badge badge-a" style="font-size:10px">A</span></th>
-          <th class="num"><span class="period-badge badge-b" style="font-size:10px">B</span></th>
-          <th class="num">Δ Absolute</th>
-          <th class="num">Δ %</th>
-        </tr></thead>
-        <tbody>${bodyRows}</tbody>
-      </table>
-    </div>`;
-  }
-
-  // ── volume metric: nominal rows + share-of-total rows ────────────────────
-  function volumeSection(title, subtitle, getVal, fmtVal, fmtDelta, invert){
-    const aVals=devs.map(d=>getVal(byDevA[d]||zero));
-    const bVals=devs.map(d=>getVal(byDevB[d]||zero));
-    const aSum=aVals.reduce((a,b)=>a+b,0);
-    const bSum=bVals.reduce((a,b)=>a+b,0);
-    let rows="";
-    // nominal
-    devs.forEach((dev,i)=>{
-      const aVal=aVals[i], bVal=bVals[i];
-      const delta=bVal-aVal;
-      const pct=aVal!==0?delta/Math.abs(aVal):null;
-      const dc=deltaClass(delta,invert);
-      const pc=pillClass(pct,invert);
-      rows+=`<tr>
-        <td class="metric">${dev}</td>
-        <td class="num">${fmtVal(aVal)}</td>
-        <td class="num">${fmtVal(bVal)}</td>
-        <td class="num ${dc}">${fmtDelta(delta)}</td>
-        <td class="num">${pct!==null?`<span class="pct-pill ${pc}">${fmtPct(pct)}</span>`:`<span class="pct-pill pill-neu">—</span>`}</td>
-      </tr>`;
-    });
-    // share separator
-    rows+=`<tr class="separator"><td colspan="5" style="padding:4px 16px;font-size:10px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Share of total</td></tr>`;
-    // share rows
-    devs.forEach((dev,i)=>{
-      const aShare=aSum>0?aVals[i]/aSum:null;
-      const bShare=bSum>0?bVals[i]/bSum:null;
-      const sd=(aShare!==null&&bShare!==null)?bShare-aShare:null;
-      const sdc=sd!==null?deltaClass(sd,false):"delta-neu";
-      const sdStr=sd!==null?(sd>=0?"+":"-")+Math.abs(sd*100).toFixed(2)+"pp":"—";
-      rows+=`<tr>
-        <td class="metric" style="font-weight:400;color:#64748b">${dev} <span style="font-size:11px">share</span></td>
-        <td class="num">${aShare!==null?fmtP(aShare):"—"}</td>
-        <td class="num">${bShare!==null?fmtP(bShare):"—"}</td>
-        <td class="num ${sdc}">${sdStr}</td>
-        <td class="num"><span class="pct-pill pill-neu">—</span></td>
-      </tr>`;
-    });
-    return buildSection(title,subtitle,rows);
-  }
-
-  // ── rate metric: 3 device rows only (% share not meaningful) ─────────────
-  function rateSection(title, subtitle, getRate, fmtRate, fmtDelta, invert, showPill){
-    let rows="";
-    devs.forEach(dev=>{
-      const A=byDevA[dev]||zero, B=byDevB[dev]||zero;
-      const aVal=getRate(A), bVal=getRate(B);
-      const delta=(aVal!==null&&bVal!==null)?bVal-aVal:null;
-      const pct=showPill&&delta!==null&&aVal!==0?delta/Math.abs(aVal):null;
-      const dc=delta!==null?deltaClass(delta,invert):"delta-neu";
-      const pc=pct!==null?pillClass(pct,invert):"pill-neu";
-      rows+=`<tr>
-        <td class="metric">${dev}</td>
-        <td class="num">${aVal!==null?fmtRate(aVal):"—"}</td>
-        <td class="num">${bVal!==null?fmtRate(bVal):"—"}</td>
-        <td class="num ${dc}">${delta!==null?fmtDelta(delta):"—"}</td>
-        <td class="num">${showPill?pct!==null?`<span class="pct-pill ${pc}">${fmtPct(pct)}</span>`:`<span class="pct-pill pill-neu">—</span>`:""}</td>
-      </tr>`;
-    });
-    return buildSection(title,subtitle,rows);
-  }
-
-  const sections=[
-    volumeSection("Cost",        null,                   r=>r.cost, v=>fmtD(v,2), v=>fmtDeltaD(v,2), false),
-    volumeSection("Clicks",      null,                   r=>r.cl,   fmtN,         fmtDeltaN,          false),
-    volumeSection("Impressions", null,                   r=>r.imp,  fmtN,         fmtDeltaN,          false),
-    rateSection(  "CPC",         "Cost / Click",         r=>r.cl>0?r.cost/r.cl:null,   v=>fmtD(v,2), v=>fmtDeltaD(v,2), true,  true),
-    rateSection(  "CTR",         "Clicks / Impressions", r=>r.imp>0?r.cl/r.imp:null,   fmtP, fmtPP,                     false, false),
-  ];
-
-  container.innerHTML=sections.join("");
+function p3_init(){
+  if(typeof DEVICE_DATA==="undefined") return;
+  const dates=DEVICE_DATA.map(r=>r.d).sort();
+  const latest=dates[dates.length-1];
+  document.getElementById("p3_chartStart").value=p0_addDays(latest,-29);
+  document.getElementById("p3_chartEnd").value=latest;
+  p3_rebuildCampList();
+  p3_recalc();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2986,10 +2997,7 @@ p1_init();
 p5_init();
 p2_rebuildCampList();
 p2_recalc();
-if(typeof DEVICE_DATA!=="undefined"){
-  p3_rebuildCampList();
-  p3_recalc();
-}
+p3_init();
 p4_rebuildCampList();
 p4_recalc();
 </script>
