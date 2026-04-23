@@ -1136,7 +1136,7 @@ const D=[
 <script src="device-data.js"></script>
 
 <script>
-DATA = DATA.filter(r => r.cat !== "Other");
+DATA.splice(0, DATA.length, ...DATA.filter(r => r.cat !== "Other"));
 </script>
 <script>
 // ══════════════════════════════════════════════════════════════════════════════
