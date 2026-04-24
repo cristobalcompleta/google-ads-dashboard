@@ -3597,55 +3597,53 @@ function p7_recalc(){
 
 function p7_renderChart(rows,overallCac){
   if(!rows.length){if(p7_chartInst){p7_chartInst.destroy();p7_chartInst=null;}return;}
-  const sorted=[...rows].filter(r=>r.camp_cac!==null).sort((a,b)=>b.camp_cac-a.camp_cac);
-  const labels   =sorted.map(r=>p7_campShort(r.camp));
-  const floatData=sorted.map(r=>[Math.min(overallCac,r.camp_cac),Math.max(overallCac,r.camp_cac)]);
-  const bgColors =sorted.map(r=>r.camp_cac>overallCac?"rgba(239,68,68,0.78)":"rgba(34,197,94,0.78)");
-  const campKeys =sorted.map(r=>r.camp);
-  const cacVals  =sorted.map(r=>r.camp_cac);
-  const effVals  =sorted.map(r=>r.effect);
-  const ref=overallCac;
+  const sorted=[...rows].filter(r=>r.effect!==null).sort((a,b)=>b.effect-a.effect);
+  const labels  =sorted.map(r=>p7_campShort(r.camp));
+  const effData =sorted.map(r=>r.effect);
+  const bgColors=sorted.map(r=>r.effect>0?"rgba(239,68,68,0.78)":"rgba(34,197,94,0.78)");
+  const campKeys=sorted.map(r=>r.camp);
+  const cacVals =sorted.map(r=>r.camp_cac);
+  const tsVals  =sorted.map(r=>r.trial_share);
 
   if(p7_chartInst) p7_chartInst.destroy();
   p7_chartInst=new Chart(document.getElementById("p7_chart").getContext("2d"),{
     type:"bar",
     data:{labels,datasets:[
-      {type:"bar",label:"Campaign CAC",data:floatData,
+      {label:"Weighted CAC Effect",data:effData,
        backgroundColor:bgColors,borderColor:bgColors.map(c=>c.replace("0.78","1")),
-       borderWidth:1,borderRadius:3,order:2},
-      {type:"line",label:`Overall CAC: ${fmtD(ref,2)}`,data:sorted.map(()=>ref),
-       borderColor:"#1e293b",borderWidth:2,borderDash:[6,3],pointRadius:0,order:1}
+       borderWidth:1,borderRadius:3}
     ]},
     options:{
       responsive:true,maintainAspectRatio:false,
       interaction:{mode:"index",intersect:false},
       plugins:{
-        legend:{position:"bottom",labels:{font:{size:10},padding:10,boxWidth:10,boxHeight:10}},
+        legend:{display:false},
         tooltip:{callbacks:{
           title:ctx=>(P6_CAMP_MAP[campKeys[ctx[0]?.dataIndex]]||ctx[0]?.label)||"",
           label:ctx=>{
-            if(ctx.dataset.type==="line") return`Overall CAC: ${fmtD(ref,2)}`;
-            const i=ctx.dataIndex, cac=cacVals[i], eff=effVals[i];
-            const delta=cac-ref, pct=(ref>0?delta/ref*100:0).toFixed(1);
+            const i=ctx.dataIndex;
+            const eff=effData[i], cac=cacVals[i], ts=tsVals[i];
+            const delta=cac-overallCac, pct=(overallCac>0?delta/overallCac*100:0).toFixed(1);
             return[
-              `Campaign CAC: ${fmtD(cac,2)}`,
-              `Δ vs baseline: ${delta>=0?"+":""}${fmtD(Math.abs(delta),2)} (${delta>=0?"+":""}${pct}%)`,
-              eff!==null?`Weighted effect: ${eff>=0?"+":""}${fmtD(Math.abs(eff),2)}/trial`:"",
-            ].filter(Boolean);
+              `Effect on CAC: ${eff>=0?"+":""}${fmtD(eff,2)}`,
+              `Campaign CAC: ${fmtD(cac,2)} (${delta>=0?"+":""}${fmtD(delta,2)} vs baseline)`,
+              `Trial share: ${(ts*100).toFixed(1)}%`,
+            ];
           }
         }}
       },
       scales:{
         x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45,minRotation:40}},
-        y:{grid:{color:"#f1f5f9"},ticks:{font:{size:10},callback:v=>"$"+v.toFixed(0)},
-           title:{display:true,text:"CAC ($)",font:{size:10},color:"#94a3b8"}}
+        y:{grid:{color:"#f1f5f9"},
+           ticks:{font:{size:10},callback:v=>(v>=0?"+":"")+fmtD(v,2)},
+           title:{display:true,text:"Effect on Overall CAC ($)",font:{size:10},color:"#94a3b8"}}
       }
     }
   });
   const start=document.getElementById("p7_cStart").value;
   const end  =document.getElementById("p7_cEnd").value;
   document.getElementById("p7_chartSub").textContent=
-    `Baseline (overall CAC): ${fmtD(ref,2)} · ${start} → ${end} · Red = above baseline · Green = below`;
+    `Overall CAC: ${fmtD(overallCac,2)} · ${start} → ${end} · Red = raised CAC · Green = lowered CAC · Sum = $0`;
 }
 
 function p7_sortBy(col){
