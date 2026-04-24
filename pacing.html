@@ -110,9 +110,9 @@ canvas{max-height:260px}
   <div class="ctrl-group">
     <span class="ctrl-label">Same-DOW days</span>
     <select id="sel-dow-count" onchange="state.dowCount=+this.value;render()" style="border:1px solid #cbd5e1;border-radius:6px;padding:4px 8px;font-size:12px;color:#334155;background:#fff;height:28px;cursor:pointer">
-      <option value="6" selected>6</option>
+      <option value="6">6</option>
       <option value="5">5</option>
-      <option value="4">4</option>
+      <option value="4" selected>4</option>
     </select>
   </div>
 
@@ -252,6 +252,11 @@ function isoWeek(dateStr) {
   return 1 + Math.round(((d - w1)/86400000 - 3 + (w1.getDay()+6)%7)/7);
 }
 function dowOf(dateStr)  { return new Date(dateStr + 'T12:00:00').getDay(); }
+function prevDayStr(dateStr) {
+  var d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() - 1);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
 function weekLabel(dateStr) { return 'W' + String(isoWeek(dateStr)).padStart(2,'0'); }
 var DOW_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
@@ -267,7 +272,7 @@ var state = {
   channels:     null,
   camps:        null,
   ags:          null,
-  dowCount:     6
+  dowCount:     4
 };
 
 // ── EXTRACT UNIQUE DIMENSION VALUES ─────────────────────────────────────────
@@ -603,17 +608,20 @@ function computeHourly() {
     return { imp: imp, cl: cl, sp: sp, cpc: cl > 0 ? sp/cl : null, ctr: imp > 0 ? cl/imp : null };
   })();
 
+  var ystDay = prevDayStr(state.viewDate);
+
   return {
-    hours:       hours,
-    today:       viewM,
-    dowAvg:      avgCumulative(dateAgg, dowDates,  hours),
-    weekAvg:     avgCumulative(dateAgg, weekDates, hours),
-    todayTotals: todayTotals,
-    dowTotals:   rawTotals(dateAgg, dowDates),
-    weekTotals:  rawTotals(dateAgg, weekDates),
-    lastViewHour: lastViewHour,
-    dowLabel:    'Avg ' + DOW_LABELS[vdow] + 's (' + dowDates.length + ')',
-    weekLabel:   'Avg last 4 weeks (' + weekDates.length + ' days)'
+    hours:          hours,
+    today:          viewM,
+    dowAvg:         avgCumulative(dateAgg, dowDates,  hours),
+    weekAvg:        avgCumulative(dateAgg, weekDates, hours),
+    todayTotals:    todayTotals,
+    yesterdayTotals: rawTotals(dateAgg, dateAgg[ystDay] ? [ystDay] : []),
+    dowTotals:      rawTotals(dateAgg, dowDates),
+    weekTotals:     rawTotals(dateAgg, weekDates),
+    lastViewHour:   lastViewHour,
+    dowLabel:       'Avg ' + DOW_LABELS[vdow] + 's (' + dowDates.length + ')',
+    weekLabel:      'Avg last 4 weeks (' + weekDates.length + ' days)'
   };
 }
 
@@ -714,11 +722,13 @@ function renderTable(result) {
     { label:'CPC',         key:'cpc', fmt:function(v){ return v === null ? '—' : '$'+v.toFixed(2); },               invert:true  }
   ];
 
-  var tToday = result.todayTotals, tDow = result.dowTotals, tWeek = result.weekTotals;
+  var tToday = result.todayTotals, tYest = result.yesterdayTotals, tDow = result.dowTotals, tWeek = result.weekTotals;
 
   var html = '<table><thead><tr>' +
     '<th>Metric</th>' +
     '<th>Today</th>' +
+    '<th>Yesterday</th>' +
+    '<th>Δ% Yesterday</th>' +
     '<th>' + result.dowLabel + '</th>' +
     '<th>Δ% DOW</th>' +
     '<th>' + result.weekLabel + '</th>' +
@@ -727,10 +737,13 @@ function renderTable(result) {
 
   rows.forEach(function(row) {
     var tv = tToday ? tToday[row.key] : null;
+    var yv = tYest  ? tYest[row.key]  : null;
     var dv = tDow   ? tDow[row.key]   : null;
     var wv = tWeek  ? tWeek[row.key]  : null;
     html += '<tr><td>' + row.label + '</td>' +
       '<td>' + row.fmt(tv) + '</td>' +
+      '<td>' + row.fmt(yv) + '</td>' +
+      '<td>' + fmtDelta(tv, yv, row.invert) + '</td>' +
       '<td>' + row.fmt(dv) + '</td>' +
       '<td>' + fmtDelta(tv, dv, row.invert) + '</td>' +
       '<td>' + row.fmt(wv) + '</td>' +
