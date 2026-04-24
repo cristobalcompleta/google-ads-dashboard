@@ -1261,6 +1261,24 @@ function monday(dateStr){
 let p0_selCT=new Set(["Brand","NonBrand","BrandShopping","NonBrandShopping"]);
 let p0_selCamp=null;
 let p0_chartInst=null;
+let p0_sundayIdx=[];
+const p0_sundayPlugin={
+  id:'p0SundayBands',
+  afterDraw(chart){
+    if(!p0_sundayIdx.length) return;
+    const{ctx,chartArea:{top,bottom}}=chart;
+    const meta=chart.getDatasetMeta(0);
+    ctx.save();
+    ctx.fillStyle='rgba(30,64,175,0.10)';
+    p0_sundayIdx.forEach(i=>{
+      const bar=meta.data[i];
+      if(!bar) return;
+      const hw=bar.width/2;
+      ctx.fillRect(bar.x-hw,top,bar.width,bottom-top);
+    });
+    ctx.restore();
+  }
+};
 let p0_compExclude=new Set();
 let p0_lastCompDate=null;
 
@@ -1771,6 +1789,7 @@ function p0_wtdCard(selDate){
 // ── chart ─────────────────────────────────────────────────────────────────────
 function p0_renderChart(selDate){
   const labels=[],trialData=[],cacData=[],rawCosts=[],rawTrials=[];
+  p0_sundayIdx=[];
   for(let i=29;i>=0;i--){
     const d=p0_addDays(selDate,-i);
     const raw=p0_dayRaw(d);
@@ -1780,6 +1799,7 @@ function p0_renderChart(selDate){
     cacData.push(raw.trials>0?raw.cost/raw.trials:null);
     rawCosts.push(raw.cost||0);
     rawTrials.push(raw.trials||0);
+    if(dt.getDay()===0) p0_sundayIdx.push(29-i);
   }
   // Rolling 7-day avg
   const roll7Trials=[],roll7CAC=[];
@@ -1845,16 +1865,11 @@ function p0_renderChart(selDate){
     }
   };
 
-  if(p0_chartInst){
-    p0_chartInst.data=chartData;
-    p0_chartInst.options=chartOpts;
-    p0_chartInst.update();
-  } else {
-    p0_chartInst=new Chart(
-      document.getElementById("p0_chart").getContext("2d"),
-      {type:"bar",data:chartData,options:chartOpts}
-    );
-  }
+  if(p0_chartInst){p0_chartInst.destroy();}
+  p0_chartInst=new Chart(
+    document.getElementById("p0_chart").getContext("2d"),
+    {type:"bar",data:chartData,options:chartOpts,plugins:[p0_sundayPlugin]}
+  );
 }
 
 // ── main recalc ───────────────────────────────────────────────────────────────
