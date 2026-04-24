@@ -1881,6 +1881,8 @@ function p0_recalc(){
 
   const dow=new Date(selDate+'T00:00:00').getDay();
   const l4dowLabel='vs L4 '+P0_DOW_FULL[dow];
+  const P0_DOW_SING=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const lastDowLabel='vs last '+P0_DOW_SING[dow];
 
   const yesterday=p0_addDays(selDate,-1);
   const lw=p0_addDays(selDate,-7);
@@ -1896,34 +1898,39 @@ function p0_recalc(){
   // ── KPI cards ──────────────────────────────────────────────────────────────
   document.getElementById("p0_kpiGrid").innerHTML=[
     p0_kpiCard("Spend", today.cost, v=>fmtD(v,0), v=>fmtD(v,0), false, [
-      {lbl:"vs Yesterday", cur:today.cost, ref:yday.cost},
-      {lbl:"vs L7D",       cur:today.cost, ref:l7d.cost},
-      {lbl:l4dowLabel,     cur:today.cost, ref:l4dow.cost},
-      {lbl:"vs L4W",       cur:today.cost, ref:l4w.cost},
+      {lbl:"vs Yesterday",  cur:today.cost, ref:yday.cost},
+      {lbl:lastDowLabel,    cur:today.cost, ref:lwD.cost},
+      {lbl:"vs L7D",        cur:today.cost, ref:l7d.cost},
+      {lbl:l4dowLabel,      cur:today.cost, ref:l4dow.cost},
+      {lbl:"vs L4W",        cur:today.cost, ref:l4w.cost},
     ]),
     p0_kpiCard("Trials CAC", today.cac, v=>fmtD(v,2), v=>fmtD(v,2), true, [
-      {lbl:"vs Yesterday", cur:today.cac, ref:yday.cac},
-      {lbl:"vs L7D",       cur:today.cac, ref:l7d.cac},
-      {lbl:l4dowLabel,     cur:today.cac, ref:l4dow.cac},
-      {lbl:"vs L4W",       cur:today.cac, ref:l4w.cac},
+      {lbl:"vs Yesterday",  cur:today.cac, ref:yday.cac},
+      {lbl:lastDowLabel,    cur:today.cac, ref:lwD.cac},
+      {lbl:"vs L7D",        cur:today.cac, ref:l7d.cac},
+      {lbl:l4dowLabel,      cur:today.cac, ref:l4dow.cac},
+      {lbl:"vs L4W",        cur:today.cac, ref:l4w.cac},
     ]),
     p0_kpiCard("Trials", today.trials, v=>fmtN(v,0), v=>fmtN(v,0), false, [
-      {lbl:"vs Yesterday", cur:today.trials, ref:yday.trials},
-      {lbl:"vs L7D",       cur:today.trials, ref:l7d.trials},
-      {lbl:l4dowLabel,     cur:today.trials, ref:l4dow.trials},
-      {lbl:"vs L4W",       cur:today.trials, ref:l4w.trials},
+      {lbl:"vs Yesterday",  cur:today.trials, ref:yday.trials},
+      {lbl:lastDowLabel,    cur:today.trials, ref:lwD.trials},
+      {lbl:"vs L7D",        cur:today.trials, ref:l7d.trials},
+      {lbl:l4dowLabel,      cur:today.trials, ref:l4dow.trials},
+      {lbl:"vs L4W",        cur:today.trials, ref:l4w.trials},
     ]),
     p0_kpiCard("CPC", today.cpc, v=>fmtD(v,2), v=>fmtD(v,2), true, [
-      {lbl:"vs Yesterday", cur:today.cpc, ref:yday.cpc},
-      {lbl:"vs L7D",       cur:today.cpc, ref:l7d.cpc},
-      {lbl:l4dowLabel,     cur:today.cpc, ref:l4dow.cpc},
-      {lbl:"vs L4W",       cur:today.cpc, ref:l4w.cpc},
+      {lbl:"vs Yesterday",  cur:today.cpc, ref:yday.cpc},
+      {lbl:lastDowLabel,    cur:today.cpc, ref:lwD.cpc},
+      {lbl:"vs L7D",        cur:today.cpc, ref:l7d.cpc},
+      {lbl:l4dowLabel,      cur:today.cpc, ref:l4dow.cpc},
+      {lbl:"vs L4W",        cur:today.cpc, ref:l4w.cpc},
     ]),
     p0_kpiCard("CVR", today.cvr, v=>(v*100).toFixed(2)+"%", v=>(v*100).toFixed(2)+"pp", false, [
-      {lbl:"vs Yesterday", cur:today.cvr, ref:yday.cvr},
-      {lbl:"vs L7D",       cur:today.cvr, ref:l7d.cvr},
-      {lbl:l4dowLabel,     cur:today.cvr, ref:l4dow.cvr},
-      {lbl:"vs L4W",       cur:today.cvr, ref:l4w.cvr},
+      {lbl:"vs Yesterday",  cur:today.cvr, ref:yday.cvr},
+      {lbl:lastDowLabel,    cur:today.cvr, ref:lwD.cvr},
+      {lbl:"vs L7D",        cur:today.cvr, ref:l7d.cvr},
+      {lbl:l4dowLabel,      cur:today.cvr, ref:l4dow.cvr},
+      {lbl:"vs L4W",        cur:today.cvr, ref:l4w.cvr},
     ]),
   ].join("");
 
