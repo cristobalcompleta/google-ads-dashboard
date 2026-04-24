@@ -1734,28 +1734,36 @@ function p0_nbVsBrandRatioCard(selDate,nbRef,brandRef,dowName){
 
 function p0_wtdCard(selDate){
   const wStart=p0_weekStart(selDate);
-  const lwStart=p0_addDays(wStart,-7);
-  const lwEnd=p0_addDays(selDate,-7);
   const wtd=p0_rangeRaw(wStart,selDate);
-  const lwtd=p0_rangeRaw(lwStart,lwEnd);
   const wtd_cac=wtd.trials>0?wtd.cost/wtd.trials:null;
-  const lwtd_cac=lwtd.trials>0?lwtd.cost/lwtd.trials:null;
-  const costDelta=wtd.cost-lwtd.cost;
-  const cacDelta=(wtd_cac!==null&&lwtd_cac!==null)?wtd_cac-lwtd_cac:null;
   const d1=new Date(wStart+"T00:00:00"),d2=new Date(selDate+"T00:00:00");
   const nDays=Math.round((d2-d1)/864e5)+1;
-  const costPct=lwtd.cost>0?costDelta/lwtd.cost:null;
-  const cacPct=(cacDelta!==null&&lwtd_cac)?cacDelta/Math.abs(lwtd_cac):null;
-  const costCls=p0_deltaClass(costDelta,lwtd.cost,false);
-  const cacCls=cacDelta!==null?p0_deltaClass(cacDelta,lwtd_cac,true):"delta-neu";
-  const fmtPctWTD=v=>v===null?"—":(v>=0?"+":"")+( v*100).toFixed(1)+"%";
+
+  // L4W ref: avg of same WTD span over last 4 weeks
+  let rCost=0,rTrials=0,rN=0;
+  for(let i=1;i<=4;i++){
+    const r=p0_rangeRaw(p0_addDays(wStart,-7*i),p0_addDays(selDate,-7*i));
+    if(r.cost>0||r.trials>0){rCost+=r.cost;rTrials+=r.trials;rN++;}
+  }
+  const ref=rN>0?{cost:rCost/rN,trials:rTrials/rN}:{cost:null,trials:null};
+  const ref_cac=ref.trials>0?ref.cost/ref.trials:null;
+
+  const fmtPctWTD=v=>v===null?"—":(v>=0?"+":"")+(v*100).toFixed(1)+"%";
+  const spendPct=ref.cost?( wtd.cost-ref.cost)/ref.cost:null;
+  const trialsPct=ref.trials?(wtd.trials-ref.trials)/ref.trials:null;
+  const cacDelta=(wtd_cac!==null&&ref_cac!==null)?wtd_cac-ref_cac:null;
+  const cacPct=cacDelta!==null&&ref_cac?cacDelta/Math.abs(ref_cac):null;
+  const spendCls=p0_deltaClass(wtd.cost-(ref.cost||0),ref.cost,false);
+  const trialsCls=p0_deltaClass(wtd.trials-(ref.trials||0),ref.trials,false);
+  const cacCls=cacDelta!==null?p0_deltaClass(cacDelta,ref_cac,true):"delta-neu";
+
   return`<div class="p0-insight-card p0-blue">
     <div class="p0-insight-icon">📅</div>
     <div class="p0-insight-title">Week-to-Date (${nDays} day${nDays>1?"s":""})</div>
     <div class="p0-insight-body">
-      Spend: ${fmtD(wtd.cost,0)} <span class="${costCls}">(${fmtPctWTD(costPct)} vs LW)</span><br>
-      CAC: ${wtd_cac!==null?fmtD(wtd_cac,2):"—"} <span class="${cacCls}">(${fmtPctWTD(cacPct)} vs LW)</span><br>
-      Trials: ${fmtN(wtd.trials,0)} total
+      Spend: ${fmtD(wtd.cost,0)} <span class="${spendCls}">(${fmtPctWTD(spendPct)} vs L4W)</span><br>
+      Trials: ${fmtN(wtd.trials,0)} <span class="${trialsCls}">(${fmtPctWTD(trialsPct)} vs L4W)</span><br>
+      CAC: ${wtd_cac!==null?fmtD(wtd_cac,2):"—"} <span class="${cacCls}">(${fmtPctWTD(cacPct)} vs L4W)</span>
     </div>
   </div>`;
 }
