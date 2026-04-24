@@ -148,6 +148,7 @@ tr:hover td{background:#f8fafc}
   <button class="tab-btn" id="tabBtn4" onclick="showTab(4)">Device Breakdown</button>
   <button class="tab-btn" id="tabBtn5" onclick="showTab(5)">Period Comparison</button>
   <button class="tab-btn" id="tabBtn6" onclick="showTab(6)">Campaign Zoom In</button>
+  <button class="tab-btn" id="tabBtn7" onclick="showTab(7)">CAC by Campaign</button>
 </nav>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
@@ -828,6 +829,93 @@ tr:hover td{background:#f8fafc}
 </div>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 7 — CAC BY CAMPAIGN                                                -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="tab7" class="tab-pane">
+  <div class="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Campaign Type</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('p7_ctPanel')"><span id="p7_ctLabel">All Types</span><span>▾</span></button>
+        <div class="dd-panel" id="p7_ctPanel">
+          <div class="dd-list">
+            <label class="dd-item"><input type="checkbox" value="Brand" checked onchange="p7_onCTChange()"> Brand</label>
+            <label class="dd-item"><input type="checkbox" value="NonBrand" checked onchange="p7_onCTChange()"> NonBrand</label>
+            <label class="dd-item"><input type="checkbox" value="BrandShopping" checked onchange="p7_onCTChange()"> BrandShopping</label>
+            <label class="dd-item"><input type="checkbox" value="NonBrandShopping" checked onchange="p7_onCTChange()"> NonBrandShopping</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-sep"></div>
+    <div class="ctrl-group">
+      <span class="period-badge badge-a">A</span>
+      <input class="date-input" type="date" id="p7_aStart" onchange="p7_recalc()">
+      <span class="period-sep">→</span>
+      <input class="date-input" type="date" id="p7_aEnd" onchange="p7_recalc()">
+    </div>
+    <div class="ctrl-group">
+      <span class="period-badge badge-b">B</span>
+      <input class="date-input" type="date" id="p7_bStart" onchange="p7_recalc()">
+      <span class="period-sep">→</span>
+      <input class="date-input" type="date" id="p7_bEnd" onchange="p7_recalc()">
+    </div>
+  </div>
+
+  <div class="p2-main">
+    <!-- CAC Bridge Chart -->
+    <div class="p2-section" style="overflow:visible">
+      <div class="section-header">
+        <div>
+          <div class="section-title">CAC Bridge — Period A → Period B</div>
+          <div class="section-sub" id="p7_chartSub">Set date ranges above · Red = pushed CAC up · Green = pulled CAC down</div>
+        </div>
+      </div>
+      <div style="padding:20px 24px">
+        <div style="position:relative;height:340px"><canvas id="p7_chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Unified comparison table -->
+    <div class="p2-section" style="padding:0;overflow:hidden">
+      <div class="section-header">
+        <div>
+          <div class="section-title">CAC Contribution by Campaign</div>
+          <div class="section-sub" id="p7_tableSub">CAC Contribution = Campaign Spend ÷ Total Trials · Default sort: Cost B ↓</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2" class="sort-hd" id="p7_sh_camp" onclick="p7_sortBy('camp')">Campaign <span class="sort-ind" id="p7_si_camp">⇅</span></th>
+              <th colspan="4" class="tbl-group-hd">Cost</th>
+              <th colspan="3" class="tbl-group-hd">Trials</th>
+              <th colspan="3" class="tbl-group-hd">CAC Contribution</th>
+            </tr>
+            <tr>
+              <th class="num sort-hd" id="p7_sh_cost_a"   onclick="p7_sortBy('cost_a')">A <span class="sort-ind" id="p7_si_cost_a">⇅</span></th>
+              <th class="num sort-hd" id="p7_sh_cost_b"   onclick="p7_sortBy('cost_b')">B <span class="sort-ind" id="p7_si_cost_b">↓</span></th>
+              <th class="num sort-hd" id="p7_sh_d_cost"   onclick="p7_sortBy('d_cost')">Δ ($) <span class="sort-ind" id="p7_si_d_cost">⇅</span></th>
+              <th class="num sort-hd" id="p7_sh_d_share"  onclick="p7_sortBy('d_share')">Δ share <span class="sort-ind" id="p7_si_d_share">⇅</span></th>
+              <th class="num sort-hd" id="p7_sh_trials_a" onclick="p7_sortBy('trials_a')">A <span class="sort-ind" id="p7_si_trials_a">⇅</span></th>
+              <th class="num sort-hd" id="p7_sh_trials_b" onclick="p7_sortBy('trials_b')">B <span class="sort-ind" id="p7_si_trials_b">⇅</span></th>
+              <th class="num sort-hd" id="p7_sh_d_trials" onclick="p7_sortBy('d_trials')">Δ <span class="sort-ind" id="p7_si_d_trials">⇅</span></th>
+              <th class="num sort-hd" id="p7_sh_contrib_a" onclick="p7_sortBy('contrib_a')">A <span class="sort-ind" id="p7_si_contrib_a">⇅</span></th>
+              <th class="num sort-hd" id="p7_sh_contrib_b" onclick="p7_sortBy('contrib_b')">B <span class="sort-ind" id="p7_si_contrib_b">⇅</span></th>
+              <th class="num sort-hd" id="p7_sh_d_contrib" onclick="p7_sortBy('d_contrib')">Δ ($) <span class="sort-ind" id="p7_si_d_contrib">⇅</span></th>
+            </tr>
+          </thead>
+          <tbody id="p7_tableBody">
+            <tr><td colspan="11" class="empty-state">Set date ranges above</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- DATA + SCRIPTS                                                          -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <script>
@@ -1280,6 +1368,7 @@ function showTab(n){
   if(n===2) Object.values(p1_charts).forEach(c=>c.resize());
   if(n===4) Object.values(p3_charts).forEach(c=>c.resize());
   if(n===6) Object.values(p6_charts).forEach(c=>c.resize());
+  if(n===7) { if(p7_chartInst) p7_chartInst.resize(); }
   // Close any open dropdowns
   document.querySelectorAll(".dd-panel").forEach(x=>x.classList.remove("open"));
 }
@@ -3457,6 +3546,246 @@ function p6_init(){
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// PAGE 7 — CAC BY CAMPAIGN
+// ══════════════════════════════════════════════════════════════════════════════
+
+let p7_selCT=new Set(["Brand","NonBrand","BrandShopping","NonBrandShopping"]);
+let p7_chartInst=null;
+let p7_wfDeltas=[];
+let p7_sort={col:"cost_b",dir:"desc"};
+let p7_tableData=[];
+const p7_COLS=["camp","cost_a","cost_b","d_cost","d_share","trials_a","trials_b","d_trials","contrib_a","contrib_b","d_contrib"];
+
+function p7_onCTChange(){
+  p7_selCT=new Set([...document.querySelectorAll("#p7_ctPanel input:checked")].map(x=>x.value));
+  const lbl=p7_selCT.size===4?"All Types":p7_selCT.size===0?"None":[...p7_selCT].join(", ");
+  document.getElementById("p7_ctLabel").textContent=lbl;
+  p7_recalc();
+}
+
+function p7_sumPeriod(start,end){
+  const s=new Date(start+"T00:00:00"),e=new Date(end+"T00:00:00");
+  const map={};
+  let totalCost=0,totalTrials=0;
+  DATA.forEach(r=>{
+    const rd=new Date(r.d+"T00:00:00");
+    if(rd<s||rd>e) return;
+    if(!p7_selCT.has(derivedType(r))) return;
+    if(!map[r.camp]) map[r.camp]={camp:r.camp,type:derivedType(r),cost:0,trials:0};
+    map[r.camp].cost+=r.cost; map[r.camp].trials+=r.trials;
+    totalCost+=r.cost; totalTrials+=r.trials;
+  });
+  return{map,totalCost,totalTrials};
+}
+
+function p7_buildData(pA,pB){
+  const camps=new Set([...Object.keys(pA.map),...Object.keys(pB.map)]);
+  const ttA=pA.totalTrials,ttB=pB.totalTrials;
+  const tcA=pA.totalCost,  tcB=pB.totalCost;
+  return[...camps].map(c=>{
+    const a=pA.map[c]||{cost:0,trials:0,type:""};
+    const b=pB.map[c]||{cost:0,trials:0,type:""};
+    const sA=tcA>0?a.cost/tcA:0, sB=tcB>0?b.cost/tcB:0;
+    const ccA=ttA>0?a.cost/ttA:null, ccB=ttB>0?b.cost/ttB:null;
+    return{
+      camp:c, type:a.type||b.type,
+      cost_a:a.cost, cost_b:b.cost, d_cost:b.cost-a.cost,
+      share_a:sA, share_b:sB, d_share:sB-sA,
+      trials_a:a.trials, trials_b:b.trials, d_trials:b.trials-a.trials,
+      contrib_a:ccA, contrib_b:ccB,
+      d_contrib:(ccA!==null&&ccB!==null)?ccB-ccA:null,
+    };
+  });
+}
+
+function p7_campShort(n){
+  const d=P6_CAMP_MAP[n]||n;
+  return d.replace(/Brand_Search_/,"B_").replace(/NonBrand_Search_/,"NB_")
+          .replace(/Shopping_National_/,"Shop_").replace(/_[UB]_Keyword/,"_KW")
+          .replace(/_[UB]_DSA/,"_DSA").replace(/_B$/,"_B");
+}
+
+function p7_renderChart(rows,cacA,cacB){
+  const sorted=[...rows].filter(r=>r.d_contrib!==null).sort((a,b)=>b.d_contrib-a.d_contrib);
+  p7_wfDeltas=[];
+  const labels=["Period A CAC"];
+  const floatData=[[0,cacA]];
+  const bgColors=["rgba(59,130,246,0.85)"];
+  p7_wfDeltas.push({type:"total",val:cacA});
+
+  let run=cacA;
+  sorted.forEach(r=>{
+    const to=run+r.d_contrib;
+    labels.push(p7_campShort(r.camp));
+    floatData.push([Math.min(run,to),Math.max(run,to)]);
+    bgColors.push(r.d_contrib>0?"rgba(239,68,68,0.78)":"rgba(34,197,94,0.78)");
+    p7_wfDeltas.push({type:"delta",val:r.d_contrib,camp:r.camp});
+    run=to;
+  });
+
+  labels.push("Period B CAC");
+  floatData.push([0,cacB]);
+  bgColors.push("rgba(249,115,22,0.85)");
+  p7_wfDeltas.push({type:"total",val:cacB});
+
+  const wfRef=p7_wfDeltas; // capture for tooltip closure
+  const baseCac=cacA;
+
+  if(p7_chartInst) p7_chartInst.destroy();
+  p7_chartInst=new Chart(document.getElementById("p7_chart").getContext("2d"),{
+    type:"bar",
+    data:{labels,datasets:[{
+      data:floatData,
+      backgroundColor:bgColors,
+      borderColor:bgColors.map(c=>c.replace(/[\d.]+\)$/,"1)")),
+      borderWidth:1,borderRadius:3,
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title:ctx=>ctx[0]?.label||"",
+          label:ctx=>{
+            const d=wfRef[ctx.dataIndex];
+            if(!d) return"";
+            if(d.type==="total") return`Overall CAC: ${fmtD(d.val,2)}`;
+            const sign=d.val>=0?"+":"";
+            const pct=baseCac>0?(d.val/baseCac*100).toFixed(1):"0";
+            return`Δ CAC Contrib: ${sign}${fmtD(Math.abs(d.val),2)} (${sign}${pct}% of base CAC)`;
+          }
+        }}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9},maxRotation:50,minRotation:40}},
+        y:{
+          grid:{color:"#f1f5f9"},
+          ticks:{font:{size:10},callback:v=>"$"+v.toFixed(0)},
+          title:{display:true,text:"CAC ($)",font:{size:10},color:"#94a3b8"},
+        }
+      }
+    }
+  });
+}
+
+function p7_sortBy(col){
+  if(p7_sort.col===col){p7_sort.dir=p7_sort.dir==="asc"?"desc":"asc";}
+  else{p7_sort={col,dir:col==="camp"||col==="type"?"asc":"desc"};}
+  p7_updateSortHeaders();
+  p7_renderTable();
+}
+
+function p7_updateSortHeaders(){
+  p7_COLS.forEach(c=>{
+    const hd=document.getElementById("p7_sh_"+c);
+    const si=document.getElementById("p7_si_"+c);
+    if(!hd||!si) return;
+    hd.classList.toggle("sort-active",c===p7_sort.col);
+    si.textContent=c!==p7_sort.col?"⇅":p7_sort.dir==="asc"?"▲":"▼";
+  });
+}
+
+function p7_renderTable(){
+  const data=[...p7_tableData];
+  const col=p7_sort.col,dir=p7_sort.dir;
+  data.sort((a,b)=>{
+    const av=a[col],bv=b[col];
+    if(col==="camp"||col==="type") return dir==="asc"?(av||"").localeCompare(bv||""):(bv||"").localeCompare(av||"");
+    if(av===null&&bv===null) return 0;
+    if(av===null) return 1; if(bv===null) return -1;
+    return dir==="asc"?av-bv:bv-av;
+  });
+  if(!data.length){
+    document.getElementById("p7_tableBody").innerHTML='<tr><td colspan="11" class="empty-state">No data for selected filters / dates.</td></tr>';
+    return;
+  }
+
+  // Totals
+  const tot=data.reduce((acc,r)=>({
+    cost_a:acc.cost_a+r.cost_a,cost_b:acc.cost_b+r.cost_b,
+    trials_a:acc.trials_a+r.trials_a,trials_b:acc.trials_b+r.trials_b,
+  }),{cost_a:0,cost_b:0,trials_a:0,trials_b:0});
+  const totCC_A=tot.trials_a>0?tot.cost_a/tot.trials_a:null;
+  const totCC_B=tot.trials_b>0?tot.cost_b/tot.trials_b:null;
+  const totDCC=(totCC_A!==null&&totCC_B!==null)?totCC_B-totCC_A:null;
+
+  function dCls(v,inv=false){
+    if(!isFinite(v)||v===0) return"delta-neu";
+    const pos=v>0;
+    return(pos!==inv)?"delta-pos":"delta-neg";
+  }
+  function fmtPP(v){
+    if(v===null||!isFinite(v)) return"—";
+    return(v>=0?"+":"")+( v*100).toFixed(1)+"pp";
+  }
+  function fmtSgn(v,dec=0){
+    if(v===null||!isFinite(v)) return"—";
+    return(v>=0?"+":"-")+"$"+Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec});
+  }
+  function fmtSgnN(v){
+    if(v===null||!isFinite(v)) return"—";
+    return(v>=0?"+":"")+v.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0});
+  }
+
+  const totalRow=`<tr class="separator" style="font-weight:700">
+    <td class="metric">Total</td>
+    <td class="num">${fmtD(tot.cost_a,0)}</td>
+    <td class="num">${fmtD(tot.cost_b,0)}</td>
+    <td class="num ${dCls(tot.cost_b-tot.cost_a)}">${fmtSgn(tot.cost_b-tot.cost_a,0)}</td>
+    <td class="num delta-neu">—</td>
+    <td class="num">${fmtN(tot.trials_a,0)}</td>
+    <td class="num">${fmtN(tot.trials_b,0)}</td>
+    <td class="num ${dCls(tot.trials_b-tot.trials_a)}">${fmtSgnN(tot.trials_b-tot.trials_a)}</td>
+    <td class="num">${totCC_A!==null?fmtD(totCC_A,2):"—"}</td>
+    <td class="num">${totCC_B!==null?fmtD(totCC_B,2):"—"}</td>
+    <td class="num ${totDCC!==null?dCls(totDCC,true):""}">${totDCC!==null?fmtSgn(totDCC,2):"—"}</td>
+  </tr>`;
+
+  const rows=data.map(r=>`<tr>
+    <td class="metric" style="font-size:11px" title="${r.camp}">${P6_CAMP_MAP[r.camp]||r.camp}<br><span class="sub">${r.type}</span></td>
+    <td class="num">${fmtD(r.cost_a,0)}</td>
+    <td class="num">${fmtD(r.cost_b,0)}</td>
+    <td class="num ${dCls(r.d_cost)}">${fmtSgn(r.d_cost,0)}</td>
+    <td class="num ${dCls(r.d_share)}">${fmtPP(r.d_share)}</td>
+    <td class="num">${fmtN(r.trials_a,0)}</td>
+    <td class="num">${fmtN(r.trials_b,0)}</td>
+    <td class="num ${dCls(r.d_trials)}">${fmtSgnN(r.d_trials)}</td>
+    <td class="num">${r.contrib_a!==null?fmtD(r.contrib_a,2):"—"}</td>
+    <td class="num">${r.contrib_b!==null?fmtD(r.contrib_b,2):"—"}</td>
+    <td class="num ${r.d_contrib!==null?dCls(r.d_contrib,true):""}">${r.d_contrib!==null?fmtSgn(r.d_contrib,2):"—"}</td>
+  </tr>`).join("");
+
+  document.getElementById("p7_tableBody").innerHTML=totalRow+rows;
+}
+
+function p7_recalc(){
+  const aS=document.getElementById("p7_aStart").value;
+  const aE=document.getElementById("p7_aEnd").value;
+  const bS=document.getElementById("p7_bStart").value;
+  const bE=document.getElementById("p7_bEnd").value;
+  if(!aS||!aE||!bS||!bE) return;
+  const pA=p7_sumPeriod(aS,aE), pB=p7_sumPeriod(bS,bE);
+  const cacA=pA.totalTrials>0?pA.totalCost/pA.totalTrials:0;
+  const cacB=pB.totalTrials>0?pB.totalCost/pB.totalTrials:0;
+  p7_tableData=p7_buildData(pA,pB);
+  p7_updateSortHeaders();
+  p7_renderTable();
+  p7_renderChart(p7_tableData,cacA,cacB);
+  const diff=cacB-cacA;
+  document.getElementById("p7_chartSub").textContent=
+    `Period A CAC: ${fmtD(cacA,2)} → Period B CAC: ${fmtD(cacB,2)} · Δ ${diff>=0?"+":""}${fmtD(Math.abs(diff),2)} · Red = pushed CAC up · Green = pulled CAC down`;
+}
+
+function p7_init(){
+  const latest=p0_latestDate();
+  document.getElementById("p7_bStart").value=p0_addDays(latest,-6);
+  document.getElementById("p7_bEnd").value=latest;
+  document.getElementById("p7_aStart").value=p0_addDays(latest,-13);
+  document.getElementById("p7_aEnd").value=p0_addDays(latest,-7);
+  p7_recalc();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════════════════════
 p0_init();
@@ -3468,6 +3797,7 @@ p3_init();
 p4_init();
 p4_rebuildCampList();
 p6_init();
+p7_init();
 </script>
 </body>
 </html>
