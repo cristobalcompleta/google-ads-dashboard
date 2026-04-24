@@ -112,6 +112,9 @@ tr:hover td{background:#f8fafc}
 .p0-hero{background:#1e293b;border-color:#334155}
 .p0-hero .p0-insight-title{color:#f5a623}
 .p0-hero .p0-insight-body{color:#94a3b8;font-size:12px;line-height:1.7}
+.p0-blue{background:#eff6ff;border-color:#bfdbfe}
+.p0-blue .p0-insight-title{color:#1d4ed8}
+.p0-blue .p0-insight-body{color:#1e40af}
 .p0-insight-icon{font-size:18px;margin-bottom:4px}
 .p0-insight-title{font-size:13px;font-weight:700;color:#0f172a;line-height:1.35}
 .p0-insight-body{font-size:11px;color:#64748b;line-height:1.65;margin-top:2px}
@@ -1362,6 +1365,14 @@ function p0_l4wDates(today,ex){
   for(let i=1;i<=28;i++){const d=p0_addDays(today,-i);if(!ex.has(d))out.push(d);}
   return out;
 }
+function p0_l4dowAvgType(today,typeName,ex){
+  const dates=p0_l4dowDates(today,ex);
+  if(!dates.length) return{cost:0,trials:0};
+  let cost=0,trials=0;
+  dates.forEach(d=>{const r=p0_dayRawType(d,typeName);cost+=r.cost;trials+=r.trials;});
+  const n=dates.length;
+  return{cost:cost/n,trials:trials/n};
+}
 
 // ── comparison dropdown ───────────────────────────────────────────────────────
 const P0_DOW_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1671,11 +1682,10 @@ function p0_cpcStoryCard(today,lw){
   </div>`;
 }
 
-function p0_cacMoverCard(typeName,selDate,lwDate){
+function p0_cacMoverCard(typeName,selDate,refRaw,refLabel){
   const t=p0_dayRawType(selDate,typeName);
-  const l=p0_dayRawType(lwDate,typeName);
   const cac_t=t.trials>0?t.cost/t.trials:null;
-  const cac_l=l.trials>0?l.cost/l.trials:null;
+  const cac_l=refRaw.trials>0?refRaw.cost/refRaw.trials:null;
 
   if(!cac_t||!cac_l) return`<div class="p0-insight-card">
     <div class="p0-insight-icon">🔍</div>
@@ -1691,7 +1701,34 @@ function p0_cacMoverCard(typeName,selDate,lwDate){
   return`<div class="p0-insight-card">
     <div class="p0-insight-icon">${icon}</div>
     <div class="p0-insight-title">${typeName} — CAC <span class="${cls}">${sign}${fmtD(Math.abs(delta),2)}</span></div>
-    <div class="p0-insight-body">Today: ${fmtD(cac_t,2)} vs ${fmtD(cac_l,2)} same day LW <span class="${cls}">(${fmtPct(pct)})</span>.</div>
+    <div class="p0-insight-body">Today: ${fmtD(cac_t,2)} vs ${fmtD(cac_l,2)} avg L4 ${refLabel} <span class="${cls}">(${fmtPct(pct)})</span>.</div>
+  </div>`;
+}
+
+function p0_nbVsBrandRatioCard(selDate,nbRef,brandRef,dowName){
+  const nb=p0_dayRawType(selDate,'NonBrand');
+  const br=p0_dayRawType(selDate,'Brand');
+  const nbCac=nb.trials>0?nb.cost/nb.trials:null;
+  const brCac=br.trials>0?br.cost/br.trials:null;
+
+  if(!nbCac||!brCac) return`<div class="p0-insight-card">
+    <div class="p0-insight-icon">⚖️</div>
+    <div class="p0-insight-title">NB / Brand CAC Ratio</div>
+    <div class="p0-insight-body">Insufficient data for one or both types.</div>
+  </div>`;
+
+  const ratioToday=nbCac/brCac;
+  const nbCacRef=nbRef.trials>0?nbRef.cost/nbRef.trials:null;
+  const brCacRef=brandRef.trials>0?brandRef.cost/brandRef.trials:null;
+  const ratioRef=(nbCacRef&&brCacRef)?nbCacRef/brCacRef:null;
+  const delta=ratioRef!==null?ratioToday-ratioRef:null;
+  const pct=ratioRef?delta/Math.abs(ratioRef):null;
+  const refStr=ratioRef!==null?`${fmtD(ratioRef,2)}x avg L4 ${dowName}`:'—';
+  const deltaStr=pct!==null?` <span class="delta-neu">(${pct>=0?'+':''}${(pct*100).toFixed(1)}%)</span>`:'';
+  return`<div class="p0-insight-card">
+    <div class="p0-insight-icon">⚖️</div>
+    <div class="p0-insight-title">NB / Brand CAC Ratio: ${fmtD(ratioToday,2)}x</div>
+    <div class="p0-insight-body">NB ${fmtD(nbCac,2)} · Brand ${fmtD(brCac,2)}<br>vs ${refStr}${deltaStr}</div>
   </div>`;
 }
 
@@ -1712,7 +1749,7 @@ function p0_wtdCard(selDate){
   const costCls=p0_deltaClass(costDelta,lwtd.cost,false);
   const cacCls=cacDelta!==null?p0_deltaClass(cacDelta,lwtd_cac,true):"delta-neu";
   const fmtPctWTD=v=>v===null?"—":(v>=0?"+":"")+( v*100).toFixed(1)+"%";
-  return`<div class="p0-insight-card">
+  return`<div class="p0-insight-card p0-blue">
     <div class="p0-insight-icon">📅</div>
     <div class="p0-insight-title">Week-to-Date (${nDays} day${nDays>1?"s":""})</div>
     <div class="p0-insight-body">
@@ -1861,15 +1898,19 @@ function p0_recalc(){
   ].join("");
 
   // ── Insight cards ──────────────────────────────────────────────────────────
+  const brandL4dow=p0_l4dowAvgType(selDate,'Brand',p0_compExclude);
+  const nbL4dow=p0_l4dowAvgType(selDate,'NonBrand',p0_compExclude);
+  const dowName=P0_DOW_FULL[dow];
+
   document.getElementById("p0_insightGrid").innerHTML=[
     p0_efficiencyCard(selDate, "Brand",    ["Brand","BrandShopping"],       "#93c5fd"),
     p0_efficiencyCard(selDate, "NonBrand", ["NonBrand","NonBrandShopping"], "#fdba74"),
     p0_topCACMoverCard(selDate),
     p0_streakCard(selDate),
-    p0_cpcStoryCard(today, lwD),
-    p0_cacMoverCard("Brand",    selDate, lw),
-    p0_cacMoverCard("NonBrand", selDate, lw),
     p0_wtdCard(selDate),
+    p0_nbVsBrandRatioCard(selDate, nbL4dow, brandL4dow, dowName),
+    p0_cacMoverCard("Brand",    selDate, brandL4dow, dowName),
+    p0_cacMoverCard("NonBrand", selDate, nbL4dow,    dowName),
   ].join("");
 
   // ── Chart ──────────────────────────────────────────────────────────────────
