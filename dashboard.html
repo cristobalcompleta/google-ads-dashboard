@@ -1770,7 +1770,7 @@ function p0_wtdCard(selDate){
 
 // ── chart ─────────────────────────────────────────────────────────────────────
 function p0_renderChart(selDate){
-  const labels=[],trialData=[],cacData=[];
+  const labels=[],trialData=[],cacData=[],rawCosts=[],rawTrials=[];
   for(let i=29;i>=0;i--){
     const d=p0_addDays(selDate,-i);
     const raw=p0_dayRaw(d);
@@ -1778,11 +1778,18 @@ function p0_renderChart(selDate){
     labels.push(`${dt.getMonth()+1}/${dt.getDate()}`);
     trialData.push(raw.trials||0);
     cacData.push(raw.trials>0?raw.cost/raw.trials:null);
+    rawCosts.push(raw.cost||0);
+    rawTrials.push(raw.trials||0);
   }
-  // Period average = pooled across all 30 days in the chart window
-  const periodRaw=p0_rangeRaw(p0_addDays(selDate,-29),selDate);
-  const periodTrialAvg=periodRaw.trials/30;
-  const periodCacAvg=periodRaw.trials>0?periodRaw.cost/periodRaw.trials:null;
+  // Rolling 7-day avg
+  const roll7Trials=[],roll7CAC=[];
+  for(let i=0;i<30;i++){
+    const s=Math.max(0,i-6);
+    let sc=0,st=0,str=0;
+    for(let j=s;j<=i;j++){sc+=rawCosts[j];st+=rawTrials[j];str+=trialData[j];}
+    roll7Trials.push(str/(i-s+1));
+    roll7CAC.push(st>0?sc/st:null);
+  }
 
   const chartData={
     labels,
@@ -1798,12 +1805,12 @@ function p0_renderChart(selDate){
         yAxisID:"y2",order:1,
       },
       {
-        type:"line",label:"Period avg Trials",data:Array(30).fill(periodTrialAvg||null),
+        type:"line",label:"7-day avg Trials",data:roll7Trials,
         borderColor:"rgba(59,130,246,0.35)",borderDash:[5,4],pointRadius:0,
         yAxisID:"y",order:3,
       },
       {
-        type:"line",label:"Period avg CAC",data:Array(30).fill(periodCacAvg||null),
+        type:"line",label:"7-day avg CAC",data:roll7CAC,
         borderColor:"rgba(249,115,22,0.35)",borderDash:[5,4],pointRadius:0,
         yAxisID:"y2",order:4,
       },
