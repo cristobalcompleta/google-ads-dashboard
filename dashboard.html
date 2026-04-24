@@ -175,6 +175,19 @@ tr:hover td{background:#f8fafc}
         </div>
       </div>
     </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Comparison</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('p0_compPanel')" id="p0_compBtn"><span id="p0_compLabel">Last 28 days</span><span>▾</span></button>
+        <div class="dd-panel" id="p0_compPanel">
+          <div class="dd-list" id="p0_compList" style="max-height:240px"></div>
+          <div class="dd-actions">
+            <button class="dd-act-btn" onclick="p0_compSelectAll()">All</button>
+            <button class="dd-act-btn" onclick="p0_compClearAll()">None</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- CONTENT -->
@@ -1202,8 +1215,10 @@ function monday(dateStr){
 // ══════════════════════════════════════════════════════════════════════════════
 
 let p0_selCT=new Set(["Brand","NonBrand","BrandShopping","NonBrandShopping"]);
-let p0_selCamp=null; // null = all campaigns; Set = specific selection
+let p0_selCamp=null;
 let p0_chartInst=null;
+let p0_compExclude=new Set();
+let p0_lastCompDate=null;
 
 // Like deltaClass but returns delta-warn (yellow) when |change| < 2%
 function p0_deltaClass(delta, ref, invert=false){
@@ -1272,7 +1287,6 @@ function p0_derive(raw){
   };
 }
 function p0_7dayAvg(today){
-  // Pooled avg over the 7 days immediately before today
   const raw=p0_rangeRaw(p0_addDays(today,-7),p0_addDays(today,-1));
   return{
     cost:   raw.cost/7,
@@ -1282,6 +1296,74 @@ function p0_7dayAvg(today){
     cac:    raw.trials>0?raw.cost/raw.trials:null,
     cvr:    raw.cl>0?raw.trials/raw.cl:null,
   };
+}
+
+// ── comparison period helpers ─────────────────────────────────────────────────
+function p0_periodAvg(daysArray){
+  if(!daysArray.length) return{cost:null,trials:null,cpc:null,ctr:null,cac:null,cvr:null};
+  let imp=0,cl=0,cost=0,trials=0;
+  daysArray.forEach(d=>{const r=p0_dayRaw(d);imp+=r.imp;cl+=r.cl;cost+=r.cost;trials+=r.trials;});
+  const n=daysArray.length;
+  return{cost:cost/n,trials:trials/n,cpc:cl>0?cost/cl:null,ctr:imp>0?cl/imp:null,cac:trials>0?cost/trials:null,cvr:cl>0?trials/cl:null};
+}
+function p0_l7dDates(today,ex){
+  const out=[];
+  for(let i=1;i<=7;i++){const d=p0_addDays(today,-i);if(!ex.has(d))out.push(d);}
+  return out;
+}
+function p0_l4dowDates(today,ex){
+  const out=[];let i=7;
+  while(out.length<4&&i<=56){const d=p0_addDays(today,-i);if(!ex.has(d))out.push(d);i+=7;}
+  return out;
+}
+function p0_l4wDates(today,ex){
+  const out=[];
+  for(let i=1;i<=28;i++){const d=p0_addDays(today,-i);if(!ex.has(d))out.push(d);}
+  return out;
+}
+
+// ── comparison dropdown ───────────────────────────────────────────────────────
+const P0_DOW_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const P0_DOW_FULL=['Sundays','Mondays','Tuesdays','Wednesdays','Thursdays','Fridays','Saturdays'];
+
+function p0_buildCompDropdown(selDate){
+  p0_compExclude=new Set();
+  const list=document.getElementById('p0_compList');
+  list.innerHTML='';
+  for(let i=1;i<=28;i++){
+    const d=p0_addDays(selDate,-i);
+    const dow=new Date(d+'T00:00:00').getDay();
+    const lbl=document.createElement('label');
+    lbl.className='dd-item';
+    lbl.innerHTML=`<input type="checkbox" value="${d}" checked onchange="p0_onCompChange(this)"> ${d} (${P0_DOW_NAMES[dow]})`;
+    list.appendChild(lbl);
+  }
+  document.getElementById('p0_compLabel').textContent='Last 28 days';
+  document.getElementById('p0_compBtn').classList.remove('active');
+}
+function p0_onCompChange(cb){
+  if(cb.checked) p0_compExclude.delete(cb.value);
+  else           p0_compExclude.add(cb.value);
+  const total=document.querySelectorAll('#p0_compList input').length;
+  const checked=document.querySelectorAll('#p0_compList input:checked').length;
+  const lbl=document.getElementById('p0_compLabel');
+  lbl.textContent=checked===total?'Last 28 days':`${checked} of ${total} days`;
+  document.getElementById('p0_compBtn').classList.toggle('active',checked!==total);
+  p0_recalc();
+}
+function p0_compSelectAll(){
+  document.querySelectorAll('#p0_compList input').forEach(x=>x.checked=true);
+  p0_compExclude=new Set();
+  document.getElementById('p0_compLabel').textContent='Last 28 days';
+  document.getElementById('p0_compBtn').classList.remove('active');
+  p0_recalc();
+}
+function p0_compClearAll(){
+  document.querySelectorAll('#p0_compList input').forEach(x=>{x.checked=false;p0_compExclude.add(x.value);});
+  const total=document.querySelectorAll('#p0_compList input').length;
+  document.getElementById('p0_compLabel').textContent=`0 of ${total} days`;
+  document.getElementById('p0_compBtn').classList.add('active');
+  p0_recalc();
 }
 
 // ── CT filter ─────────────────────────────────────────────────────────────────
@@ -1687,40 +1769,53 @@ function p0_recalc(){
   const selDate=document.getElementById("p0_date").value;
   if(!selDate) return;
 
+  if(selDate!==p0_lastCompDate){p0_buildCompDropdown(selDate);p0_lastCompDate=selDate;}
+
+  const dow=new Date(selDate+'T00:00:00').getDay();
+  const l4dowLabel='vs L4 '+P0_DOW_FULL[dow];
+
   const yesterday=p0_addDays(selDate,-1);
   const lw=p0_addDays(selDate,-7);
 
   const today=p0_derive(p0_dayRaw(selDate));
   const yday=p0_derive(p0_dayRaw(yesterday));
   const lwD=p0_derive(p0_dayRaw(lw));
-  const avg7=p0_7dayAvg(selDate);
+
+  const l7d  =p0_periodAvg(p0_l7dDates(selDate,p0_compExclude));
+  const l4dow=p0_periodAvg(p0_l4dowDates(selDate,p0_compExclude));
+  const l4w  =p0_periodAvg(p0_l4wDates(selDate,p0_compExclude));
 
   // ── KPI cards ──────────────────────────────────────────────────────────────
   document.getElementById("p0_kpiGrid").innerHTML=[
     p0_kpiCard("Spend", today.cost, v=>fmtD(v,0), v=>fmtD(v,0), false, [
-      {lbl:"vs Yesterday",   cur:today.cost, ref:yday.cost},
-      {lbl:"vs Same Day LW", cur:today.cost, ref:lwD.cost},
-      {lbl:"vs 7-day avg",   cur:today.cost, ref:avg7.cost},
+      {lbl:"vs Yesterday", cur:today.cost, ref:yday.cost},
+      {lbl:"vs L7D",       cur:today.cost, ref:l7d.cost},
+      {lbl:l4dowLabel,     cur:today.cost, ref:l4dow.cost},
+      {lbl:"vs L4W",       cur:today.cost, ref:l4w.cost},
     ]),
     p0_kpiCard("Trials CAC", today.cac, v=>fmtD(v,2), v=>fmtD(v,2), true, [
-      {lbl:"vs Yesterday",   cur:today.cac, ref:yday.cac},
-      {lbl:"vs Same Day LW", cur:today.cac, ref:lwD.cac},
-      {lbl:"vs 7-day avg",   cur:today.cac, ref:avg7.cac},
+      {lbl:"vs Yesterday", cur:today.cac, ref:yday.cac},
+      {lbl:"vs L7D",       cur:today.cac, ref:l7d.cac},
+      {lbl:l4dowLabel,     cur:today.cac, ref:l4dow.cac},
+      {lbl:"vs L4W",       cur:today.cac, ref:l4w.cac},
     ]),
     p0_kpiCard("Trials", today.trials, v=>fmtN(v,0), v=>fmtN(v,0), false, [
-      {lbl:"vs Yesterday",   cur:today.trials, ref:yday.trials},
-      {lbl:"vs Same Day LW", cur:today.trials, ref:lwD.trials},
-      {lbl:"vs 7-day avg",   cur:today.trials, ref:avg7.trials},
+      {lbl:"vs Yesterday", cur:today.trials, ref:yday.trials},
+      {lbl:"vs L7D",       cur:today.trials, ref:l7d.trials},
+      {lbl:l4dowLabel,     cur:today.trials, ref:l4dow.trials},
+      {lbl:"vs L4W",       cur:today.trials, ref:l4w.trials},
     ]),
     p0_kpiCard("CPC", today.cpc, v=>fmtD(v,2), v=>fmtD(v,2), true, [
-      {lbl:"vs Yesterday",   cur:today.cpc, ref:yday.cpc},
-      {lbl:"vs Same Day LW", cur:today.cpc, ref:lwD.cpc},
-      {lbl:"vs 7-day avg",   cur:today.cpc, ref:avg7.cpc},
+      {lbl:"vs Yesterday", cur:today.cpc, ref:yday.cpc},
+      {lbl:"vs L7D",       cur:today.cpc, ref:l7d.cpc},
+      {lbl:l4dowLabel,     cur:today.cpc, ref:l4dow.cpc},
+      {lbl:"vs L4W",       cur:today.cpc, ref:l4w.cpc},
     ]),
     p0_kpiCard("CVR", today.cvr, v=>(v*100).toFixed(2)+"%", v=>(v*100).toFixed(2)+"pp", false, [
-      {lbl:"vs Yesterday",   cur:today.cvr, ref:yday.cvr},
-      {lbl:"vs Same Day LW", cur:today.cvr, ref:lwD.cvr},
-      {lbl:"vs 7-day avg",   cur:today.cvr, ref:avg7.cvr},
+      {lbl:"vs Yesterday", cur:today.cvr, ref:yday.cvr},
+      {lbl:"vs L7D",       cur:today.cvr, ref:l7d.cvr},
+      {lbl:l4dowLabel,     cur:today.cvr, ref:l4dow.cvr},
+      {lbl:"vs L4W",       cur:today.cvr, ref:l4w.cvr},
     ]),
   ].join("");
 
