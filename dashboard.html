@@ -543,19 +543,19 @@ tr:hover td{background:#f8fafc}
     <div class="period-group">
       <span class="period-badge badge-a">A</span>
       <span class="period-label">Start</span>
-      <input class="date-input" type="date" id="p4_aStart" value="2026-03-20" onchange="p4_recalc()">
+      <input class="date-input" type="date" id="p4_aStart" onchange="p4_recalc()">
       <span class="period-sep">→</span>
       <span class="period-label">End</span>
-      <input class="date-input" type="date" id="p4_aEnd" value="2026-03-26" onchange="p4_recalc()">
+      <input class="date-input" type="date" id="p4_aEnd" onchange="p4_recalc()">
     </div>
     <div style="width:1px;height:24px;background:#e2e8f0"></div>
     <div class="period-group">
       <span class="period-badge badge-b">B</span>
       <span class="period-label">Start</span>
-      <input class="date-input" type="date" id="p4_bStart" value="2026-03-27" onchange="p4_recalc()">
+      <input class="date-input" type="date" id="p4_bStart" onchange="p4_recalc()">
       <span class="period-sep">→</span>
       <span class="period-label">End</span>
-      <input class="date-input" type="date" id="p4_bEnd" value="2026-04-02" onchange="p4_recalc()">
+      <input class="date-input" type="date" id="p4_bEnd" onchange="p4_recalc()">
     </div>
   </div>
 
@@ -2902,6 +2902,15 @@ function p4_sumPeriod(start,end){
   return{imp,cl,cost,trials};
 }
 
+function p4_init(){
+  const yesterday=p0_addDays(p0_latestDate(),-1);
+  document.getElementById("p4_bStart").value=yesterday;
+  document.getElementById("p4_bEnd").value=yesterday;
+  document.getElementById("p4_aStart").value=p0_addDays(yesterday,-7);
+  document.getElementById("p4_aEnd").value=p0_addDays(yesterday,-1);
+  p4_recalc();
+}
+
 function p4_recalc(){
   const aStart=document.getElementById("p4_aStart").value;
   const aEnd=document.getElementById("p4_aEnd").value;
@@ -3093,8 +3102,8 @@ p5_init();
 p2_rebuildCampList();
 p2_recalc();
 p3_init();
+p4_init();
 p4_rebuildCampList();
-p4_recalc();
 </script>
 </body>
 </html>
