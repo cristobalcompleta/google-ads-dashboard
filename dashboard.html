@@ -115,6 +115,16 @@ tr:hover td{background:#f8fafc}
 .p0-insight-icon{font-size:18px;margin-bottom:4px}
 .p0-insight-title{font-size:13px;font-weight:700;color:#0f172a;line-height:1.35}
 .p0-insight-body{font-size:11px;color:#64748b;line-height:1.65;margin-top:2px}
+
+/* ── README BOX ───────────────────────────────────────────────────────────── */
+.p0-cards-wrap{display:flex;gap:16px;align-items:stretch}
+.p0-cards-left{display:flex;flex-direction:column;gap:16px;flex:1;min-width:0}
+.p0-readme{background:#fefce8;border:1px solid #fde047;border-radius:12px;padding:20px 22px;width:252px;flex-shrink:0;display:flex;flex-direction:column;gap:14px}
+.rm-section{display:flex;flex-direction:column;gap:5px}
+.rm-title{font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #fde047;padding-bottom:4px;margin-bottom:2px}
+.rm-body{font-size:11px;color:#78350f;line-height:1.65}
+.rm-body li{margin-left:12px;margin-bottom:2px}
+.rm-body strong{color:#92400e}
 </style>
 </head>
 <body>
@@ -193,14 +203,52 @@ tr:hover td{background:#f8fafc}
   <!-- CONTENT -->
   <div class="p0-main">
 
-    <!-- KPI Cards -->
-    <div class="p0-kpi-grid" id="p0_kpiGrid">
-      <div class="p0-kpi-card" style="grid-column:1/-1"><div class="empty-state">Loading…</div></div>
-    </div>
+    <!-- KPI + Insight + Readme -->
+    <div class="p0-cards-wrap">
+      <div class="p0-cards-left">
+        <div class="p0-kpi-grid" id="p0_kpiGrid">
+          <div class="p0-kpi-card" style="grid-column:1/-1"><div class="empty-state">Loading…</div></div>
+        </div>
+        <div class="p0-insight-grid" id="p0_insightGrid">
+          <div class="p0-insight-card p0-hero" style="grid-column:1/-1"><div class="p0-insight-body">Loading…</div></div>
+        </div>
+      </div>
 
-    <!-- Insight Cards -->
-    <div class="p0-insight-grid" id="p0_insightGrid">
-      <div class="p0-insight-card p0-hero" style="grid-column:1/-1"><div class="p0-insight-body">Loading…</div></div>
+      <!-- Read Me -->
+      <div class="p0-readme">
+        <div class="rm-section">
+          <div class="rm-title">What you're looking at</div>
+          <div class="rm-body">Daily Google Ads snapshot for the selected Report Date. All metrics respect the Campaign Type and Campaign filters above.</div>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">KPI Cards</div>
+          <ul class="rm-body">
+            <li><strong>vs Yesterday</strong> — day-over-day</li>
+            <li><strong>vs L4 [DOW]</strong> — same weekday, last 4 weeks</li>
+            <li><strong>vs L7D</strong> — last 7 days avg</li>
+            <li><strong>vs L4W</strong> — last 28 days avg</li>
+          </ul>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Color Guide</div>
+          <div class="rm-body">
+            🟢 Green = better &nbsp;·&nbsp; 🔴 Red = worse &nbsp;·&nbsp; 🟡 Yellow = ±2% (flat)<br>
+            CAC and CPC are inverted — lower is green.
+          </div>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Comparison Dropdown</div>
+          <div class="rm-body">Removes specific days from L7D, L4DOW, and L4W. Use it to exclude holidays or outlier days that distort your benchmarks.</div>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Insight Cards</div>
+          <ul class="rm-body">
+            <li><strong>Top CAC Mover</strong> — biggest CAC shift vs yesterday</li>
+            <li><strong>Most Efficient</strong> — lowest CAC in Brand / NonBrand</li>
+            <li><strong>Streak</strong> — consecutive days CAC trended same direction</li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <!-- 14-day Trend Chart -->
