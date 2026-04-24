@@ -822,10 +822,6 @@ tr:hover td{background:#f8fafc}
           <div class="chart-label">CPC (Cost / Click)</div>
           <div style="position:relative;height:240px"><canvas id="p6_c4"></canvas></div>
         </div>
-        <div style="grid-column:1/-1">
-          <div class="chart-label">pLTR — Predictive Lifetime Revenue <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0">(data populating)</span></div>
-          <div style="position:relative;height:200px"><canvas id="p6_c5"></canvas></div>
-        </div>
       </div>
     </div>
   </div>
@@ -3370,7 +3366,7 @@ function p6_recalc(){
   const start=document.getElementById("p6_start").value;
   const end  =document.getElementById("p6_end").value;
   if(!start||!end||!p6_primaryCamp){
-    ["p6_c1","p6_c2","p6_c3","p6_c4","p6_c5"].forEach(id=>p6_destroyChart(id));
+    ["p6_c1","p6_c2","p6_c3","p6_c4"].forEach(id=>p6_destroyChart(id));
     document.getElementById("p6_sub").textContent="Select a campaign above";
     return;
   }
@@ -3388,14 +3384,11 @@ function p6_recalc(){
   const pCost  =series(prim,r=>r.cost);
   const pCVR   =series(prim,r=>r.cl>0?r.trials/r.cl:null);
   const pCPC   =series(prim,r=>r.cl>0?r.cost/r.cl:null);
-  const pPLTV  =series(prim,r=>r.pltv||0);
-
   const cTrials=comp?series(comp,r=>r.trials):null;
   const cCAC   =comp?series(comp,r=>r.trials>0?r.cost/r.trials:null):null;
   const cCost  =comp?series(comp,r=>r.cost):null;
   const cCVR   =comp?series(comp,r=>r.cl>0?r.trials/r.cl:null):null;
   const cCPC   =comp?series(comp,r=>r.cl>0?r.cost/r.cl:null):null;
-  const cPLTV  =comp?series(comp,r=>r.pltv||0):null;
 
   const pL=p6_shortName(p6_primaryCamp);
   const cL=comp?p6_shortName(p6_compCamp):"";
@@ -3446,15 +3439,7 @@ function p6_recalc(){
   o4.plugins.tooltip={callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y!==null?fmtD(ctx.parsed.y,2):"—"}`}};
   p6_charts["p6_c4"]=new Chart(document.getElementById("p6_c4").getContext("2d"),{type:"bar",data:{labels,datasets:ds4},options:o4});
 
-  // ── Chart 5: pLTR ────────────────────────────────────────────────────────
-  p6_destroyChart("p6_c5");
-  const ds5=[{type:"bar",label:`${pL} — pLTR`,data:pPLTV,backgroundColor:P6_PBAR_A,yAxisID:"y",order:2}];
-  if(comp) ds5.push({type:"bar",label:`${cL} — pLTR`,data:cPLTV,backgroundColor:P6_CBAR_A,yAxisID:"y",order:4});
-  const o5=p6_baseOpts("pLTR ($)","",v=>fmtD(v,0));
-  o5.plugins.tooltip={callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y!==null?fmtD(ctx.parsed.y,2):"—"}`}};
-  p6_charts["p6_c5"]=new Chart(document.getElementById("p6_c5").getContext("2d"),{type:"bar",data:{labels,datasets:ds5},options:o5});
-
-  document.getElementById("p6_sub").textContent=
+document.getElementById("p6_sub").textContent=
     `${p6_primaryCamp}${comp?" vs "+p6_compCamp:""} · ${start} → ${end}`;
 }
 
