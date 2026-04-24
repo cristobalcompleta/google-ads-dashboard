@@ -142,11 +142,12 @@ tr:hover td{background:#f8fafc}
 </header>
 <nav class="tab-nav">
   <button class="tab-btn active" id="tabBtn0" onclick="showTab(0)">Summary</button>
-  <button class="tab-btn" id="tabBtn1" onclick="showTab(1)">Campaign Type Zoom In</button>
-  <button class="tab-btn" id="tabBtn2" onclick="showTab(2)">Campaign Zoom In</button>
+  <button class="tab-btn" id="tabBtn1" onclick="showTab(1)">Campaign Type Cost Spread</button>
+  <button class="tab-btn" id="tabBtn2" onclick="showTab(2)">Campaign Cost Spread</button>
   <button class="tab-btn" id="tabBtn3" onclick="showTab(3)">CAC Decomposition</button>
   <button class="tab-btn" id="tabBtn4" onclick="showTab(4)">Device Breakdown</button>
   <button class="tab-btn" id="tabBtn5" onclick="showTab(5)">Period Comparison</button>
+  <button class="tab-btn" id="tabBtn6" onclick="showTab(6)">Campaign Zoom In</button>
 </nav>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
@@ -781,6 +782,56 @@ tr:hover td{background:#f8fafc}
 </div>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 6 — CAMPAIGN ZOOM IN                                               -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="tab6" class="tab-pane">
+  <div class="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Primary Campaign</span>
+      <select class="date-input" id="p6_primary" onchange="p6_onCampChange()" style="min-width:220px;max-width:320px;height:28px;padding:2px 6px"></select>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Comparison</span>
+      <select class="date-input" id="p6_comp" onchange="p6_onCampChange()" style="min-width:180px;max-width:320px;height:28px;padding:2px 6px"></select>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Date Range</span>
+      <input class="date-input" type="date" id="p6_start" onchange="p6_recalc()">
+      <span class="period-sep-inline">→</span>
+      <input class="date-input" type="date" id="p6_end" onchange="p6_recalc()">
+    </div>
+  </div>
+  <div class="p2-main">
+    <div class="section">
+      <div class="section-title">Campaign Zoom In</div>
+      <div class="section-sub" id="p6_sub">Select a campaign above</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:16px">
+        <div>
+          <div class="chart-label">Trials &amp; CAC</div>
+          <div style="position:relative;height:240px"><canvas id="p6_c1"></canvas></div>
+        </div>
+        <div>
+          <div class="chart-label">Cost &amp; CAC</div>
+          <div style="position:relative;height:240px"><canvas id="p6_c2"></canvas></div>
+        </div>
+        <div>
+          <div class="chart-label">CVR (Trials / Click)</div>
+          <div style="position:relative;height:240px"><canvas id="p6_c3"></canvas></div>
+        </div>
+        <div>
+          <div class="chart-label">CPC (Cost / Click)</div>
+          <div style="position:relative;height:240px"><canvas id="p6_c4"></canvas></div>
+        </div>
+        <div style="grid-column:1/-1">
+          <div class="chart-label">pLTR — Predictive Lifetime Revenue <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0">(data populating)</span></div>
+          <div style="position:relative;height:200px"><canvas id="p6_c5"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- DATA + SCRIPTS                                                          -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <script>
@@ -1232,6 +1283,7 @@ function showTab(n){
   if(n===1) Object.values(p5_charts).forEach(c=>c.resize());
   if(n===2) Object.values(p1_charts).forEach(c=>c.resize());
   if(n===4) Object.values(p3_charts).forEach(c=>c.resize());
+  if(n===6) Object.values(p6_charts).forEach(c=>c.resize());
   // Close any open dropdowns
   document.querySelectorAll(".dd-panel").forEach(x=>x.classList.remove("open"));
 }
@@ -3213,6 +3265,193 @@ function p4_recalc(){
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// PAGE 6 — CAMPAIGN ZOOM IN
+// ══════════════════════════════════════════════════════════════════════════════
+
+const p6_charts={};
+let p6_primaryCamp=null;
+let p6_compCamp=null;
+
+const P6_PBAR="#2563eb";         // primary bars
+const P6_PBAR_A="rgba(37,99,235,0.70)";
+const P6_PLINE="#1e40af";        // primary CAC line
+const P6_CBAR_A="rgba(22,163,74,0.65)"; // comparison bars
+const P6_CLINE="#166534";        // comparison CAC line
+
+function p6_shortName(n){
+  if(!n||n.length<=36) return n||"";
+  return n.slice(0,34)+"…";
+}
+
+function p6_buildCamps(){
+  const camps=[...new Set(DATA.map(r=>r.camp))].sort();
+  const primEl=document.getElementById("p6_primary");
+  const compEl=document.getElementById("p6_comp");
+  const opts=camps.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join("");
+  primEl.innerHTML=`<option value="">Select campaign…</option>`+opts;
+  compEl.innerHTML=`<option value="">None</option>`+opts;
+}
+
+function p6_onCampChange(){
+  p6_primaryCamp=document.getElementById("p6_primary").value||null;
+  p6_compCamp=document.getElementById("p6_comp").value||null;
+  p6_recalc();
+}
+
+function p6_campSeries(campName,start,end){
+  const s=new Date(start+"T00:00:00"),e=new Date(end+"T00:00:00");
+  const map={};
+  DATA.forEach(r=>{
+    if(r.camp!==campName) return;
+    const rd=new Date(r.d+"T00:00:00");
+    if(rd<s||rd>e) return;
+    if(!map[r.d]) map[r.d]={cost:0,trials:0,cl:0,imp:0,pltv:0};
+    map[r.d].cost+=r.cost; map[r.d].trials+=r.trials;
+    map[r.d].cl+=r.cl;     map[r.d].imp+=r.imp;
+    map[r.d].pltv+=(r.pltv||0);
+  });
+  return map;
+}
+
+function p6_makeDates(start,end){
+  const dates=[];
+  const cur=new Date(start+"T00:00:00"),e=new Date(end+"T00:00:00");
+  while(cur<=e){dates.push(cur.toISOString().slice(0,10));cur.setDate(cur.getDate()+1);}
+  return dates;
+}
+
+function p6_destroyChart(id){
+  if(p6_charts[id]){p6_charts[id].destroy();delete p6_charts[id];}
+}
+
+function p6_baseOpts(y1Label,y2Label,tickCb1){
+  const opts={
+    responsive:true,maintainAspectRatio:false,
+    interaction:{mode:"index",intersect:false},
+    plugins:{legend:{position:"bottom",labels:{font:{size:10},padding:8,boxWidth:10,boxHeight:10}}},
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45,minRotation:45}},
+      y:{position:"left",grid:{color:"#f1f5f9"},
+        ticks:{font:{size:10},callback:tickCb1||(v=>fmtN(v,0))},
+        title:{display:!!y1Label,text:y1Label||"",font:{size:10},color:"#94a3b8"}},
+    }
+  };
+  if(y2Label){
+    opts.scales.y2={
+      position:"right",grid:{display:false},
+      ticks:{font:{size:10},callback:v=>"$"+v.toFixed(0)},
+      title:{display:true,text:y2Label,font:{size:10},color:"#94a3b8"},
+    };
+  }
+  return opts;
+}
+
+function p6_recalc(){
+  const start=document.getElementById("p6_start").value;
+  const end  =document.getElementById("p6_end").value;
+  if(!start||!end||!p6_primaryCamp){
+    ["p6_c1","p6_c2","p6_c3","p6_c4","p6_c5"].forEach(id=>p6_destroyChart(id));
+    document.getElementById("p6_sub").textContent="Select a campaign above";
+    return;
+  }
+
+  const dates=p6_makeDates(start,end);
+  const labels=dates.map(d=>{const dt=new Date(d+"T00:00:00");return`${dt.getMonth()+1}/${dt.getDate()}`;});
+
+  const prim=p6_campSeries(p6_primaryCamp,start,end);
+  const comp=p6_compCamp?p6_campSeries(p6_compCamp,start,end):null;
+
+  function series(map,fn){return dates.map(d=>map[d]?fn(map[d]):null);}
+
+  const pTrials=series(prim,r=>r.trials);
+  const pCAC   =series(prim,r=>r.trials>0?r.cost/r.trials:null);
+  const pCost  =series(prim,r=>r.cost);
+  const pCVR   =series(prim,r=>r.cl>0?r.trials/r.cl:null);
+  const pCPC   =series(prim,r=>r.cl>0?r.cost/r.cl:null);
+  const pPLTV  =series(prim,r=>r.pltv||0);
+
+  const cTrials=comp?series(comp,r=>r.trials):null;
+  const cCAC   =comp?series(comp,r=>r.trials>0?r.cost/r.trials:null):null;
+  const cCost  =comp?series(comp,r=>r.cost):null;
+  const cCVR   =comp?series(comp,r=>r.cl>0?r.trials/r.cl:null):null;
+  const cCPC   =comp?series(comp,r=>r.cl>0?r.cost/r.cl:null):null;
+  const cPLTV  =comp?series(comp,r=>r.pltv||0):null;
+
+  const pL=p6_shortName(p6_primaryCamp);
+  const cL=comp?p6_shortName(p6_compCamp):"";
+
+  // ── Chart 1: Trials + CAC ────────────────────────────────────────────────
+  p6_destroyChart("p6_c1");
+  const ds1=[
+    {type:"bar", label:`${pL} — Trials`,data:pTrials,backgroundColor:P6_PBAR_A,yAxisID:"y",order:2},
+    {type:"line",label:`${pL} — CAC`,   data:pCAC,borderColor:P6_PLINE,backgroundColor:"transparent",pointRadius:2,tension:0.3,yAxisID:"y2",order:1},
+  ];
+  if(comp){
+    ds1.push({type:"bar", label:`${cL} — Trials`,data:cTrials,backgroundColor:P6_CBAR_A,yAxisID:"y",order:4});
+    ds1.push({type:"line",label:`${cL} — CAC`,   data:cCAC,borderColor:P6_CLINE,backgroundColor:"transparent",pointRadius:2,tension:0.3,yAxisID:"y2",order:3});
+  }
+  const o1=p6_baseOpts("Trials","CAC ($)");
+  o1.plugins.tooltip={callbacks:{label:ctx=>ctx.dataset.yAxisID==="y2"
+    ?`${ctx.dataset.label}: ${ctx.parsed.y!==null?fmtD(ctx.parsed.y,2):"—"}`
+    :`${ctx.dataset.label}: ${ctx.parsed.y!==null?fmtN(ctx.parsed.y,0):"—"}`}};
+  p6_charts["p6_c1"]=new Chart(document.getElementById("p6_c1").getContext("2d"),{type:"bar",data:{labels,datasets:ds1},options:o1});
+
+  // ── Chart 2: Cost + CAC ──────────────────────────────────────────────────
+  p6_destroyChart("p6_c2");
+  const ds2=[
+    {type:"bar", label:`${pL} — Cost`,data:pCost,backgroundColor:P6_PBAR_A,yAxisID:"y",order:2},
+    {type:"line",label:`${pL} — CAC`, data:pCAC,borderColor:P6_PLINE,backgroundColor:"transparent",pointRadius:2,tension:0.3,yAxisID:"y2",order:1},
+  ];
+  if(comp){
+    ds2.push({type:"bar", label:`${cL} — Cost`,data:cCost,backgroundColor:P6_CBAR_A,yAxisID:"y",order:4});
+    ds2.push({type:"line",label:`${cL} — CAC`, data:cCAC,borderColor:P6_CLINE,backgroundColor:"transparent",pointRadius:2,tension:0.3,yAxisID:"y2",order:3});
+  }
+  const o2=p6_baseOpts("Cost ($)","CAC ($)",v=>fmtD(v,0));
+  o2.plugins.tooltip={callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y!==null?fmtD(ctx.parsed.y,2):"—"}`}};
+  p6_charts["p6_c2"]=new Chart(document.getElementById("p6_c2").getContext("2d"),{type:"bar",data:{labels,datasets:ds2},options:o2});
+
+  // ── Chart 3: CVR ─────────────────────────────────────────────────────────
+  p6_destroyChart("p6_c3");
+  const ds3=[{type:"bar",label:`${pL} — CVR`,data:pCVR,backgroundColor:P6_PBAR_A,yAxisID:"y",order:2}];
+  if(comp) ds3.push({type:"bar",label:`${cL} — CVR`,data:cCVR,backgroundColor:P6_CBAR_A,yAxisID:"y",order:4});
+  const o3=p6_baseOpts("CVR","",v=>(v*100).toFixed(2)+"%");
+  o3.plugins.tooltip={callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y!==null?(ctx.parsed.y*100).toFixed(2)+"%":"—"}`}};
+  p6_charts["p6_c3"]=new Chart(document.getElementById("p6_c3").getContext("2d"),{type:"bar",data:{labels,datasets:ds3},options:o3});
+
+  // ── Chart 4: CPC ─────────────────────────────────────────────────────────
+  p6_destroyChart("p6_c4");
+  const ds4=[{type:"bar",label:`${pL} — CPC`,data:pCPC,backgroundColor:P6_PBAR_A,yAxisID:"y",order:2}];
+  if(comp) ds4.push({type:"bar",label:`${cL} — CPC`,data:cCPC,backgroundColor:P6_CBAR_A,yAxisID:"y",order:4});
+  const o4=p6_baseOpts("CPC ($)","",v=>fmtD(v,2));
+  o4.plugins.tooltip={callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y!==null?fmtD(ctx.parsed.y,2):"—"}`}};
+  p6_charts["p6_c4"]=new Chart(document.getElementById("p6_c4").getContext("2d"),{type:"bar",data:{labels,datasets:ds4},options:o4});
+
+  // ── Chart 5: pLTR ────────────────────────────────────────────────────────
+  p6_destroyChart("p6_c5");
+  const ds5=[{type:"bar",label:`${pL} — pLTR`,data:pPLTV,backgroundColor:P6_PBAR_A,yAxisID:"y",order:2}];
+  if(comp) ds5.push({type:"bar",label:`${cL} — pLTR`,data:cPLTV,backgroundColor:P6_CBAR_A,yAxisID:"y",order:4});
+  const o5=p6_baseOpts("pLTR ($)","",v=>fmtD(v,0));
+  o5.plugins.tooltip={callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y!==null?fmtD(ctx.parsed.y,2):"—"}`}};
+  p6_charts["p6_c5"]=new Chart(document.getElementById("p6_c5").getContext("2d"),{type:"bar",data:{labels,datasets:ds5},options:o5});
+
+  document.getElementById("p6_sub").textContent=
+    `${p6_primaryCamp}${comp?" vs "+p6_compCamp:""} · ${start} → ${end}`;
+}
+
+function p6_init(){
+  p6_buildCamps();
+  const latest=p0_latestDate();
+  document.getElementById("p6_start").value=p0_addDays(latest,-29);
+  document.getElementById("p6_end").value=latest;
+  const primEl=document.getElementById("p6_primary");
+  if(primEl.options.length>1){
+    primEl.selectedIndex=1;
+    p6_primaryCamp=primEl.value;
+    p6_recalc();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════════════════════
 p0_init();
@@ -3223,6 +3462,7 @@ p2_recalc();
 p3_init();
 p4_init();
 p4_rebuildCampList();
+p6_init();
 </script>
 </body>
 </html>
