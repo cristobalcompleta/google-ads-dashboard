@@ -3272,6 +3272,23 @@ const p6_charts={};
 let p6_primaryCamp=null;
 let p6_compCamp=null;
 
+const P6_CAMP_MAP={
+  "brand_search_brandcore_b_keyword":       "Brand_Search_BrandCore_B_Keyword",
+  "brand_search_brandnoncore_b_keyword":    "Brand_Search_BrandNonCore_B_Keyword",
+  "brand_search_midtier_b_keyword":         "Brand_Search_MidTier_B_Keyword",
+  "brand_search_resurrection_b_keyword":    "Brand_Search_Resurrection_B_Keyword",
+  "nonbrand_search_competitor_u_keyword":   "NonBrand_Search_Competitor_U_Keyword",
+  "nonbrand_search_cuisine_u_keyword":      "NonBrand_Search_Cuisine_U_Keyword",
+  "nonbrand_search_discovery_u_dsa":        "NonBrand_Search_Discovery_U_DSA",
+  "nonbrand_search_discovery_u_keyword":    "NonBrand_Search_Discovery_U_Keyword",
+  "nonbrand_search_genericcore_u_keyword":  "NonBrand_Search_GenericCore_U_Keyword",
+  "nonbrand_search_lifestyle_u_keyword":    "NonBrand_Search_Lifestyle_U_Keyword",
+  "nonbrand_search_resurrection_u_keyword": "NonBrand_Search_Resurrection_U_Keyword",
+  "nonbrand_search_store_u_keyword":        "NonBrand_Search_Store_U_Keyword",
+  "shopping_national_mealplans":            "Shopping_National_MealPlans",
+  "shopping_national_mealplans_b":          "Shopping_National_MealPlans_B",
+};
+
 const P6_PBAR="#2563eb";         // primary bars
 const P6_PBAR_A="rgba(37,99,235,0.70)";
 const P6_PLINE="#1e40af";        // primary CAC line
@@ -3279,15 +3296,18 @@ const P6_CBAR_A="rgba(22,163,74,0.65)"; // comparison bars
 const P6_CLINE="#166534";        // comparison CAC line
 
 function p6_shortName(n){
-  if(!n||n.length<=36) return n||"";
-  return n.slice(0,34)+"…";
+  if(!n) return "";
+  const disp=P6_CAMP_MAP[n]||n;
+  if(disp.length<=36) return disp;
+  return disp.slice(0,34)+"…";
 }
 
 function p6_buildCamps(){
-  const camps=[...new Set(DATA.map(r=>r.camp))].sort();
+  const inData=new Set(DATA.map(r=>r.camp));
+  const camps=Object.keys(P6_CAMP_MAP).filter(k=>inData.has(k));
   const primEl=document.getElementById("p6_primary");
   const compEl=document.getElementById("p6_comp");
-  const opts=camps.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join("");
+  const opts=camps.map(k=>`<option value="${k}">${P6_CAMP_MAP[k]}</option>`).join("");
   primEl.innerHTML=`<option value="">Select campaign…</option>`+opts;
   compEl.innerHTML=`<option value="">None</option>`+opts;
 }
