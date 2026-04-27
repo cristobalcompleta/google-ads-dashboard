@@ -1006,7 +1006,7 @@ DD_LABELS['dd-tchan']     = 'All';
 buildCheckList('list-tchan', ['Brand','NonBrand','Shopping'], true, function() {
   state.tChannels = getChecked('list-tchan');
   syncLabel('dd-tchan', state.tChannels, 'All');
-  renderTrials();
+  render();
 });
 
 // ── CAMPAIGN ESTIMATE FILTER ──────────────────────────────────────────────────
@@ -1020,7 +1020,7 @@ DD_LABELS['dd-distcamp']     = 'All';
   buildCheckList('list-distcamp', camps, true, function() {
     state.distCamps = getChecked('list-distcamp');
     syncLabel('dd-distcamp', state.distCamps, 'All');
-    renderTrials();
+    render();
   });
 })();
 
