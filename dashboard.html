@@ -152,7 +152,6 @@ tr:hover td{background:#f8fafc}
   <button class="tab-btn" id="tabBtn6" onclick="showTab(6)">Campaign Zoom In</button>
   <button class="tab-btn" id="tabBtn1" onclick="showTab(1)">Campaign Type Cost Spread</button>
   <button class="tab-btn" id="tabBtn2" onclick="showTab(2)">Campaign Cost Spread</button>
-  <button class="tab-btn" id="tabBtn4" onclick="showTab(4)">Device Breakdown</button>
   <button class="tab-btn" id="tabBtn5" onclick="showTab(5)">Period Comparison</button>
 </nav>
 
@@ -511,90 +510,6 @@ tr:hover td{background:#f8fafc}
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- TAB 4 — DEVICE BREAKDOWN                                               -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<div id="tab4" class="tab-pane">
-  <div class="tab-readme">
-    <span class="rm-title">What you're looking at</span>
-    <span class="rm-body">How spend and performance split across Mobile, Desktop, and Tablet. The stacked bar charts (daily + weekly) show if device mix is shifting over time. The summary table aggregates all key metrics by device for the selected date range — useful for spotting if one device is dragging CAC or CVR.</span>
-  </div>
-
-  <!-- CONTROLS -->
-  <div class="controls">
-    <div class="ctrl-group">
-      <span class="ctrl-label">Date Range</span>
-      <input class="date-input" type="date" id="p3_chartStart" onchange="p3_recalc()">
-      <span class="period-sep-inline">→</span>
-      <input class="date-input" type="date" id="p3_chartEnd" onchange="p3_recalc()">
-    </div>
-    <div class="ctrl-group">
-      <span class="ctrl-label">Campaign Type</span>
-      <div class="dd-wrap">
-        <button class="dd-btn" onclick="toggleDD('p3_ctPanel')"><span id="p3_ctLabel">All Types</span><span>▾</span></button>
-        <div class="dd-panel" id="p3_ctPanel">
-          <div class="dd-list">
-            <label class="dd-item"><input type="checkbox" value="Brand" checked onchange="p3_onCTChange()"> Brand</label>
-            <label class="dd-item"><input type="checkbox" value="NonBrand" checked onchange="p3_onCTChange()"> NonBrand</label>
-            <label class="dd-item"><input type="checkbox" value="BrandShopping" checked onchange="p3_onCTChange()"> BrandShopping</label>
-            <label class="dd-item"><input type="checkbox" value="NonBrandShopping" checked onchange="p3_onCTChange()"> NonBrandShopping</label>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="ctrl-group">
-      <span class="ctrl-label">Campaign</span>
-      <div class="dd-wrap">
-        <button class="dd-btn" onclick="toggleDD('p3_campPanel')"><span id="p3_campLabel">All Campaigns</span><span>▾</span></button>
-        <div class="dd-panel" id="p3_campPanel">
-          <input class="dd-search" type="text" placeholder="Search campaigns…" oninput="p3_filterList('p3_campList',this.value)">
-          <div class="dd-list" id="p3_campList"></div>
-          <div class="dd-actions">
-            <button class="dd-act-btn" onclick="p3_selectAll('p3_campList')">Select all</button>
-            <button class="dd-act-btn" onclick="p3_clearAll('p3_campList')">Clear</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- CHARTS -->
-  <div class="main">
-    <div class="section">
-      <div class="section-title">% of Cost by Device</div>
-      <div class="section-sub">Share of total spend going to each device · Filters above apply</div>
-      <div class="charts-row">
-        <div><div class="chart-label">Daily</div><canvas id="p3_chartD"></canvas></div>
-        <div><div class="chart-label">Weekly</div><canvas id="p3_chartW"></canvas></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TABLE -->
-  <div class="p2-main">
-    <div class="p2-section">
-      <div class="section-header">
-        <div>
-          <div class="section-title">Device Performance Summary</div>
-          <div style="font-size:11px;color:#94a3b8;margin-top:1px" id="p3_tableSubtitle">Aggregated for selected date range · Filters above apply</div>
-        </div>
-      </div>
-      <div style="overflow-x:auto">
-        <table id="p3_table">
-          <thead>
-            <tr>
-              <th>Metric</th>
-              <th class="num">Mobile</th>
-              <th class="num">Desktop</th>
-              <th class="num">Tablet</th>
-            </tr>
-          </thead>
-          <tbody id="p3_tableBody">
-            <tr><td colspan="4" class="empty-state">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-</div>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- TAB 3 — CAC DECOMPOSITION                                               -->
@@ -1577,7 +1492,6 @@ function showTab(n){
   if(n===0) { if(p0_chartInst) p0_chartInst.resize(); }
   if(n===1) Object.values(p5_charts).forEach(c=>c.resize());
   if(n===2) Object.values(p1_charts).forEach(c=>c.resize());
-  if(n===4) Object.values(p3_charts).forEach(c=>c.resize());
   if(n===6) Object.values(p6_charts).forEach(c=>c.resize());
   if(n===7) { if(p7_chartInst) p7_chartInst.resize(); }
   if(n===8) { if(pw_chartInst) pw_chartInst.resize(); }
@@ -3130,179 +3044,6 @@ function p2_renderFunnel(){
   document.getElementById("p2_funnelBody").innerHTML=rows.join("");
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// PAGE 3 — DEVICE BREAKDOWN
-// ══════════════════════════════════════════════════════════════════════════════
-
-let p3_selCT=new Set(["Brand","NonBrand","BrandShopping","NonBrandShopping"]);
-let p3_selCamp=null;
-const p3_charts={};
-const DEV_COLORS={Mobile:"#f97316",Desktop:"#3b82f6",Tablet:"#8b5cf6"};
-const DEV_ORDER=["Mobile","Desktop","Tablet"];
-
-function p3_filterList(listId,q){
-  document.querySelectorAll(`#${listId} .dd-item`).forEach(el=>{
-    el.classList.toggle("hidden",!el.textContent.toLowerCase().includes(q.toLowerCase()));
-  });
-}
-function p3_selectAll(listId){
-  document.querySelectorAll(`#${listId} input`).forEach(x=>x.checked=true);
-  p3_selCamp=null; p3_updateCampLabel();
-  p3_recalc();
-}
-function p3_clearAll(listId){
-  document.querySelectorAll(`#${listId} input`).forEach(x=>x.checked=false);
-  p3_selCamp=new Set(); p3_updateCampLabel();
-  p3_recalc();
-}
-function p3_updateCampLabel(){
-  const checks=[...document.querySelectorAll("#p3_campList input:checked")].map(x=>x.value);
-  const total=document.querySelectorAll("#p3_campList input").length;
-  document.getElementById("p3_campLabel").textContent=
-    checks.length===0?"None":checks.length===total?"All Campaigns":`${checks.length} selected`;
-}
-function p3_onCTChange(){
-  p3_selCT=new Set([...document.querySelectorAll("#p3_ctPanel input:checked")].map(x=>x.value));
-  document.getElementById("p3_ctLabel").textContent=
-    p3_selCT.size===4?"All Types":p3_selCT.size===0?"None":[...p3_selCT].join(", ");
-  p3_rebuildCampList();
-  p3_recalc();
-}
-function p3_onCampChange(){
-  const checks=[...document.querySelectorAll("#p3_campList input:checked")].map(x=>x.value);
-  const total=document.querySelectorAll("#p3_campList input").length;
-  p3_selCamp=checks.length===total?null:new Set(checks);
-  p3_updateCampLabel();
-  p3_recalc();
-}
-function p3_rebuildCampList(){
-  if(typeof DEVICE_DATA==="undefined") return;
-  const list=document.getElementById("p3_campList");
-  const cats=new Set();
-  DEVICE_DATA.forEach(r=>{if(p3_selCT.has(derivedType(r))) cats.add(r.cat);});
-  const sorted=[...cats].sort();
-  list.innerHTML=sorted.map(c=>`<label class="dd-item"><input type="checkbox" value="${c}" checked onchange="p3_onCampChange()"> ${c}</label>`).join("");
-  p3_selCamp=null;
-  p3_updateCampLabel();
-}
-
-function p3_filteredRows(){
-  if(typeof DEVICE_DATA==="undefined") return [];
-  const start=document.getElementById("p3_chartStart").value;
-  const end=document.getElementById("p3_chartEnd").value;
-  const s=start?new Date(start+"T00:00:00"):null;
-  const e=end?new Date(end+"T00:00:00"):null;
-  return DEVICE_DATA.filter(r=>{
-    if(!p3_selCT.has(derivedType(r))) return false;
-    if(p3_selCamp&&!p3_selCamp.has(r.cat)) return false;
-    if(s||e){
-      const rd=new Date(r.d+"T00:00:00");
-      if(s&&rd<s) return false;
-      if(e&&rd>e) return false;
-    }
-    return true;
-  });
-}
-
-function p3_upsertChart(id, data){
-  const cfg={
-    responsive:true, maintainAspectRatio:false,
-    plugins:{
-      legend:{position:"bottom",labels:{font:{size:10},padding:8,boxWidth:10,boxHeight:10}},
-      tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}}
-    },
-    scales:{
-      x:{stacked:true,grid:{display:false},ticks:{font:{size:9},maxRotation:45,minRotation:45}},
-      y:{stacked:true,min:0,max:100,grid:{color:"#f1f5f9"},ticks:{font:{size:10},callback:v=>v+"%"}}
-    }
-  };
-  if(p3_charts[id]){
-    p3_charts[id].data=data;
-    p3_charts[id].update();
-    return;
-  }
-  p3_charts[id]=new Chart(document.getElementById(id).getContext("2d"),{type:"bar",data,options:cfg});
-}
-
-function p3_renderCharts(rows){
-  const mapD={}, mapW={};
-  rows.forEach(r=>{
-    const wk=monday(r.d);
-    if(!mapD[r.d]) mapD[r.d]={};
-    mapD[r.d][r.dev]=(mapD[r.d][r.dev]||0)+r.cost;
-    if(!mapW[wk]) mapW[wk]={};
-    mapW[wk][r.dev]=(mapW[wk][r.dev]||0)+r.cost;
-  });
-  function buildData(map){
-    const dates=Object.keys(map).sort();
-    const datasets=DEV_ORDER.map(dev=>({
-      label:dev,
-      data:dates.map(d=>{
-        const row=map[d]||{};
-        const total=Object.values(row).reduce((a,b)=>a+b,0);
-        return total>0?(row[dev]||0)/total*100:0;
-      }),
-      backgroundColor:DEV_COLORS[dev]||"#ccc",
-      stack:"s"
-    }));
-    return{labels:dates,datasets};
-  }
-  p3_upsertChart("p3_chartD",buildData(mapD));
-  p3_upsertChart("p3_chartW",buildData(mapW));
-  // sync resize handles
-  p3_charts["p3_chartD"]=p3_charts["p3_chartD"];
-  p3_charts["p3_chartW"]=p3_charts["p3_chartW"];
-}
-
-function p3_renderTable(rows){
-  const totals={};
-  rows.forEach(r=>{
-    if(!totals[r.dev]) totals[r.dev]={imp:0,cl:0,cost:0,trials:0};
-    totals[r.dev].imp+=r.imp;
-    totals[r.dev].cl+=r.cl;
-    totals[r.dev].cost+=r.cost;
-    totals[r.dev].trials+=(r.conv||0);
-  });
-  const devs=DEV_ORDER;
-  const totalCost=devs.reduce((s,d)=>s+(totals[d]?totals[d].cost:0),0);
-  const z={imp:0,cl:0,cost:0,trials:0};
-
-  function cell(v){return`<td class="num">${v}</td>`;}
-  function row(label, vals, cls=""){
-    return`<tr class="${cls}"><td class="metric">${label}</td>${vals.map(cell).join("")}</tr>`;
-  }
-  const safe=(d)=>totals[d]||z;
-
-  const tableRows=[
-    row("Impressions", devs.map(d=>fmtN(safe(d).imp))),
-    row("Clicks",      devs.map(d=>fmtN(safe(d).cl))),
-    row("Cost",        devs.map(d=>"$"+fmtD(safe(d).cost,2))),
-    row("Cost %",      devs.map(d=>totalCost>0?fmtP(safe(d).cost/totalCost):"—"), "separator"),
-    row("Trials",      devs.map(d=>fmtN(safe(d).trials))),
-    row("CTR",         devs.map(d=>safe(d).imp>0?fmtP(safe(d).cl/safe(d).imp):"—")),
-    row("CPC",         devs.map(d=>safe(d).cl>0?"$"+fmtD(safe(d).cost/safe(d).cl,2):"—")),
-    row("CVR",         devs.map(d=>safe(d).cl>0?fmtP(safe(d).trials/safe(d).cl):"—")),
-    row("CAC",         devs.map(d=>safe(d).trials>0?"$"+fmtD(safe(d).cost/safe(d).trials,2):"—")),
-  ];
-  document.getElementById("p3_tableBody").innerHTML=tableRows.join("");
-}
-
-function p3_recalc(){
-  if(typeof DEVICE_DATA==="undefined") return;
-  const rows=p3_filteredRows();
-  p3_renderCharts(rows);
-  p3_renderTable(rows);
-}
-
-function p3_init(){
-  if(typeof DEVICE_DATA==="undefined") return;
-  const dates=DEVICE_DATA.map(r=>r.d).sort();
-  const latest=dates[dates.length-1];
-  document.getElementById("p3_chartStart").value=p0_addDays(latest,-29);
-  document.getElementById("p3_chartEnd").value=latest;
-  p3_rebuildCampList();
-  p3_recalc();
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PAGE 4 — CAC DECOMPOSITION
@@ -4483,7 +4224,6 @@ p1_init();
 p5_init();
 p2_rebuildCampList();
 p2_recalc();
-p3_init();
 p4_init();
 p4_rebuildCampList();
 p6_init();
