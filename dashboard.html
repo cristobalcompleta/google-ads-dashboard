@@ -149,6 +149,7 @@ tr:hover td{background:#f8fafc}
   <button class="tab-btn" id="tabBtn5" onclick="showTab(5)">Period Comparison</button>
   <button class="tab-btn" id="tabBtn6" onclick="showTab(6)">Campaign Zoom In</button>
   <button class="tab-btn" id="tabBtn7" onclick="showTab(7)">CAC by Campaign</button>
+  <button class="tab-btn" id="tabBtn8" onclick="showTab(8)">Weekly Summary</button>
 </nav>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
@@ -901,6 +902,114 @@ tr:hover td{background:#f8fafc}
 </div>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 8 — WEEKLY SUMMARY                                                  -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="tab8" class="tab-pane">
+  <div class="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Report Week</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('pw_weekPanel')"><span id="pw_weekLabel">Loading…</span><span>▾</span></button>
+        <div class="dd-panel" id="pw_weekPanel">
+          <div class="dd-list" id="pw_weekList" style="max-height:240px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Campaign Type</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('pw_ctPanel')"><span id="pw_ctLabel">All Types</span><span>▾</span></button>
+        <div class="dd-panel" id="pw_ctPanel">
+          <div class="dd-list">
+            <label class="dd-item"><input type="checkbox" value="Brand" checked onchange="pw_onCTChange()"> Brand</label>
+            <label class="dd-item"><input type="checkbox" value="NonBrand" checked onchange="pw_onCTChange()"> NonBrand</label>
+            <label class="dd-item"><input type="checkbox" value="BrandShopping" checked onchange="pw_onCTChange()"> BrandShopping</label>
+            <label class="dd-item"><input type="checkbox" value="NonBrandShopping" checked onchange="pw_onCTChange()"> NonBrandShopping</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Campaign</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('pw_campPanel')"><span id="pw_campLabel">All Campaigns</span><span>▾</span></button>
+        <div class="dd-panel" id="pw_campPanel">
+          <input class="dd-search" type="text" placeholder="Search campaigns…" oninput="pw_filterCampList(this.value)">
+          <div class="dd-list" id="pw_campList"></div>
+          <div class="dd-actions">
+            <button class="dd-act-btn" onclick="pw_campSelectAll()">Select all</button>
+            <button class="dd-act-btn" onclick="pw_campClearAll()">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Comparison</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('pw_compPanel')" id="pw_compBtn"><span id="pw_compLabel">Last 8 weeks</span><span>▾</span></button>
+        <div class="dd-panel" id="pw_compPanel">
+          <div class="dd-list" id="pw_compList" style="max-height:240px"></div>
+          <div class="dd-actions">
+            <button class="dd-act-btn" onclick="pw_compSelectAll()">All</button>
+            <button class="dd-act-btn" onclick="pw_compClearAll()">None</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="p0-main">
+    <div class="p0-cards-wrap">
+      <div class="p0-cards-left">
+        <div class="p0-kpi-grid" id="pw_kpiGrid">
+          <div class="p0-kpi-card" style="grid-column:1/-1"><div class="empty-state">Loading…</div></div>
+        </div>
+        <div class="p0-insight-grid" id="pw_insightGrid">
+          <div class="p0-insight-card p0-hero" style="grid-column:1/-1"><div class="p0-insight-body">Loading…</div></div>
+        </div>
+      </div>
+      <div class="p0-readme">
+        <div class="rm-section">
+          <div class="rm-title">What you're looking at</div>
+          <div class="rm-body">Weekly Google Ads snapshot for the selected week. All metrics respect the Campaign Type and Campaign filters above.</div>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">KPI Cards</div>
+          <ul class="rm-body">
+            <li><strong>vs Last Week</strong> — week-over-week</li>
+            <li><strong>vs L4W avg</strong> — avg of last 4 complete weeks</li>
+            <li><strong>vs L8W avg</strong> — avg of last 8 complete weeks</li>
+          </ul>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Comparison Dropdown</div>
+          <div class="rm-body">Removes specific weeks from L4W and L8W averages. Use it to exclude outlier weeks that distort your benchmarks.</div>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Insight Cards</div>
+          <ul class="rm-body">
+            <li><strong>Most Efficient</strong> — lowest CAC campaign in Brand / NonBrand this week</li>
+            <li><strong>Top CAC Mover</strong> — biggest weekly CAC shift vs last week</li>
+            <li><strong>Streak</strong> — consecutive weeks CAC trended same direction</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="p2-section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">12-Week Trend — Trials &amp; CAC</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:1px">Weekly trials (bars · left axis) · Weekly CAC (line · right axis)</div>
+        </div>
+      </div>
+      <div style="padding:20px 24px">
+        <canvas id="pw_chart" style="max-height:800px;min-height:600px"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- DATA + SCRIPTS                                                          -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <script>
@@ -1354,6 +1463,7 @@ function showTab(n){
   if(n===4) Object.values(p3_charts).forEach(c=>c.resize());
   if(n===6) Object.values(p6_charts).forEach(c=>c.resize());
   if(n===7) { if(p7_chartInst) p7_chartInst.resize(); }
+  if(n===8) { if(pw_chartInst) pw_chartInst.resize(); }
   // Close any open dropdowns
   document.querySelectorAll(".dd-panel").forEach(x=>x.classList.remove("open"));
 }
@@ -3730,6 +3840,357 @@ function p7_init(){
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// PAGE 8 — WEEKLY SUMMARY
+// ══════════════════════════════════════════════════════════════════════════════
+
+let pw_chartInst=null;
+let pw_selCT=new Set(["Brand","NonBrand","BrandShopping","NonBrandShopping"]);
+let pw_selCamp=null;
+let pw_compExclude=new Set();
+let pw_selWeek=null;
+let pw_allWeeks=[];
+
+function pw_addDays(ds,n){
+  const d=new Date(ds+"T00:00:00");
+  d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+function pw_weekStart(ds){
+  const d=new Date(ds+"T00:00:00");
+  const day=d.getDay();
+  d.setDate(d.getDate()-(day===0?6:day-1));
+  return d.toISOString().slice(0,10);
+}
+function pw_nWeeksAgo(wStart,n){ return pw_addDays(wStart,-7*n); }
+function pw_fmtWeekLabel(wStart){
+  const wEnd=pw_addDays(wStart,6);
+  const ms=new Date(wStart+"T00:00:00"),me=new Date(wEnd+"T00:00:00");
+  const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return`${M[ms.getMonth()]} ${ms.getDate()} – ${M[me.getMonth()]} ${me.getDate()}`;
+}
+
+function pw_weekRaw(wStart){
+  const wEnd=pw_addDays(wStart,6);
+  let imp=0,cl=0,cost=0,trials=0;
+  DATA.forEach(r=>{
+    if(r.d<wStart||r.d>wEnd) return;
+    if(!pw_selCT.has(derivedType(r))) return;
+    if(pw_selCamp&&!pw_selCamp.has(r.cat)) return;
+    imp+=r.imp;cl+=r.cl;cost+=r.cost;trials+=r.trials;
+  });
+  return{imp,cl,cost,trials};
+}
+function pw_weekRawType(wStart,typeName){
+  const wEnd=pw_addDays(wStart,6);
+  let imp=0,cl=0,cost=0,trials=0;
+  DATA.forEach(r=>{
+    if(r.d<wStart||r.d>wEnd) return;
+    if(derivedType(r)!==typeName) return;
+    imp+=r.imp;cl+=r.cl;cost+=r.cost;trials+=r.trials;
+  });
+  return{imp,cl,cost,trials};
+}
+function pw_derive(raw){
+  return{...raw,
+    cpc:raw.cl>0?raw.cost/raw.cl:null,
+    ctr:raw.imp>0?raw.cl/raw.imp:null,
+    cac:raw.trials>0?raw.cost/raw.trials:null,
+    cvr:raw.cl>0?raw.trials/raw.cl:null,
+  };
+}
+function pw_periodAvg(selWeek,n,ex){
+  const weeks=[];
+  for(let i=1;i<=n;i++){const ws=pw_nWeeksAgo(selWeek,i);if(!ex.has(ws))weeks.push(ws);}
+  if(!weeks.length) return{cost:null,trials:null,cpc:null,ctr:null,cac:null,cvr:null};
+  let imp=0,cl=0,cost=0,trials=0;
+  weeks.forEach(ws=>{const r=pw_weekRaw(ws);imp+=r.imp;cl+=r.cl;cost+=r.cost;trials+=r.trials;});
+  const k=weeks.length;
+  return{cost:cost/k,trials:trials/k,cpc:cl>0?cost/cl:null,ctr:imp>0?cl/imp:null,cac:trials>0?cost/trials:null,cvr:cl>0?trials/cl:null};
+}
+
+function pw_buildWeekList(){
+  const ws=new Set();
+  DATA.forEach(r=>ws.add(pw_weekStart(r.d)));
+  pw_allWeeks=[...ws].sort().reverse();
+}
+function pw_buildWeekSelector(){
+  const list=document.getElementById('pw_weekList');
+  list.innerHTML='';
+  pw_allWeeks.forEach(ws=>{
+    const el=document.createElement('div');
+    el.className='dd-item';
+    el.style.cssText='padding:6px 12px;cursor:pointer;font-size:12px';
+    el.textContent=pw_fmtWeekLabel(ws);
+    el.onclick=()=>{
+      pw_selWeek=ws;
+      document.getElementById('pw_weekLabel').textContent=pw_fmtWeekLabel(ws);
+      toggleDD('pw_weekPanel');
+      pw_buildCompDropdown();
+      pw_recalc();
+    };
+    list.appendChild(el);
+  });
+  if(pw_allWeeks.length){
+    pw_selWeek=pw_allWeeks[0];
+    document.getElementById('pw_weekLabel').textContent=pw_fmtWeekLabel(pw_selWeek);
+  }
+}
+function pw_buildCompDropdown(){
+  pw_compExclude=new Set();
+  const list=document.getElementById('pw_compList');
+  list.innerHTML='';
+  for(let i=1;i<=8;i++){
+    const ws=pw_nWeeksAgo(pw_selWeek,i);
+    const lbl=document.createElement('label');
+    lbl.className='dd-item';
+    lbl.innerHTML=`<input type="checkbox" value="${ws}" checked onchange="pw_onCompChange(this)"> ${pw_fmtWeekLabel(ws)}`;
+    list.appendChild(lbl);
+  }
+  document.getElementById('pw_compLabel').textContent='Last 8 weeks';
+  document.getElementById('pw_compBtn').classList.remove('active');
+}
+function pw_onCompChange(cb){
+  if(cb.checked) pw_compExclude.delete(cb.value);
+  else pw_compExclude.add(cb.value);
+  const total=document.querySelectorAll('#pw_compList input').length;
+  const checked=document.querySelectorAll('#pw_compList input:checked').length;
+  document.getElementById('pw_compLabel').textContent=checked===total?'Last 8 weeks':`${checked} of ${total} weeks`;
+  document.getElementById('pw_compBtn').classList.toggle('active',checked!==total);
+  pw_recalc();
+}
+function pw_compSelectAll(){
+  document.querySelectorAll('#pw_compList input').forEach(x=>x.checked=true);
+  pw_compExclude=new Set();
+  document.getElementById('pw_compLabel').textContent='Last 8 weeks';
+  document.getElementById('pw_compBtn').classList.remove('active');
+  pw_recalc();
+}
+function pw_compClearAll(){
+  document.querySelectorAll('#pw_compList input').forEach(x=>{x.checked=false;pw_compExclude.add(x.value);});
+  const total=document.querySelectorAll('#pw_compList input').length;
+  document.getElementById('pw_compLabel').textContent=`0 of ${total} weeks`;
+  document.getElementById('pw_compBtn').classList.add('active');
+  pw_recalc();
+}
+
+function pw_onCTChange(){
+  pw_selCT=new Set([...document.querySelectorAll("#pw_ctPanel input:checked")].map(x=>x.value));
+  document.getElementById("pw_ctLabel").textContent=pw_selCT.size===4?"All Types":pw_selCT.size===0?"None":[...pw_selCT].join(", ");
+  pw_selCamp=null;
+  pw_rebuildCampList();
+  pw_recalc();
+}
+function pw_rebuildCampList(){
+  const cats=new Set();
+  DATA.forEach(r=>{if(pw_selCT.has(derivedType(r)))cats.add(r.cat);});
+  document.getElementById("pw_campList").innerHTML=[...cats].sort().map(c=>
+    `<label class="dd-item"><input type="checkbox" value="${c}" checked onchange="pw_onCampChange()"> ${c}</label>`
+  ).join("");
+  pw_updateCampLabel();
+}
+function pw_updateCampLabel(){
+  const checks=document.querySelectorAll("#pw_campList input:checked").length;
+  const total=document.querySelectorAll("#pw_campList input").length;
+  document.getElementById("pw_campLabel").textContent=checks===0?"None":checks===total?"All Campaigns":`${checks} campaigns`;
+}
+function pw_onCampChange(){
+  const checks=[...document.querySelectorAll("#pw_campList input:checked")].map(x=>x.value);
+  const total=document.querySelectorAll("#pw_campList input").length;
+  pw_selCamp=checks.length===total?null:new Set(checks);
+  pw_updateCampLabel();
+  pw_recalc();
+}
+function pw_filterCampList(q){
+  document.querySelectorAll("#pw_campList .dd-item").forEach(el=>{
+    el.classList.toggle("hidden",!el.textContent.toLowerCase().includes(q.toLowerCase()));
+  });
+}
+function pw_campSelectAll(){document.querySelectorAll("#pw_campList input").forEach(x=>x.checked=true);pw_selCamp=null;pw_updateCampLabel();pw_recalc();}
+function pw_campClearAll(){document.querySelectorAll("#pw_campList input").forEach(x=>x.checked=false);pw_selCamp=new Set();pw_updateCampLabel();pw_recalc();}
+
+// ── insight cards ─────────────────────────────────────────────────────────────
+function pw_efficiencyCard(wStart,groupLabel,groupTypes,accentColor){
+  const activeTypes=groupTypes.filter(t=>pw_selCT.has(t));
+  if(!activeTypes.length) return`<div class="p0-insight-card p0-hero"><div class="p0-insight-icon">🏆</div><div class="p0-insight-title" style="color:${accentColor}">${groupLabel} — Most Efficient</div><div class="p0-insight-body">Not in current filter.</div></div>`;
+  const wEnd=pw_addDays(wStart,6),campMap={};
+  let totalCost=0,totalTrials=0;
+  DATA.forEach(r=>{
+    if(r.d<wStart||r.d>wEnd) return;
+    if(!activeTypes.includes(derivedType(r))) return;
+    if(pw_selCamp&&!pw_selCamp.has(r.cat)) return;
+    if(!campMap[r.cat]) campMap[r.cat]={cost:0,trials:0};
+    campMap[r.cat].cost+=r.cost;campMap[r.cat].trials+=r.trials;
+    totalCost+=r.cost;totalTrials+=r.trials;
+  });
+  const typeAvgCAC=totalTrials>0?totalCost/totalTrials:null;
+  const ranked=Object.entries(campMap).map(([cat,d])=>({cat,cac:d.trials>0?d.cost/d.trials:null})).filter(x=>x.cac!==null).sort((a,b)=>a.cac-b.cac);
+  if(!ranked.length) return`<div class="p0-insight-card p0-hero"><div class="p0-insight-icon">🏆</div><div class="p0-insight-title" style="color:${accentColor}">${groupLabel} — Most Efficient</div><div class="p0-insight-body">No trial data this week.</div></div>`;
+  const best=ranked[0],runner=ranked[1];
+  const vsAvg=(typeAvgCAC&&best.cac)?(best.cac-typeAvgCAC)/Math.abs(typeAvgCAC):null;
+  const vsAvgColor=vsAvg===null?'#f59e0b':Math.abs(vsAvg)<0.02?'#f59e0b':vsAvg<0?'#4ade80':'#f87171';
+  const vsAvgStr=vsAvg!==null?` <span style="color:${vsAvgColor}">(${vsAvg>=0?'+':''}${(vsAvg*100).toFixed(0)}% vs ${groupLabel} avg)</span>`:'';
+  const runnerStr=runner?`<br>Runner-up: <strong style="color:#cbd5e1">${runner.cat}</strong> · ${fmtD(runner.cac,2)}`:'';
+  return`<div class="p0-insight-card p0-hero"><div class="p0-insight-icon">🏆</div><div class="p0-insight-title" style="color:${accentColor}">${groupLabel} — Most Efficient</div><div class="p0-insight-body"><strong style="color:${accentColor}">${best.cat}</strong> · ${fmtD(best.cac,2)} CAC${vsAvgStr}${runnerStr}</div></div>`;
+}
+
+function pw_topCACMoverCard(wStart){
+  const lwStart=pw_nWeeksAgo(wStart,1),wEnd=pw_addDays(wStart,6),lwEnd=pw_addDays(lwStart,6);
+  const thisMap={},lwMap={};
+  DATA.forEach(r=>{
+    if(!pw_selCT.has(derivedType(r))) return;
+    if(pw_selCamp&&!pw_selCamp.has(r.cat)) return;
+    if(r.d>=wStart&&r.d<=wEnd){if(!thisMap[r.cat])thisMap[r.cat]={cost:0,trials:0};thisMap[r.cat].cost+=r.cost;thisMap[r.cat].trials+=r.trials;}
+    if(r.d>=lwStart&&r.d<=lwEnd){if(!lwMap[r.cat])lwMap[r.cat]={cost:0,trials:0};lwMap[r.cat].cost+=r.cost;lwMap[r.cat].trials+=r.trials;}
+  });
+  const deltas=[];
+  Object.keys(thisMap).forEach(cat=>{
+    const t=thisMap[cat],l=lwMap[cat]||{cost:0,trials:0};
+    if(t.trials<1||l.trials<1) return;
+    const cac_t=t.cost/t.trials,cac_l=l.cost/l.trials;
+    deltas.push({cat,cac_t,cac_l,delta:cac_t-cac_l});
+  });
+  if(!deltas.length) return`<div class="p0-insight-card p0-hero"><div class="p0-insight-title" style="color:#f5a623">Top CAC Mover</div><div class="p0-insight-body">Not enough data to compare campaigns vs last week.</div></div>`;
+  deltas.sort((a,b)=>a.delta-b.delta);
+  const best=deltas[0],worst=deltas[deltas.length-1];
+  const bestPct=best.cac_l?Math.abs(best.delta/best.cac_l):1,worstPct=worst.cac_l?Math.abs(worst.delta/worst.cac_l):1;
+  const bestColor=bestPct<0.02?'#f59e0b':'#4ade80',worstColor=worstPct<0.02?'#f59e0b':'#f87171';
+  const bestLine=best.delta<0?`<span style="color:${bestColor}">↓ <strong>${best.cat}</strong> ${fmtDeltaD(best.delta,2)}</span>`:'';
+  const worstLine=worst!==best&&worst.delta>0?`${bestLine?'<br>':''}<span style="color:${worstColor}">↑ <strong>${worst.cat}</strong> ${fmtDeltaD(worst.delta,2)}</span>`:'';
+  const body=bestLine||worstLine?`${bestLine}${worstLine}<br><span style="opacity:.5;font-size:10px">vs last week · min 1 trial each week</span>`:`<span style="opacity:.7">All campaigns moved within normal range.</span>`;
+  return`<div class="p0-insight-card p0-hero"><div class="p0-insight-title" style="color:#f5a623">Top CAC Mover</div><div class="p0-insight-body">${body}</div></div>`;
+}
+
+function pw_streakCard(wStart){
+  const weeks=[];
+  for(let i=0;i<12;i++){const ws=pw_nWeeksAgo(wStart,i);const raw=pw_weekRaw(ws);weeks.push({ws,cac:raw.trials>0?raw.cost/raw.trials:null});}
+  let streak=0,direction=null,streakStartCAC=null,streakStartDate=null;
+  for(let i=0;i<weeks.length-1;i++){
+    const cur=weeks[i].cac,prev=weeks[i+1].cac;
+    if(cur===null||prev===null||prev===0) break;
+    const pct=(cur-prev)/Math.abs(prev);
+    if(Math.abs(pct)<0.02) break;
+    const dir=pct<0?'improving':'deteriorating';
+    if(direction===null){direction=dir;streak=1;streakStartCAC=prev;streakStartDate=weeks[i+1].ws;}
+    else if(dir===direction){streak++;streakStartCAC=prev;streakStartDate=weeks[i+1].ws;}
+    else break;
+  }
+  if(!streak||direction===null) return`<div class="p0-insight-card p0-hero"><div class="p0-insight-title" style="color:#94a3b8">CAC Trend</div><div class="p0-insight-body">No consistent trend — CAC flat or mixed recently.</div></div>`;
+  const todayCAC=weeks[0].cac,totalDelta=todayCAC!==null?todayCAC-streakStartCAC:null;
+  const color=direction==='improving'?'#4ade80':'#f87171',arrow=direction==='improving'?'↓':'↑',label=direction==='improving'?'Improving':'Deteriorating';
+  const deltaStr=totalDelta!==null?` · ${fmtDeltaD(totalDelta,2)} since ${pw_fmtWeekLabel(streakStartDate)}`:'';
+  return`<div class="p0-insight-card p0-hero"><div class="p0-insight-title" style="color:${color}">CAC ${label}</div><div class="p0-insight-body">${arrow} <strong style="color:${color}">${streak} week${streak>1?'s':''} running</strong>${deltaStr}</div></div>`;
+}
+
+function pw_cpcStoryCard(thisWeek,lastWeek){
+  if(!thisWeek.cpc||!lastWeek.cpc) return`<div class="p0-insight-card"><div class="p0-insight-icon">📈</div><div class="p0-insight-title">CPC Story</div><div class="p0-insight-body">Insufficient click data for comparison.</div></div>`;
+  const cpcDelta=thisWeek.cpc-lastWeek.cpc,ctrDelta=(thisWeek.ctr&&lastWeek.ctr)?thisWeek.ctr-lastWeek.ctr:null,cacDelta=(thisWeek.cac&&lastWeek.cac)?thisWeek.cac-lastWeek.cac:null;
+  const icon=cpcDelta<0?"📉":"📈",sign=cpcDelta>=0?"+":"−",titleCls=p0_deltaClass(cpcDelta,lastWeek.cpc,true);
+  let body="";
+  if(ctrDelta!==null){const ctrDir=ctrDelta>0?"↑":"↓",ctrPct=(Math.abs(ctrDelta/lastWeek.ctr)*100).toFixed(1);body=`CTR ${ctrDir}${ctrPct}% vs LW → CPC ${sign}${fmtD(Math.abs(cpcDelta),2)}`;if(cacDelta!==null)body+=` → CAC ${cacDelta>0?"↑":"↓"}${fmtD(Math.abs(cacDelta),2)}.`;else body+=".";}
+  else{body=`CPC ${sign}${fmtD(Math.abs(cpcDelta),2)} vs last week.`;if(cacDelta!==null)body+=` CAC ${cacDelta>0?"up":"down"} ${fmtD(Math.abs(cacDelta),2)}.`;}
+  return`<div class="p0-insight-card"><div class="p0-insight-icon">${icon}</div><div class="p0-insight-title">CPC <span class="${titleCls}">${sign}${fmtD(Math.abs(cpcDelta),2)}</span> vs last week</div><div class="p0-insight-body">${body}</div></div>`;
+}
+
+function pw_cacMoverCard(typeName,wStart,refRaw,refLabel){
+  const t=pw_weekRawType(wStart,typeName),cac_t=t.trials>0?t.cost/t.trials:null,cac_l=refRaw.trials>0?refRaw.cost/refRaw.trials:null;
+  if(!cac_t||!cac_l) return`<div class="p0-insight-card"><div class="p0-insight-icon">🔍</div><div class="p0-insight-title">${typeName} CAC</div><div class="p0-insight-body">No trial data for one or both periods.</div></div>`;
+  const delta=cac_t-cac_l,pct=delta/Math.abs(cac_l),cls=p0_deltaClass(delta,cac_l,true),icon=cls==="delta-warn"?"➡️":delta>0?"⚠️":"✅",sign=delta>=0?"+":"−";
+  return`<div class="p0-insight-card"><div class="p0-insight-icon">${icon}</div><div class="p0-insight-title">${typeName} — CAC <span class="${cls}">${sign}${fmtD(Math.abs(delta),2)}</span></div><div class="p0-insight-body">This week: ${fmtD(cac_t,2)} vs ${fmtD(cac_l,2)} ${refLabel} <span class="${cls}">(${fmtPct(pct)})</span>.</div></div>`;
+}
+
+function pw_nbVsBrandRatioCard(wStart,lwNbRaw,lwBrandRaw){
+  const nb=pw_weekRawType(wStart,'NonBrand'),br=pw_weekRawType(wStart,'Brand');
+  const nbCac=nb.trials>0?nb.cost/nb.trials:null,brCac=br.trials>0?br.cost/br.trials:null;
+  if(!nbCac||!brCac) return`<div class="p0-insight-card"><div class="p0-insight-icon">⚖️</div><div class="p0-insight-title">NB / Brand CAC Ratio</div><div class="p0-insight-body">Insufficient data for one or both types.</div></div>`;
+  const ratioToday=nbCac/brCac,nbCacRef=lwNbRaw.trials>0?lwNbRaw.cost/lwNbRaw.trials:null,brCacRef=lwBrandRaw.trials>0?lwBrandRaw.cost/lwBrandRaw.trials:null;
+  const ratioRef=(nbCacRef&&brCacRef)?nbCacRef/brCacRef:null,delta=ratioRef!==null?ratioToday-ratioRef:null,pct=ratioRef?delta/Math.abs(ratioRef):null;
+  const refStr=ratioRef!==null?`${fmtD(ratioRef,2)}x last week`:'—',deltaStr=pct!==null?` <span class="delta-neu">(${pct>=0?'+':''}${(pct*100).toFixed(1)}%)</span>`:'';
+  return`<div class="p0-insight-card"><div class="p0-insight-icon">⚖️</div><div class="p0-insight-title">NB / Brand CAC Ratio: ${fmtD(ratioToday,2)}x</div><div class="p0-insight-body">NB ${fmtD(nbCac,2)} · Brand ${fmtD(brCac,2)}<br>vs ${refStr}${deltaStr}</div></div>`;
+}
+
+function pw_weeklyTotalsCard(wStart){
+  const raw=pw_weekRaw(wStart),cac=raw.trials>0?raw.cost/raw.trials:null;
+  let l4wCost=0,l4wTrials=0,l4wN=0;
+  for(let i=1;i<=4;i++){const ws=pw_nWeeksAgo(wStart,i);if(!pw_compExclude.has(ws)){const r=pw_weekRaw(ws);l4wCost+=r.cost;l4wTrials+=r.trials;l4wN++;}}
+  const refCost=l4wN>0?l4wCost/l4wN:null,refTrials=l4wN>0?l4wTrials/l4wN:null,refCac=(refCost!==null&&refTrials>0)?refCost/refTrials:null;
+  const fmt=v=>v===null?"—":(v>=0?"+":"")+(v*100).toFixed(1)+"%";
+  const spendPct=refCost?(raw.cost-refCost)/refCost:null,trialsPct=refTrials?(raw.trials-refTrials)/refTrials:null;
+  const cacDelta=(cac!==null&&refCac!==null)?cac-refCac:null,cacPct=cacDelta!==null&&refCac?cacDelta/Math.abs(refCac):null;
+  const spendCls=p0_deltaClass(raw.cost-(refCost||0),refCost,false),trialsCls=p0_deltaClass(raw.trials-(refTrials||0),refTrials,false),cacCls=cacDelta!==null?p0_deltaClass(cacDelta,refCac,true):"delta-neu";
+  return`<div class="p0-insight-card p0-blue"><div class="p0-insight-icon">📅</div><div class="p0-insight-title">Weekly Totals</div><div class="p0-insight-body">Spend: ${fmtD(raw.cost,0)} <span class="${spendCls}">(${fmt(spendPct)} vs L4W avg)</span><br>Trials: ${fmtN(raw.trials,0)} <span class="${trialsCls}">(${fmt(trialsPct)} vs L4W avg)</span><br>CAC: ${cac!==null?fmtD(cac,2):"—"} <span class="${cacCls}">(${fmt(cacPct)} vs L4W avg)</span></div></div>`;
+}
+
+// ── chart ─────────────────────────────────────────────────────────────────────
+function pw_renderChart(wStart){
+  const labels=[],trialData=[],cacData=[];
+  for(let i=11;i>=0;i--){
+    const ws=pw_nWeeksAgo(wStart,i),raw=pw_weekRaw(ws);
+    labels.push(pw_fmtWeekLabel(ws).split('–')[0].trim());
+    trialData.push(raw.trials||0);
+    cacData.push(raw.trials>0?raw.cost/raw.trials:null);
+  }
+  const chartData={labels,datasets:[
+    {type:"bar",label:"Trials",data:trialData,backgroundColor:"rgba(59,130,246,0.65)",yAxisID:"y",order:2},
+    {type:"line",label:"Weekly CAC",data:cacData,borderColor:"#f97316",backgroundColor:"transparent",pointBackgroundColor:"#f97316",pointRadius:4,tension:0.3,yAxisID:"y2",order:1},
+  ]};
+  const chartOpts={
+    responsive:true,maintainAspectRatio:false,
+    interaction:{mode:"index",intersect:false},
+    plugins:{
+      legend:{position:"bottom",labels:{font:{size:10},padding:10,boxWidth:10,boxHeight:10}},
+      tooltip:{callbacks:{label:ctx=>ctx.dataset.yAxisID==="y2"?`${ctx.dataset.label}: ${ctx.parsed.y!==null?fmtD(ctx.parsed.y,2):"—"}`:`${ctx.dataset.label}: ${fmtN(ctx.parsed.y,0)}`}}
+    },
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:10}}},
+      y:{position:"left",grid:{color:"#f1f5f9"},ticks:{font:{size:10},callback:v=>fmtN(v,0)},title:{display:true,text:"Trials",font:{size:10},color:"#94a3b8"}},
+      y2:{position:"right",grid:{display:false},ticks:{font:{size:10},callback:v=>"$"+v.toFixed(0)},title:{display:true,text:"CAC ($)",font:{size:10},color:"#94a3b8"}},
+    }
+  };
+  if(pw_chartInst) pw_chartInst.destroy();
+  pw_chartInst=new Chart(document.getElementById("pw_chart").getContext("2d"),{type:"bar",data:chartData,options:chartOpts});
+}
+
+// ── main recalc ───────────────────────────────────────────────────────────────
+function pw_recalc(){
+  if(!pw_selWeek) return;
+  const wStart=pw_selWeek,lwStart=pw_nWeeksAgo(wStart,1);
+  const thisWeek=pw_derive(pw_weekRaw(wStart)),lastWeek=pw_derive(pw_weekRaw(lwStart));
+  const l4w=pw_periodAvg(wStart,4,pw_compExclude),l8w=pw_periodAvg(wStart,8,pw_compExclude);
+  const lwNbRaw=pw_weekRawType(lwStart,'NonBrand'),lwBrandRaw=pw_weekRawType(lwStart,'Brand');
+
+  document.getElementById("pw_kpiGrid").innerHTML=[
+    p0_kpiCard("Spend",thisWeek.cost,v=>fmtD(v,0),v=>fmtD(v,0),false,[{lbl:"vs Last Week",cur:thisWeek.cost,ref:lastWeek.cost},{lbl:"vs L4W avg",cur:thisWeek.cost,ref:l4w.cost},{lbl:"vs L8W avg",cur:thisWeek.cost,ref:l8w.cost}]),
+    p0_kpiCard("Trials CAC",thisWeek.cac,v=>fmtD(v,2),v=>fmtD(v,2),true,[{lbl:"vs Last Week",cur:thisWeek.cac,ref:lastWeek.cac},{lbl:"vs L4W avg",cur:thisWeek.cac,ref:l4w.cac},{lbl:"vs L8W avg",cur:thisWeek.cac,ref:l8w.cac}]),
+    p0_kpiCard("Trials",thisWeek.trials,v=>fmtN(v,0),v=>fmtN(v,0),false,[{lbl:"vs Last Week",cur:thisWeek.trials,ref:lastWeek.trials},{lbl:"vs L4W avg",cur:thisWeek.trials,ref:l4w.trials},{lbl:"vs L8W avg",cur:thisWeek.trials,ref:l8w.trials}]),
+    p0_kpiCard("CPC",thisWeek.cpc,v=>fmtD(v,2),v=>fmtD(v,2),true,[{lbl:"vs Last Week",cur:thisWeek.cpc,ref:lastWeek.cpc},{lbl:"vs L4W avg",cur:thisWeek.cpc,ref:l4w.cpc},{lbl:"vs L8W avg",cur:thisWeek.cpc,ref:l8w.cpc}]),
+    p0_kpiCard("CTR",thisWeek.ctr,v=>fmtPct(v),v=>fmtPct(v),false,[{lbl:"vs Last Week",cur:thisWeek.ctr,ref:lastWeek.ctr},{lbl:"vs L4W avg",cur:thisWeek.ctr,ref:l4w.ctr},{lbl:"vs L8W avg",cur:thisWeek.ctr,ref:l8w.ctr}]),
+    p0_kpiCard("CVR",thisWeek.cvr,v=>fmtPct(v),v=>fmtPct(v),false,[{lbl:"vs Last Week",cur:thisWeek.cvr,ref:lastWeek.cvr},{lbl:"vs L4W avg",cur:thisWeek.cvr,ref:l4w.cvr},{lbl:"vs L8W avg",cur:thisWeek.cvr,ref:l8w.cvr}]),
+  ].join("");
+
+  document.getElementById("pw_insightGrid").innerHTML=[
+    pw_efficiencyCard(wStart,"Brand",["Brand","BrandShopping"],"#3b82f6"),
+    pw_efficiencyCard(wStart,"NonBrand",["NonBrand","NonBrandShopping"],"#8b5cf6"),
+    pw_topCACMoverCard(wStart),
+    pw_streakCard(wStart),
+    pw_cpcStoryCard(thisWeek,lastWeek),
+    pw_cacMoverCard("Brand",wStart,lwBrandRaw,"last week"),
+    pw_cacMoverCard("NonBrand",wStart,lwNbRaw,"last week"),
+    pw_nbVsBrandRatioCard(wStart,lwNbRaw,lwBrandRaw),
+    pw_weeklyTotalsCard(wStart),
+  ].join("");
+
+  pw_renderChart(wStart);
+}
+
+function pw_init(){
+  pw_buildWeekList();
+  pw_rebuildCampList();
+  pw_buildWeekSelector();
+  pw_buildCompDropdown();
+  pw_recalc();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════════════════════
 p0_init();
@@ -3742,6 +4203,7 @@ p4_init();
 p4_rebuildCampList();
 p6_init();
 p7_init();
+pw_init();
 </script>
 </body>
 </html>
