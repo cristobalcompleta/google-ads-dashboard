@@ -83,6 +83,14 @@ canvas{max-height:260px}
 .td-neg{color:#dc2626;font-weight:600}
 .td-neu{color:#94a3b8}
 
+/* ── STAT BOXES ─────────────────────────────────────────────────────────── */
+.stat-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.stat-box{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px 20px}
+.stat-box-lbl{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.stat-box-val{font-size:22px;font-weight:800;color:#0f172a;line-height:1}
+.stat-box-sub{font-size:10px;color:#94a3b8;margin-top:4px}
+.stat-box-accent .stat-box-val{color:#f5a623}
+
 /* ── TAB NAV ─────────────────────────────────────────────────────────────── */
 .tab-nav{background:#fff;border-bottom:1px solid #e2e8f0;padding:0 28px;display:flex;gap:0}
 .tab-btn{background:none;border:none;border-bottom:2px solid transparent;padding:10px 18px;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;margin-bottom:-1px;transition:color .15s,border-color .15s}
@@ -103,6 +111,7 @@ canvas{max-height:260px}
 <div class="tab-nav">
   <button class="tab-btn active" id="tab-spend" onclick="switchTab('spend')">Spend Pacing</button>
   <button class="tab-btn" id="tab-trials" onclick="switchTab('trials')">Trial Pacing</button>
+  <button class="tab-btn" id="tab-proj"   onclick="switchTab('proj')">Projection</button>
 </div>
 
 <div class="controls">
@@ -300,6 +309,59 @@ canvas{max-height:260px}
   </div>
 </div>
 
+<div class="main" id="section-proj" style="display:none">
+  <div class="stat-row">
+    <div class="stat-box">
+      <div class="stat-box-lbl">Spend so far</div>
+      <div class="stat-box-val" id="proj-spend-sf">—</div>
+      <div class="stat-box-sub" id="proj-spend-sf-sub"></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-box-lbl">Trials so far</div>
+      <div class="stat-box-val" id="proj-trials-sf">—</div>
+      <div class="stat-box-sub" id="proj-trials-sf-sub"></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-box-lbl">Projected EOD Spend</div>
+      <div class="stat-box-val" id="proj-spend-eod">—</div>
+      <div class="stat-box-sub" id="proj-spend-eod-sub"></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-box-lbl">Projected EOD Trials</div>
+      <div class="stat-box-val" id="proj-trials-eod">—</div>
+      <div class="stat-box-sub" id="proj-trials-eod-sub"></div>
+    </div>
+    <div class="stat-box stat-box-accent">
+      <div class="stat-box-lbl">Current CAC</div>
+      <div class="stat-box-val" id="proj-cac-sf">—</div>
+      <div class="stat-box-sub" id="proj-cac-sf-sub"></div>
+    </div>
+    <div class="stat-box stat-box-accent">
+      <div class="stat-box-lbl">Projected EOD CAC</div>
+      <div class="stat-box-val" id="proj-cac-eod">—</div>
+      <div class="stat-box-sub" id="proj-cac-eod-sub"></div>
+    </div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Spend by Hour (GMT 0)</div>
+      <div class="chart-sub">Cumulative actual → projected · vs L4 DOW &amp; L4W</div>
+      <div class="legend" id="legend-proj"></div>
+      <canvas id="cProjSpend"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Trials by Hour (GMT 0)</div>
+      <div class="chart-sub">Cumulative actual → projected · vs L4 DOW &amp; L4W</div>
+      <canvas id="cProjTrials"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Projection Breakdown</div>
+    <div class="chart-sub" id="proj-tbl-sub">Spend · Trials · CAC — actual so far + projected EOD by channel and campaign</div>
+    <div id="proj-table" class="tbl-wrap"></div>
+  </div>
+</div>
+
 <script>
 // ── GUARD ────────────────────────────────────────────────────────────────────
 if (typeof PACING_DATA === 'undefined') {
@@ -328,6 +390,19 @@ function prevDayStr(dateStr) {
   d.setDate(d.getDate() - 1);
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
+function nextDayStr(dateStr) {
+  var d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + 1);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+// Shift PACING_DATA from Google Ads GMT-7 to GMT-0 (aligns with trials data)
+// Hours 17-23 of day D in GMT-7 become hours 0-6 of day D+1 in GMT-0
+var PACING_DATA_GMT0 = PACING_DATA.map(function(r) {
+  var h7 = +r[1], h0 = (h7 + 7) % 24;
+  var d0 = (h7 + 7 >= 24) ? nextDayStr(r[0]) : r[0];
+  return [d0, h0, r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9]];
+});
 function weekLabel(dateStr) { return 'W' + String(isoWeek(dateStr)).padStart(2,'0'); }
 var DOW_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
@@ -348,7 +423,7 @@ var state = {
 
 // ── EXTRACT UNIQUE DIMENSION VALUES ─────────────────────────────────────────
 var allDatesSet = new Set(), chanSet = new Set(), campSet = new Set(), agMap = {};
-PACING_DATA.forEach(function(r) {
+PACING_DATA_GMT0.forEach(function(r) {
   allDatesSet.add(r[0]);
   chanSet.add(r[2]);
   campSet.add(r[3]);
@@ -610,7 +685,7 @@ function computeHourly() {
   var viewAgg  = {};   // hour -> {sp,imp,cl,cv} for viewDate
   var dateAgg  = {};   // dateStr -> hour -> {sp,imp,cl,cv} for all other dates
 
-  PACING_DATA.forEach(function(r) {
+  PACING_DATA_GMT0.forEach(function(r) {
     var date = r[0], hour = +r[1];
     if (hour < state.hrMin || hour > state.hrMax) return;
     if (!passes(r)) return;
@@ -864,20 +939,23 @@ var activeTab = 'spend';
 var _origRender = render;
 render = function() {
   if (activeTab === 'spend') _origRender();
-  else renderTrials();
+  else if (activeTab === 'trials') renderTrials();
+  else renderProjection();
 };
 
 function switchTab(tab) {
   activeTab = tab;
   document.getElementById('tab-spend').classList.toggle('active',  tab === 'spend');
   document.getElementById('tab-trials').classList.toggle('active', tab === 'trials');
-  document.getElementById('section-spend').style.display   = tab === 'spend'  ? '' : 'none';
-  document.getElementById('section-trials').style.display  = tab === 'trials' ? '' : 'none';
-  document.getElementById('ctrl-channel').style.display       = tab === 'spend'  ? '' : 'none';
-  document.getElementById('ctrl-camp').style.display          = tab === 'spend'  ? '' : 'none';
-  document.getElementById('ctrl-ag').style.display            = tab === 'spend'  ? '' : 'none';
-  document.getElementById('ctrl-trial-channel').style.display = tab === 'trials' ? '' : 'none';
-  document.getElementById('ctrl-distcamp').style.display      = tab === 'trials' ? '' : 'none';
+  document.getElementById('tab-proj').classList.toggle('active',   tab === 'proj');
+  document.getElementById('section-spend').style.display  = tab === 'spend'  ? '' : 'none';
+  document.getElementById('section-trials').style.display = tab === 'trials' ? '' : 'none';
+  document.getElementById('section-proj').style.display   = tab === 'proj'   ? '' : 'none';
+  document.getElementById('ctrl-channel').style.display       = tab === 'spend' ? '' : 'none';
+  document.getElementById('ctrl-camp').style.display          = tab === 'spend' ? '' : 'none';
+  document.getElementById('ctrl-ag').style.display            = tab === 'spend' ? '' : 'none';
+  document.getElementById('ctrl-trial-channel').style.display = (tab === 'trials' || tab === 'proj') ? '' : 'none';
+  document.getElementById('ctrl-distcamp').style.display      = (tab === 'trials' || tab === 'proj') ? '' : 'none';
   rebuildCompList();
   render();
 }
@@ -1167,6 +1245,369 @@ function renderDistTable(todayTotals) {
   document.getElementById('trials-dist-table').innerHTML = html;
   document.getElementById('dist-tbl-sub').textContent =
     'Estimated trials by campaign — L4 DoW share (' + DIST_DATES.join(', ') + ') applied to today\'s running total';
+}
+
+// ── PROJECTION CHARTS ─────────────────────────────────────────────────────────
+var PACING_CHAN_MAP = {'Brand Search':'brand','NonBrand Search':'nonbrand','Shopping':'shopping'};
+var CHAN_DISPLAY    = {brand:'Brand', nonbrand:'NonBrand', shopping:'Shopping'};
+var CHAN_ORDER      = ['brand','nonbrand','shopping'];
+
+function makeProjDataset(label, color, dash) {
+  return {
+    label: label, data: [],
+    borderColor: color, backgroundColor: 'transparent',
+    borderWidth: dash.length ? 1.5 : 2.5,
+    borderDash: dash,
+    pointRadius: dash.length ? 0 : 3,
+    pointHoverRadius: dash.length ? 3 : 5,
+    tension: 0.3, spanGaps: false, fill: false
+  };
+}
+
+var PROJ_SPEND_CHART = new Chart(document.getElementById('cProjSpend').getContext('2d'), {
+  type: 'line',
+  data: { labels: [], datasets: [
+    makeProjDataset('Actual',          '#f5a623', []),
+    makeProjDataset('Projected',       '#f5a623', [6,4]),
+    makeProjDataset('L4 DOW',          '#3b82f6', [5,4]),
+    makeProjDataset('L4W',             '#94a3b8', [3,3])
+  ]},
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend:{display:false},
+      tooltip:{ callbacks:{ label:function(c){ var v=c.raw; return c.dataset.label+': '+(v!==null?'$'+Math.round(v).toLocaleString():'—'); } } } },
+    scales: {
+      x:{ grid:{color:'#f1f5f9'}, ticks:{font:{size:11},color:'#94a3b8'} },
+      y:{ grid:{color:'#f1f5f9'}, ticks:{font:{size:11},color:'#94a3b8', callback:function(v){return '$'+Math.round(v/1000)+'k';} } }
+    }
+  }
+});
+
+var PROJ_TRIALS_CHART = new Chart(document.getElementById('cProjTrials').getContext('2d'), {
+  type: 'line',
+  data: { labels: [], datasets: [
+    makeProjDataset('Actual',    '#10b981', []),
+    makeProjDataset('Projected', '#10b981', [6,4]),
+    makeProjDataset('L4 DOW',   '#3b82f6', [5,4]),
+    makeProjDataset('L4W',      '#94a3b8', [3,3])
+  ]},
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend:{display:false},
+      tooltip:{ callbacks:{ label:function(c){ var v=c.raw; return c.dataset.label+': '+(v!==null?Math.round(v):'—'); } } } },
+    scales: {
+      x:{ grid:{color:'#f1f5f9'}, ticks:{font:{size:11},color:'#94a3b8'} },
+      y:{ grid:{color:'#f1f5f9'}, ticks:{font:{size:11},color:'#94a3b8', callback:function(v){return Math.round(v);} } }
+    }
+  }
+});
+
+// ── PROJECTION COMPUTATION ────────────────────────────────────────────────────
+function computeProjection() {
+  var spViewAgg  = {};  // h -> {total,brand,nonbrand,shopping}
+  var spDateAgg  = {};  // date -> h -> {total,brand,nonbrand,shopping}
+  var spCampDate = {};  // camp_lower -> {chan, byDate:{date->sp}}
+
+  PACING_DATA_GMT0.forEach(function(r) {
+    var date=r[0], hour=+r[1], chanRaw=r[2], camp=r[3].toLowerCase(), sp=+r[5];
+    if (hour < state.hrMin || hour > state.hrMax) return;
+    var chan = PACING_CHAN_MAP[chanRaw]; if (!chan) return;
+    if (state.tChannels && !state.tChannels.has(CHAN_DISPLAY[chan])) return;
+    if (date === state.viewDate) {
+      if (!spViewAgg[hour]) spViewAgg[hour] = {total:0,brand:0,nonbrand:0,shopping:0};
+      spViewAgg[hour].total+=sp; spViewAgg[hour][chan]+=sp;
+    } else {
+      if (!spDateAgg[date]) spDateAgg[date] = {};
+      if (!spDateAgg[date][hour]) spDateAgg[date][hour] = {total:0,brand:0,nonbrand:0,shopping:0};
+      spDateAgg[date][hour].total+=sp; spDateAgg[date][hour][chan]+=sp;
+      if (!spCampDate[camp]) spCampDate[camp] = {chan:chan, byDate:{}};
+      spCampDate[camp].byDate[date] = (spCampDate[camp].byDate[date]||0) + sp;
+    }
+  });
+
+  var trViewAgg = {};
+  var trDateAgg = {};
+  if (typeof TRIALS_DATA !== 'undefined') {
+    TRIALS_DATA.forEach(function(r) {
+      var date=r[0], hour=+r[1];
+      if (hour < state.hrMin || hour > state.hrMax) return;
+      var brand    = !state.tChannels||state.tChannels.has('Brand')    ? +r[2] : 0;
+      var nonbrand = !state.tChannels||state.tChannels.has('NonBrand') ? +r[3] : 0;
+      var shopping = !state.tChannels||state.tChannels.has('Shopping') ? +r[4] : 0;
+      if (date === state.viewDate) {
+        if (!trViewAgg[hour]) trViewAgg[hour] = {total:0,brand:0,nonbrand:0,shopping:0};
+        trViewAgg[hour].total+=brand+nonbrand+shopping; trViewAgg[hour].brand+=brand;
+        trViewAgg[hour].nonbrand+=nonbrand; trViewAgg[hour].shopping+=shopping;
+      } else {
+        if (!trDateAgg[date]) trDateAgg[date] = {};
+        if (!trDateAgg[date][hour]) trDateAgg[date][hour] = {total:0,brand:0,nonbrand:0,shopping:0};
+        trDateAgg[date][hour].total+=brand+nonbrand+shopping; trDateAgg[date][hour].brand+=brand;
+        trDateAgg[date][hour].nonbrand+=nonbrand; trDateAgg[date][hour].shopping+=shopping;
+      }
+    });
+  }
+
+  var hours = [];
+  for (var h = state.hrMin; h <= state.hrMax; h++) hours.push(h);
+  var vdow   = dowOf(state.viewDate);
+  var cutoff = new Date(new Date(state.viewDate+'T12:00:00').getTime() - 28*24*60*60*1000);
+
+  var spHistAll  = Object.keys(spDateAgg).sort().reverse().filter(function(d){ return !state.excludeDates.has(d); });
+  var spDowDates = spHistAll.filter(function(d){ return dowOf(d)===vdow; }).slice(0, state.dowCount);
+  var spWkDates  = spHistAll.filter(function(d){ return new Date(d+'T12:00:00')>=cutoff; });
+  var trHistAll  = Object.keys(trDateAgg).sort().reverse().filter(function(d){ return !state.excludeDates.has(d); });
+  var trDowDates = trHistAll.filter(function(d){ return dowOf(d)===vdow; }).slice(0, state.dowCount);
+  var trWkDates  = trHistAll.filter(function(d){ return new Date(d+'T12:00:00')>=cutoff; });
+
+  var lastSpH = state.hrMin - 1;
+  hours.forEach(function(h){ if (spViewAgg[h]) lastSpH = h; });
+  var lastTrH = state.hrMin - 1;
+  hours.forEach(function(h){ if (trViewAgg[h]) lastTrH = h; });
+
+  function hourlyAvg(dateAgg, dates) {
+    var n = dates.length;
+    if (n === 0) return hours.map(function(){ return null; });
+    return hours.map(function(h) {
+      var tot=0, found=false;
+      dates.forEach(function(d){ if (dateAgg[d]&&dateAgg[d][h]){ tot+=dateAgg[d][h].total; found=true; } });
+      return found ? tot/n : 0;
+    });
+  }
+
+  var spDowHrly = hourlyAvg(spDateAgg, spDowDates);
+  var spWkHrly  = hourlyAvg(spDateAgg, spWkDates);
+  var trDowHrly = hourlyAvg(trDateAgg, trDowDates);
+  var trWkHrly  = hourlyAvg(trDateAgg, trWkDates);
+
+  function cumSum(arr) { var s=0; return arr.map(function(v){ return v===null?null:(s+=v); }); }
+
+  // Actual so-far totals
+  var spActual=0, trActual=0;
+  var spChanAct={brand:0,nonbrand:0,shopping:0};
+  var trChanAct={brand:0,nonbrand:0,shopping:0};
+  hours.forEach(function(h) {
+    if (h<=lastSpH && spViewAgg[h]) {
+      spActual+=spViewAgg[h].total;
+      spChanAct.brand+=spViewAgg[h].brand; spChanAct.nonbrand+=spViewAgg[h].nonbrand; spChanAct.shopping+=spViewAgg[h].shopping;
+    }
+    if (h<=lastTrH && trViewAgg[h]) {
+      trActual+=trViewAgg[h].total;
+      trChanAct.brand+=trViewAgg[h].brand; trChanAct.nonbrand+=trViewAgg[h].nonbrand; trChanAct.shopping+=trViewAgg[h].shopping;
+    }
+  });
+
+  // Scale factors: actual-to-DOW-avg ratio at lastHour
+  var spDowAtLast=0, trDowAtLast=0;
+  hours.forEach(function(h,i){
+    if (h<=lastSpH && spDowHrly[i]!==null) spDowAtLast+=spDowHrly[i];
+    if (h<=lastTrH && trDowHrly[i]!==null) trDowAtLast+=trDowHrly[i];
+  });
+  var spScale = spDowAtLast > 0 ? spActual/spDowAtLast : 1;
+  var trScale = trDowAtLast > 0 ? trActual/trDowAtLast : 1;
+
+  // Build projected cumulative line (null before lastH, connects at lastH, extrapolates after)
+  function makeProjLine(actual, lastH, scale, dowHrly) {
+    if (lastH < state.hrMin) return hours.map(function(){ return null; });
+    var cum = actual;
+    return hours.map(function(h,i) {
+      if (h < lastH)  return null;
+      if (h === lastH) return actual;
+      cum += (dowHrly[i]||0) * scale;
+      return cum;
+    });
+  }
+
+  // Build actual cumulative (null after lastH)
+  function makeActualLine(viewAgg, lastH) {
+    var s = 0;
+    return hours.map(function(h) {
+      if (h > lastH) return null;
+      s += viewAgg[h] ? viewAgg[h].total : 0;
+      return s;
+    });
+  }
+
+  var spActualCum = makeActualLine(spViewAgg, lastSpH);
+  var trActualCum = makeActualLine(trViewAgg, lastTrH);
+  var spProjCum   = makeProjLine(spActual, lastSpH, spScale, spDowHrly);
+  var trProjCum   = makeProjLine(trActual, lastTrH, trScale, trDowHrly);
+
+  var spEOD = spProjCum[spProjCum.length-1]; if (spEOD===null) spEOD=spActual;
+  var trEOD = trProjCum[trProjCum.length-1]; if (trEOD===null) trEOD=trActual;
+
+  // Channel EOD: actual + remaining allocated by L4 DOW channel shares
+  var spRemain = Math.max(0, spEOD-spActual);
+  var trRemain = Math.max(0, trEOD-trActual);
+
+  var spChanL4={brand:0,nonbrand:0,shopping:0};
+  spDowDates.forEach(function(date) {
+    Object.keys(spDateAgg[date]||{}).forEach(function(h) {
+      var row=spDateAgg[date][h];
+      spChanL4.brand+=row.brand||0; spChanL4.nonbrand+=row.nonbrand||0; spChanL4.shopping+=row.shopping||0;
+    });
+  });
+  var trChanL4={brand:0,nonbrand:0,shopping:0};
+  if (typeof DIST_DATA !== 'undefined') DIST_DATA.forEach(function(r){ trChanL4[r[1]]=(trChanL4[r[1]]||0)+r[2]; });
+
+  var spChanL4Tot = (spChanL4.brand+spChanL4.nonbrand+spChanL4.shopping)||1;
+  var trChanL4Tot = (trChanL4.brand+trChanL4.nonbrand+trChanL4.shopping)||1;
+
+  var spChanEOD = {
+    brand:    spChanAct.brand    + spRemain*(spChanL4.brand/spChanL4Tot),
+    nonbrand: spChanAct.nonbrand + spRemain*(spChanL4.nonbrand/spChanL4Tot),
+    shopping: spChanAct.shopping + spRemain*(spChanL4.shopping/spChanL4Tot)
+  };
+  var trChanEOD = {
+    brand:    trChanAct.brand    + trRemain*(trChanL4.brand/trChanL4Tot),
+    nonbrand: trChanAct.nonbrand + trRemain*(trChanL4.nonbrand/trChanL4Tot),
+    shopping: trChanAct.shopping + trRemain*(trChanL4.shopping/trChanL4Tot)
+  };
+
+  // Campaign-level: spend shares from L4 DOW pacing data, trial shares from DIST_DATA
+  var spCampL4={}, spChanL4ForCamp={brand:0,nonbrand:0,shopping:0};
+  Object.keys(spCampDate).forEach(function(camp) {
+    var cd=spCampDate[camp];
+    var sp=spDowDates.reduce(function(s,d){ return s+(cd.byDate[d]||0); }, 0);
+    if (sp>0) { spCampL4[camp]={chan:cd.chan,sp:sp}; spChanL4ForCamp[cd.chan]+=sp; }
+  });
+
+  var trCampL4={}, trChanL4ForCamp={brand:0,nonbrand:0,shopping:0};
+  if (typeof DIST_DATA !== 'undefined') {
+    DIST_DATA.forEach(function(r){ trCampL4[r[0]]={chan:r[1],trials:r[2]}; trChanL4ForCamp[r[1]]+=r[2]; });
+  }
+
+  var allCampsSet={};
+  Object.keys(spCampL4).forEach(function(c){ allCampsSet[c]=spCampL4[c].chan; });
+  Object.keys(trCampL4).forEach(function(c){ if(!allCampsSet[c]) allCampsSet[c]=trCampL4[c].chan; });
+
+  var campRows=[];
+  Object.keys(allCampsSet).forEach(function(camp) {
+    var chan=allCampsSet[camp];
+    var spL4=spCampL4[camp]?spCampL4[camp].sp:0;
+    var spShr=spChanL4ForCamp[chan]>0?spL4/spChanL4ForCamp[chan]:0;
+    var trL4=trCampL4[camp]?trCampL4[camp].trials:0;
+    var trShr=trChanL4ForCamp[chan]>0?trL4/trChanL4ForCamp[chan]:0;
+    campRows.push({
+      camp:camp, chan:chan,
+      spSF: spChanAct[chan]*spShr, spEOD: spChanEOD[chan]*spShr,
+      trSF: trChanAct[chan]*trShr, trEOD: trChanEOD[chan]*trShr
+    });
+  });
+  campRows.sort(function(a,b){
+    var co=CHAN_ORDER.indexOf(a.chan)-CHAN_ORDER.indexOf(b.chan);
+    return co!==0?co:b.spEOD-a.spEOD;
+  });
+
+  var dowLabel  = 'Avg '+DOW_LABELS[vdow]+'s ('+spDowDates.length+')';
+  var weekLabel = 'L4W ('+spWkDates.length+' days)';
+
+  return {
+    hours, lastSpH, lastTrH,
+    spendActual:spActualCum, spendProj:spProjCum, spendDow:cumSum(spDowHrly), spendWeek:cumSum(spWkHrly),
+    trialsActual:trActualCum, trialsProj:trProjCum, trialsDow:cumSum(trDowHrly), trialsWeek:cumSum(trWkHrly),
+    spActual, spEOD, trActual, trEOD,
+    cacSF:  trActual>0 ? spActual/trActual : null,
+    cacEOD: trEOD>0    ? spEOD/trEOD      : null,
+    spChanAct, spChanEOD, trChanAct, trChanEOD,
+    campRows, dowLabel, weekLabel
+  };
+}
+
+// ── PROJECTION TABLE ──────────────────────────────────────────────────────────
+function renderProjTable(r) {
+  function fmtSp(v)  { return (!v&&v!==0)||v<1?'—':'$'+Math.round(v).toLocaleString(); }
+  function fmtTr(v)  { return (!v&&v!==0)||v<0.5?'—':Math.round(v).toLocaleString(); }
+  function fmtCAC(v) { return !v||!isFinite(v)||v>9999?'—':'$'+v.toFixed(0); }
+
+  var html = '<table><thead><tr>' +
+    '<th>Channel / Campaign</th>' +
+    '<th>Spend so far</th><th>Spend EOD est.</th>' +
+    '<th>Trials so far</th><th>Trials EOD est.</th>' +
+    '<th>CAC so far</th><th>CAC EOD est.</th>' +
+    '</tr></thead><tbody>';
+
+  html += '<tr><td><strong>Total</strong></td>' +
+    '<td>'+fmtSp(r.spActual)+'</td><td>'+fmtSp(r.spEOD)+'</td>' +
+    '<td>'+fmtTr(r.trActual)+'</td><td>'+fmtTr(r.trEOD)+'</td>' +
+    '<td>'+fmtCAC(r.cacSF)+'</td><td>'+fmtCAC(r.cacEOD)+'</td></tr>';
+
+  CHAN_ORDER.forEach(function(chan) {
+    if (state.tChannels && !state.tChannels.has(CHAN_DISPLAY[chan])) return;
+    var spSF=r.spChanAct[chan], spE=r.spChanEOD[chan];
+    var trSF=r.trChanAct[chan], trE=r.trChanEOD[chan];
+    html += '<tr class="tbl-group-header"><td colspan="7">'+CHAN_DISPLAY[chan]+'</td></tr>';
+    html += '<tr><td style="padding-left:16px;font-weight:700">'+CHAN_DISPLAY[chan]+' Total</td>' +
+      '<td>'+fmtSp(spSF)+'</td><td>'+fmtSp(spE)+'</td>' +
+      '<td>'+fmtTr(trSF)+'</td><td>'+fmtTr(trE)+'</td>' +
+      '<td>'+fmtCAC(trSF>0?spSF/trSF:null)+'</td><td>'+fmtCAC(trE>0?spE/trE:null)+'</td></tr>';
+    r.campRows.filter(function(c){
+      return c.chan===chan && !(state.distCamps && !state.distCamps.has(c.camp));
+    }).forEach(function(c) {
+      html += '<tr>' +
+        '<td style="font-family:monospace;font-size:11px;padding-left:24px">'+c.camp+'</td>' +
+        '<td>'+fmtSp(c.spSF)+'</td><td>'+fmtSp(c.spEOD)+'</td>' +
+        '<td>'+fmtTr(c.trSF)+'</td><td>'+fmtTr(c.trEOD)+'</td>' +
+        '<td>'+fmtCAC(c.trSF>0.5?c.spSF/c.trSF:null)+'</td>' +
+        '<td>'+fmtCAC(c.trEOD>0.5?c.spEOD/c.trEOD:null)+'</td></tr>';
+    });
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('proj-table').innerHTML = html;
+  document.getElementById('proj-tbl-sub').textContent =
+    'Actual through '+r.lastSpH+':00 (GMT 0) · Projected EOD using '+r.dowLabel+' pace shape';
+}
+
+// ── PROJECTION RENDER ─────────────────────────────────────────────────────────
+function renderProjection() {
+  var r = computeProjection(); if (!r) return;
+  var labels = r.hours.map(function(h){ return h+':00'; });
+  var $ = function(id){ return document.getElementById(id); };
+
+  // Stat boxes
+  $('proj-spend-sf').textContent   = '$'+Math.round(r.spActual).toLocaleString();
+  $('proj-trials-sf').textContent  = Math.round(r.trActual).toLocaleString();
+  $('proj-spend-eod').textContent  = '$'+Math.round(r.spEOD).toLocaleString();
+  $('proj-trials-eod').textContent = Math.round(r.trEOD).toLocaleString();
+  $('proj-cac-sf').textContent     = r.cacSF  ? '$'+r.cacSF.toFixed(0)  : '—';
+  $('proj-cac-eod').textContent    = r.cacEOD ? '$'+r.cacEOD.toFixed(0) : '—';
+  $('proj-spend-sf-sub').textContent   = 'Through '+r.lastSpH+':00 GMT 0';
+  $('proj-trials-sf-sub').textContent  = 'Through '+r.lastTrH+':00 GMT 0';
+  $('proj-spend-eod-sub').textContent  = r.dowLabel+' pace';
+  $('proj-trials-eod-sub').textContent = r.dowLabel+' pace';
+  $('proj-cac-sf-sub').textContent     = 'Spend ÷ trials so far';
+  $('proj-cac-eod-sub').textContent    = 'Projected EOD spend ÷ trials';
+
+  // Legend
+  $('legend-proj').innerHTML =
+    '<div class="leg-item"><div class="leg-line" style="background:#f5a623;height:3px"></div> Spend actual</div>' +
+    '<div class="leg-item"><div class="leg-line" style="background:repeating-linear-gradient(90deg,#f5a623 0 6px,transparent 6px 10px);height:2px"></div> Spend projected</div>' +
+    '<div class="leg-item"><div class="leg-line" style="background:#10b981;height:3px"></div> Trials actual</div>' +
+    '<div class="leg-item"><div class="leg-line" style="background:repeating-linear-gradient(90deg,#10b981 0 6px,transparent 6px 10px);height:2px"></div> Trials projected</div>' +
+    '<div class="leg-item"><div class="leg-line" style="background:repeating-linear-gradient(90deg,#3b82f6 0 5px,transparent 5px 9px);height:2px"></div> '+r.dowLabel+'</div>' +
+    '<div class="leg-item"><div class="leg-line" style="background:repeating-linear-gradient(90deg,#94a3b8 0 3px,transparent 3px 6px);height:2px"></div> '+r.weekLabel+'</div>';
+
+  // Spend chart
+  PROJ_SPEND_CHART.data.labels = labels;
+  PROJ_SPEND_CHART.data.datasets[0].data = r.spendActual;
+  PROJ_SPEND_CHART.data.datasets[1].data = r.spendProj;
+  PROJ_SPEND_CHART.data.datasets[2].label = r.dowLabel;
+  PROJ_SPEND_CHART.data.datasets[2].data  = r.spendDow;
+  PROJ_SPEND_CHART.data.datasets[3].label = r.weekLabel;
+  PROJ_SPEND_CHART.data.datasets[3].data  = r.spendWeek;
+  PROJ_SPEND_CHART.update('none');
+
+  // Trials chart
+  PROJ_TRIALS_CHART.data.labels = labels;
+  PROJ_TRIALS_CHART.data.datasets[0].data = r.trialsActual;
+  PROJ_TRIALS_CHART.data.datasets[1].data = r.trialsProj;
+  PROJ_TRIALS_CHART.data.datasets[2].label = r.dowLabel;
+  PROJ_TRIALS_CHART.data.datasets[2].data  = r.trialsDow;
+  PROJ_TRIALS_CHART.data.datasets[3].label = r.weekLabel;
+  PROJ_TRIALS_CHART.data.datasets[3].data  = r.trialsWeek;
+  PROJ_TRIALS_CHART.update('none');
+
+  renderProjTable(r);
 }
 
 // ── TRIALS RENDER ─────────────────────────────────────────────────────────────
