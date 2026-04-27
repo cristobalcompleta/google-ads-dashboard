@@ -2150,6 +2150,13 @@ function p0_recalc(){
       {lbl:l4dowLabel,      cur:today.trials, ref:l4dow.trials},
       {lbl:"vs L4W",        cur:today.trials, ref:l4w.trials},
     ]),
+    p0_kpiCard("CPC", today.cpc, v=>fmtD(v,2), v=>fmtD(v,2), true, [
+      {lbl:"vs Yesterday",  cur:today.cpc, ref:yday.cpc},
+      {lbl:lastDowLabel,    cur:today.cpc, ref:lwD.cpc},
+      {lbl:"vs L7D",        cur:today.cpc, ref:l7d.cpc},
+      {lbl:l4dowLabel,      cur:today.cpc, ref:l4dow.cpc},
+      {lbl:"vs L4W",        cur:today.cpc, ref:l4w.cpc},
+    ]),
     p0_kpiCard("CVR", today.cvr, v=>(v*100).toFixed(2)+"%", v=>(v*100).toFixed(2)+"pp", false, [
       {lbl:"vs Yesterday",  cur:today.cvr, ref:yday.cvr},
       {lbl:lastDowLabel,    cur:today.cvr, ref:lwD.cvr},
@@ -4155,6 +4162,7 @@ function pw_recalc(){
     p0_kpiCard("Spend",thisWeek.cost,v=>fmtD(v,0),v=>fmtD(v,0),false,[{lbl:"vs Last Week",cur:thisWeek.cost,ref:lastWeek.cost},{lbl:"vs L4W avg",cur:thisWeek.cost,ref:l4w.cost},{lbl:"vs L8W avg",cur:thisWeek.cost,ref:l8w.cost}]),
     p0_kpiCard("Trials CAC",thisWeek.cac,v=>fmtD(v,2),v=>fmtD(v,2),true,[{lbl:"vs Last Week",cur:thisWeek.cac,ref:lastWeek.cac},{lbl:"vs L4W avg",cur:thisWeek.cac,ref:l4w.cac},{lbl:"vs L8W avg",cur:thisWeek.cac,ref:l8w.cac}]),
     p0_kpiCard("Trials",thisWeek.trials,v=>fmtN(v,0),v=>fmtN(v,0),false,[{lbl:"vs Last Week",cur:thisWeek.trials,ref:lastWeek.trials},{lbl:"vs L4W avg",cur:thisWeek.trials,ref:l4w.trials},{lbl:"vs L8W avg",cur:thisWeek.trials,ref:l8w.trials}]),
+    p0_kpiCard("CPC",thisWeek.cpc,v=>fmtD(v,2),v=>fmtD(v,2),true,[{lbl:"vs Last Week",cur:thisWeek.cpc,ref:lastWeek.cpc},{lbl:"vs L4W avg",cur:thisWeek.cpc,ref:l4w.cpc},{lbl:"vs L8W avg",cur:thisWeek.cpc,ref:l8w.cpc}]),
     p0_kpiCard("CVR",thisWeek.cvr,v=>fmtPct(v),v=>fmtPct(v),false,[{lbl:"vs Last Week",cur:thisWeek.cvr,ref:lastWeek.cvr},{lbl:"vs L4W avg",cur:thisWeek.cvr,ref:l4w.cvr},{lbl:"vs L8W avg",cur:thisWeek.cvr,ref:l8w.cvr}]),
   ].join("");
 
@@ -4163,7 +4171,6 @@ function pw_recalc(){
     pw_efficiencyCard(wStart,"NonBrand",["NonBrand","NonBrandShopping"],"#8b5cf6"),
     pw_topCACMoverCard(wStart),
     pw_streakCard(wStart),
-    pw_cpcStoryCard(thisWeek,lastWeek),
     pw_cacMoverCard("Brand",wStart,lwBrandRaw,"last week"),
     pw_cacMoverCard("NonBrand",wStart,lwNbRaw,"last week"),
     pw_nbVsBrandRatioCard(wStart,lwNbRaw,lwBrandRaw),
