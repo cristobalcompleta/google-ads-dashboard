@@ -6,6 +6,7 @@
 <title>CookUnity — Pacing Dashboard</title>
 <script src="pacing-data.js"></script>
 <script src="trials-data.js"></script>
+<script src="trials-dist.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -272,6 +273,11 @@ canvas{max-height:260px}
       <div class="chart-sub" id="trials-tbl-sub">Today vs historical averages</div>
       <div id="trials-summary-table"></div>
     </div>
+  </div>
+  <div class="chart-card" style="margin-top:0">
+    <div class="chart-title">Campaign Estimate</div>
+    <div class="chart-sub" id="dist-tbl-sub">Estimated trials by campaign — based on L4 same-DOW share applied to today's running total</div>
+    <div id="trials-dist-table"></div>
   </div>
 </div>
 
@@ -1052,6 +1058,81 @@ function renderTrialsTable(result) {
     'Through '+result.lastViewHour+':00 · '+result.dowLabel+' · '+result.weekLabel;
 }
 
+// ── CAMPAIGN DISTRIBUTION TABLE ───────────────────────────────────────────────
+function renderDistTable(todayTotals) {
+  if (typeof DIST_DATA === 'undefined') return;
+
+  // Build channel totals and per-campaign totals from DIST_DATA
+  var chanTotal = {brand:0, nonbrand:0, shopping:0};
+  var campAgg   = {}; // camp -> {chan, trials}
+  DIST_DATA.forEach(function(r) {
+    var camp = r[0], chan = r[1], t = r[2];
+    chanTotal[chan] = (chanTotal[chan] || 0) + t;
+    if (!campAgg[camp]) campAgg[camp] = {chan: chan, trials: 0};
+    campAgg[camp].trials += t;
+  });
+
+  // Channel key -> today's running total from the view
+  var todayByChan = {
+    brand:    todayTotals ? todayTotals.brand    : 0,
+    nonbrand: todayTotals ? todayTotals.nonbrand : 0,
+    shopping: todayTotals ? todayTotals.shopping : 0
+  };
+
+  // Apply channel filter
+  var visibleChans = {brand: true, nonbrand: true, shopping: true};
+  if (state.tChannels) {
+    visibleChans.brand    = state.tChannels.has('Brand');
+    visibleChans.nonbrand = state.tChannels.has('NonBrand');
+    visibleChans.shopping = state.tChannels.has('Shopping');
+  }
+
+  // Build rows: one per campaign, sorted by channel then estimated trials desc
+  var CHAN_LABEL = {brand:'Brand', nonbrand:'NonBrand', shopping:'Shopping'};
+  var rows = [];
+  Object.keys(campAgg).forEach(function(camp) {
+    var chan  = campAgg[camp].chan;
+    if (!visibleChans[chan]) return;
+    var t4    = campAgg[camp].trials;
+    var share = chanTotal[chan] > 0 ? t4 / chanTotal[chan] : 0;
+    var est   = Math.round(share * todayByChan[chan]);
+    var avg   = Math.round(t4 / DIST_DATES.length);
+    rows.push({camp: camp, chan: chan, chanLabel: CHAN_LABEL[chan], avg: avg, share: share, est: est});
+  });
+  rows.sort(function(a, b) {
+    if (a.chan !== b.chan) return a.chan < b.chan ? -1 : 1;
+    return b.est - a.est;
+  });
+
+  var html = '<table><thead><tr>' +
+    '<th style="text-align:left">Campaign</th>' +
+    '<th>Channel</th>' +
+    '<th>L4 DoW avg</th>' +
+    '<th>Share</th>' +
+    '<th>Est. today</th>' +
+    '</tr></thead><tbody>';
+
+  var lastChan = null;
+  rows.forEach(function(r) {
+    if (r.chan !== lastChan) {
+      html += '<tr style="background:#f8fafc"><td colspan="5" style="text-align:left;font-weight:700;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px">' + r.chanLabel + '</td></tr>';
+      lastChan = r.chan;
+    }
+    html += '<tr>' +
+      '<td style="text-align:left;font-family:monospace;font-size:11px">' + r.camp + '</td>' +
+      '<td>' + r.chanLabel + '</td>' +
+      '<td>' + r.avg + '</td>' +
+      '<td>' + (r.share * 100).toFixed(1) + '%</td>' +
+      '<td style="font-weight:700;color:#f5a623">' + r.est + '</td>' +
+      '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('trials-dist-table').innerHTML = html;
+  document.getElementById('dist-tbl-sub').textContent =
+    'Estimated trials by campaign — L4 DoW share (' + DIST_DATES.join(', ') + ') applied to today\'s running total';
+}
+
 // ── TRIALS RENDER ─────────────────────────────────────────────────────────────
 function renderTrials() {
   if (typeof TRIALS_DATA === 'undefined') return;
@@ -1072,6 +1153,7 @@ function renderTrials() {
   TCHART.data.datasets[2].data  = result.weekAvg;
   TCHART.update('none');
   renderTrialsTable(result);
+  renderDistTable(result.todayTotals);
 }
 </script>
 </body>
