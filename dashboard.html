@@ -4162,8 +4162,6 @@ function pw_recalc(){
     p0_kpiCard("Spend",thisWeek.cost,v=>fmtD(v,0),v=>fmtD(v,0),false,[{lbl:"vs Last Week",cur:thisWeek.cost,ref:lastWeek.cost},{lbl:"vs L4W avg",cur:thisWeek.cost,ref:l4w.cost},{lbl:"vs L8W avg",cur:thisWeek.cost,ref:l8w.cost}]),
     p0_kpiCard("Trials CAC",thisWeek.cac,v=>fmtD(v,2),v=>fmtD(v,2),true,[{lbl:"vs Last Week",cur:thisWeek.cac,ref:lastWeek.cac},{lbl:"vs L4W avg",cur:thisWeek.cac,ref:l4w.cac},{lbl:"vs L8W avg",cur:thisWeek.cac,ref:l8w.cac}]),
     p0_kpiCard("Trials",thisWeek.trials,v=>fmtN(v,0),v=>fmtN(v,0),false,[{lbl:"vs Last Week",cur:thisWeek.trials,ref:lastWeek.trials},{lbl:"vs L4W avg",cur:thisWeek.trials,ref:l4w.trials},{lbl:"vs L8W avg",cur:thisWeek.trials,ref:l8w.trials}]),
-    p0_kpiCard("CPC",thisWeek.cpc,v=>fmtD(v,2),v=>fmtD(v,2),true,[{lbl:"vs Last Week",cur:thisWeek.cpc,ref:lastWeek.cpc},{lbl:"vs L4W avg",cur:thisWeek.cpc,ref:l4w.cpc},{lbl:"vs L8W avg",cur:thisWeek.cpc,ref:l8w.cpc}]),
-    p0_kpiCard("CTR",thisWeek.ctr,v=>fmtPct(v),v=>fmtPct(v),false,[{lbl:"vs Last Week",cur:thisWeek.ctr,ref:lastWeek.ctr},{lbl:"vs L4W avg",cur:thisWeek.ctr,ref:l4w.ctr},{lbl:"vs L8W avg",cur:thisWeek.ctr,ref:l8w.ctr}]),
     p0_kpiCard("CVR",thisWeek.cvr,v=>fmtPct(v),v=>fmtPct(v),false,[{lbl:"vs Last Week",cur:thisWeek.cvr,ref:lastWeek.cvr},{lbl:"vs L4W avg",cur:thisWeek.cvr,ref:l4w.cvr},{lbl:"vs L8W avg",cur:thisWeek.cvr,ref:l8w.cvr}]),
   ].join("");
 
