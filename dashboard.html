@@ -2150,13 +2150,6 @@ function p0_recalc(){
       {lbl:l4dowLabel,      cur:today.trials, ref:l4dow.trials},
       {lbl:"vs L4W",        cur:today.trials, ref:l4w.trials},
     ]),
-    p0_kpiCard("CPC", today.cpc, v=>fmtD(v,2), v=>fmtD(v,2), true, [
-      {lbl:"vs Yesterday",  cur:today.cpc, ref:yday.cpc},
-      {lbl:lastDowLabel,    cur:today.cpc, ref:lwD.cpc},
-      {lbl:"vs L7D",        cur:today.cpc, ref:l7d.cpc},
-      {lbl:l4dowLabel,      cur:today.cpc, ref:l4dow.cpc},
-      {lbl:"vs L4W",        cur:today.cpc, ref:l4w.cpc},
-    ]),
     p0_kpiCard("CVR", today.cvr, v=>(v*100).toFixed(2)+"%", v=>(v*100).toFixed(2)+"pp", false, [
       {lbl:"vs Yesterday",  cur:today.cvr, ref:yday.cvr},
       {lbl:lastDowLabel,    cur:today.cvr, ref:lwD.cvr},
