@@ -143,6 +143,7 @@ tr:hover td{background:#f8fafc}
 <nav class="tab-nav">
   <button class="tab-btn active" id="tabBtn0" onclick="showTab(0)">Summary</button>
   <button class="tab-btn" id="tabBtn8" onclick="showTab(8)">Weekly Summary</button>
+  <button class="tab-btn" id="tabBtn9" onclick="showTab(9)">DoW Zoom In</button>
   <button class="tab-btn" id="tabBtn3" onclick="showTab(3)">CAC Decomposition</button>
   <button class="tab-btn" id="tabBtn7" onclick="showTab(7)">CAC by Campaign</button>
   <button class="tab-btn" id="tabBtn6" onclick="showTab(6)">Campaign Zoom In</button>
@@ -1010,6 +1011,87 @@ tr:hover td{background:#f8fafc}
 </div>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 9 — DOW ZOOM IN                                                     -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="tab9" class="tab-pane">
+  <div class="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Report Week</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('pd_weekPanel')"><span id="pd_weekLabel">Loading…</span><span>▾</span></button>
+        <div class="dd-panel" id="pd_weekPanel">
+          <div class="dd-list" id="pd_weekList" style="max-height:240px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Campaign Type</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('pd_ctPanel')"><span id="pd_ctLabel">All Types</span><span>▾</span></button>
+        <div class="dd-panel" id="pd_ctPanel">
+          <div class="dd-list">
+            <label class="dd-item"><input type="checkbox" value="Brand" checked onchange="pd_onCTChange()"> Brand</label>
+            <label class="dd-item"><input type="checkbox" value="NonBrand" checked onchange="pd_onCTChange()"> NonBrand</label>
+            <label class="dd-item"><input type="checkbox" value="BrandShopping" checked onchange="pd_onCTChange()"> BrandShopping</label>
+            <label class="dd-item"><input type="checkbox" value="NonBrandShopping" checked onchange="pd_onCTChange()"> NonBrandShopping</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Campaign</span>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('pd_campPanel')"><span id="pd_campLabel">All Campaigns</span><span>▾</span></button>
+        <div class="dd-panel" id="pd_campPanel">
+          <input class="dd-search" type="text" placeholder="Search campaigns…" oninput="pd_filterCampList(this.value)">
+          <div class="dd-list" id="pd_campList"></div>
+          <div class="dd-actions">
+            <button class="dd-act-btn" onclick="pd_campSelectAll()">Select all</button>
+            <button class="dd-act-btn" onclick="pd_campClearAll()">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:16px 24px 24px">
+    <!-- Row 1: Spend + Trials -->
+    <div class="charts-row" style="margin-bottom:20px">
+      <div class="p2-section">
+        <div class="section-header"><div><div class="section-title">Spend Index</div><div style="font-size:11px;color:#94a3b8;margin-top:1px">Daily spend vs weekly avg · 1.00x = baseline</div></div></div>
+        <div style="padding:16px 20px;height:260px"><canvas id="pd_chartSpend"></canvas></div>
+      </div>
+      <div class="p2-section">
+        <div class="section-header"><div><div class="section-title">Trials Index</div><div style="font-size:11px;color:#94a3b8;margin-top:1px">Daily trials vs weekly avg · 1.00x = baseline</div></div></div>
+        <div style="padding:16px 20px;height:260px"><canvas id="pd_chartTrials"></canvas></div>
+      </div>
+    </div>
+    <!-- Row 2: CAC + Table -->
+    <div class="charts-row" style="margin-bottom:20px">
+      <div class="p2-section">
+        <div class="section-header"><div><div class="section-title">CAC Index</div><div style="font-size:11px;color:#94a3b8;margin-top:1px">Daily CAC vs weekly avg CAC · 1.00x = baseline</div></div></div>
+        <div style="padding:16px 20px;height:260px"><canvas id="pd_chartCAC"></canvas></div>
+      </div>
+      <div class="p2-section">
+        <div class="section-header"><div><div class="section-title">Spend &amp; Trials Share by Day</div><div style="font-size:11px;color:#94a3b8;margin-top:1px">% of weekly total attributed to each day</div></div></div>
+        <div style="padding:16px 20px" id="pd_tableWrap"></div>
+      </div>
+    </div>
+    <!-- Row 3: CPC + CVR -->
+    <div class="charts-row">
+      <div class="p2-section">
+        <div class="section-header"><div><div class="section-title">CPC Index</div><div style="font-size:11px;color:#94a3b8;margin-top:1px">Daily CPC vs weekly avg CPC · 1.00x = baseline</div></div></div>
+        <div style="padding:16px 20px;height:260px"><canvas id="pd_chartCPC"></canvas></div>
+      </div>
+      <div class="p2-section">
+        <div class="section-header"><div><div class="section-title">CVR Index</div><div style="font-size:11px;color:#94a3b8;margin-top:1px">Daily CVR vs weekly avg CVR · 1.00x = baseline</div></div></div>
+        <div style="padding:16px 20px;height:260px"><canvas id="pd_chartCVR"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- DATA + SCRIPTS                                                          -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <script>
@@ -1464,6 +1546,7 @@ function showTab(n){
   if(n===6) Object.values(p6_charts).forEach(c=>c.resize());
   if(n===7) { if(p7_chartInst) p7_chartInst.resize(); }
   if(n===8) { if(pw_chartInst) pw_chartInst.resize(); }
+  if(n===9) { Object.values(pd_charts).forEach(c=>c&&c.resize()); }
   // Close any open dropdowns
   document.querySelectorAll(".dd-panel").forEach(x=>x.classList.remove("open"));
 }
@@ -4189,6 +4272,175 @@ function pw_init(){
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// PAGE 9 — DOW ZOOM IN
+// ══════════════════════════════════════════════════════════════════════════════
+
+let pd_charts={};
+let pd_selCT=new Set(["Brand","NonBrand","BrandShopping","NonBrandShopping"]);
+let pd_selCamp=null;
+let pd_selWeek=null;
+let pd_allWeeks=[];
+const PD_DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+function pd_addDays(ds,n){const d=new Date(ds+"T00:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+function pd_weekStart(ds){const d=new Date(ds+"T00:00:00");const day=d.getDay();d.setDate(d.getDate()-(day===0?6:day-1));return d.toISOString().slice(0,10);}
+function pd_fmtWeekLabel(wStart){
+  const wEnd=pd_addDays(wStart,6);
+  const ms=new Date(wStart+"T00:00:00"),me=new Date(wEnd+"T00:00:00");
+  const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return`${M[ms.getMonth()]} ${ms.getDate()} – ${M[me.getMonth()]} ${me.getDate()}`;
+}
+
+// ── data ─────────────────────────────────────────────────────────────────────
+function pd_weekDowRaw(wStart){
+  // Returns array[7]: index 0=Mon(wStart) … 6=Sun(wStart+6)
+  const wEnd=pd_addDays(wStart,6);
+  const days=Array.from({length:7},()=>({imp:0,cl:0,cost:0,trials:0}));
+  DATA.forEach(r=>{
+    if(r.d<wStart||r.d>wEnd) return;
+    if(!pd_selCT.has(derivedType(r))) return;
+    if(pd_selCamp&&!pd_selCamp.has(r.cat)) return;
+    const diffMs=new Date(r.d+"T00:00:00")-new Date(wStart+"T00:00:00");
+    const i=Math.round(diffMs/86400000);
+    if(i<0||i>6) return;
+    days[i].imp+=r.imp;days[i].cl+=r.cl;days[i].cost+=r.cost;days[i].trials+=r.trials;
+  });
+  return days;
+}
+function pd_l4wDowRaw(wStart){
+  const totals=Array.from({length:7},()=>({imp:0,cl:0,cost:0,trials:0}));
+  for(let w=1;w<=4;w++){
+    const ws=pd_addDays(wStart,-7*w);
+    const days=pd_weekDowRaw(ws);
+    for(let i=0;i<7;i++){totals[i].imp+=days[i].imp;totals[i].cl+=days[i].cl;totals[i].cost+=days[i].cost;totals[i].trials+=days[i].trials;}
+  }
+  return totals.map(t=>({imp:t.imp/4,cl:t.cl/4,cost:t.cost/4,trials:t.trials/4}));
+}
+function pd_volumeIndex(days,key){
+  const avg=days.reduce((s,d)=>s+d[key],0)/7;
+  if(avg===0) return Array(7).fill(null);
+  return days.map(d=>d[key]/avg);
+}
+function pd_ratioIndex(days,numKey,denKey){
+  const tNum=days.reduce((s,d)=>s+d[numKey],0),tDen=days.reduce((s,d)=>s+d[denKey],0);
+  if(tDen===0) return Array(7).fill(null);
+  const base=tNum/tDen;
+  return days.map(d=>d[denKey]===0?null:(d[numKey]/d[denKey])/base);
+}
+
+// ── chart ─────────────────────────────────────────────────────────────────────
+function pd_makeChart(canvasId,thisIdx,l4wIdx,thisColor,l4wColor,weekLabel){
+  const cfg={
+    type:'line',
+    data:{
+      labels:PD_DOW,
+      datasets:[
+        {label:weekLabel,data:thisIdx,borderColor:thisColor,backgroundColor:'transparent',pointBackgroundColor:thisColor,pointRadius:4,tension:0.3,order:1},
+        {label:'L4W avg',data:l4wIdx,borderColor:l4wColor,backgroundColor:'transparent',borderDash:[5,4],pointBackgroundColor:l4wColor,pointStyle:'rectRot',pointRadius:5,tension:0.3,order:2},
+        {label:'__ref__',data:Array(7).fill(1),borderColor:'rgba(148,163,184,0.45)',backgroundColor:'transparent',borderDash:[3,3],pointRadius:0,order:3},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{position:'bottom',labels:{font:{size:10},padding:10,boxWidth:10,boxHeight:10,filter:item=>item.text!=='__ref__'}},
+        tooltip:{
+          filter:item=>item.dataset.label!=='__ref__',
+          callbacks:{label:ctx=>{
+            if(ctx.parsed.y===null) return`${ctx.dataset.label}: —`;
+            const pct=((ctx.parsed.y-1)*100).toFixed(1);
+            return`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}x (${pct>=0?'+':''}${pct}%)`;
+          }}
+        }
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:11}}},
+        y:{grid:{color:'#f1f5f9'},ticks:{font:{size:10},callback:v=>v.toFixed(2)+'x'}}
+      }
+    }
+  };
+  if(pd_charts[canvasId]) pd_charts[canvasId].destroy();
+  pd_charts[canvasId]=new Chart(document.getElementById(canvasId).getContext('2d'),cfg);
+}
+
+// ── table ─────────────────────────────────────────────────────────────────────
+function pd_renderTable(thisDays,l4wDays,weekLabel){
+  const tSpend=thisDays.reduce((s,d)=>s+d.cost,0),tTrials=thisDays.reduce((s,d)=>s+d.trials,0);
+  const lSpend=l4wDays.reduce((s,d)=>s+d.cost,0),lTrials=l4wDays.reduce((s,d)=>s+d.trials,0);
+  const fmt=v=>v!==null&&isFinite(v)?v.toFixed(1)+'%':'—';
+  const rows=PD_DOW.map((dow,i)=>{
+    const ts=tSpend>0?thisDays[i].cost/tSpend*100:null;
+    const ls=lSpend>0?l4wDays[i].cost/lSpend*100:null;
+    const tt=tTrials>0?thisDays[i].trials/tTrials*100:null;
+    const lt=lTrials>0?l4wDays[i].trials/lTrials*100:null;
+    return`<tr><td style="font-weight:600;font-size:12px">${dow}</td><td class="num">${fmt(ts)}</td><td class="num">${fmt(ls)}</td><td class="num">${fmt(tt)}</td><td class="num">${fmt(lt)}</td></tr>`;
+  }).join('');
+  return`<table><thead><tr>
+    <th>Day</th>
+    <th class="num" style="font-size:11px">Spend %<br><span style="font-weight:400;color:#94a3b8">This Wk</span></th>
+    <th class="num" style="font-size:11px">Spend %<br><span style="font-weight:400;color:#94a3b8">L4W avg</span></th>
+    <th class="num" style="font-size:11px">Trials %<br><span style="font-weight:400;color:#94a3b8">This Wk</span></th>
+    <th class="num" style="font-size:11px">Trials %<br><span style="font-weight:400;color:#94a3b8">L4W avg</span></th>
+  </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ── filters ───────────────────────────────────────────────────────────────────
+function pd_onCTChange(){
+  pd_selCT=new Set([...document.querySelectorAll("#pd_ctPanel input:checked")].map(x=>x.value));
+  document.getElementById("pd_ctLabel").textContent=pd_selCT.size===4?"All Types":pd_selCT.size===0?"None":[...pd_selCT].join(", ");
+  pd_selCamp=null;pd_rebuildCampList();pd_recalc();
+}
+function pd_rebuildCampList(){
+  const cats=new Set();
+  DATA.forEach(r=>{if(pd_selCT.has(derivedType(r)))cats.add(r.cat);});
+  document.getElementById("pd_campList").innerHTML=[...cats].sort().map(c=>`<label class="dd-item"><input type="checkbox" value="${c}" checked onchange="pd_onCampChange()"> ${c}</label>`).join("");
+  pd_updateCampLabel();
+}
+function pd_updateCampLabel(){
+  const checks=document.querySelectorAll("#pd_campList input:checked").length,total=document.querySelectorAll("#pd_campList input").length;
+  document.getElementById("pd_campLabel").textContent=checks===0?"None":checks===total?"All Campaigns":`${checks} campaigns`;
+}
+function pd_onCampChange(){
+  const checks=[...document.querySelectorAll("#pd_campList input:checked")].map(x=>x.value),total=document.querySelectorAll("#pd_campList input").length;
+  pd_selCamp=checks.length===total?null:new Set(checks);pd_updateCampLabel();pd_recalc();
+}
+function pd_filterCampList(q){document.querySelectorAll("#pd_campList .dd-item").forEach(el=>el.classList.toggle("hidden",!el.textContent.toLowerCase().includes(q.toLowerCase())));}
+function pd_campSelectAll(){document.querySelectorAll("#pd_campList input").forEach(x=>x.checked=true);pd_selCamp=null;pd_updateCampLabel();pd_recalc();}
+function pd_campClearAll(){document.querySelectorAll("#pd_campList input").forEach(x=>x.checked=false);pd_selCamp=new Set();pd_updateCampLabel();pd_recalc();}
+
+// ── week selector ─────────────────────────────────────────────────────────────
+function pd_buildWeekList(){
+  const ws=new Set();DATA.forEach(r=>ws.add(pd_weekStart(r.d)));
+  pd_allWeeks=[...ws].sort().reverse();
+}
+function pd_buildWeekSelector(){
+  const list=document.getElementById('pd_weekList');list.innerHTML='';
+  pd_allWeeks.forEach(ws=>{
+    const el=document.createElement('div');
+    el.className='dd-item';el.style.cssText='padding:6px 12px;cursor:pointer;font-size:12px';
+    el.textContent=pd_fmtWeekLabel(ws);
+    el.onclick=()=>{pd_selWeek=ws;document.getElementById('pd_weekLabel').textContent=pd_fmtWeekLabel(ws);toggleDD('pd_weekPanel');pd_recalc();};
+    list.appendChild(el);
+  });
+  if(pd_allWeeks.length){pd_selWeek=pd_allWeeks[0];document.getElementById('pd_weekLabel').textContent=pd_fmtWeekLabel(pd_selWeek);}
+}
+
+// ── recalc ────────────────────────────────────────────────────────────────────
+function pd_recalc(){
+  if(!pd_selWeek) return;
+  const wStart=pd_selWeek,weekLabel=pd_fmtWeekLabel(wStart);
+  const thisDays=pd_weekDowRaw(wStart),l4wDays=pd_l4wDowRaw(wStart);
+  pd_makeChart('pd_chartSpend', pd_volumeIndex(thisDays,'cost'),    pd_volumeIndex(l4wDays,'cost'),    '#3b82f6','#93c5fd',weekLabel);
+  pd_makeChart('pd_chartTrials',pd_volumeIndex(thisDays,'trials'),  pd_volumeIndex(l4wDays,'trials'),  '#22c55e','#86efac',weekLabel);
+  pd_makeChart('pd_chartCAC',   pd_ratioIndex(thisDays,'cost','trials'),pd_ratioIndex(l4wDays,'cost','trials'),'#f97316','#fdba74',weekLabel);
+  pd_makeChart('pd_chartCPC',   pd_ratioIndex(thisDays,'cost','cl'), pd_ratioIndex(l4wDays,'cost','cl'),'#8b5cf6','#c4b5fd',weekLabel);
+  pd_makeChart('pd_chartCVR',   pd_ratioIndex(thisDays,'trials','cl'),pd_ratioIndex(l4wDays,'trials','cl'),'#14b8a6','#99f6e4',weekLabel);
+  document.getElementById('pd_tableWrap').innerHTML=pd_renderTable(thisDays,l4wDays,weekLabel);
+}
+function pd_init(){pd_buildWeekList();pd_rebuildCampList();pd_buildWeekSelector();pd_recalc();}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════════════════════
 p0_init();
@@ -4202,6 +4454,7 @@ p4_rebuildCampList();
 p6_init();
 p7_init();
 pw_init();
+pd_init();
 </script>
 </body>
 </html>
