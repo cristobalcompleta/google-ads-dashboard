@@ -70,14 +70,15 @@ canvas{max-height:260px}
 .no-data p{font-size:12px;line-height:1.7}
 
 /* ── SUMMARY TABLE ──────────────────────────────────────────────────────────── */
-#summary-table{overflow-x:auto;margin-top:4px}
-#summary-table table{width:100%;border-collapse:collapse;font-size:12px}
-#summary-table th{padding:7px 10px;text-align:right;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #e2e8f0;white-space:nowrap}
-#summary-table th:first-child{text-align:left}
-#summary-table td{padding:7px 10px;text-align:right;border-bottom:1px solid #f1f5f9;color:#1e293b;font-variant-numeric:tabular-nums;white-space:nowrap}
-#summary-table td:first-child{text-align:left;font-weight:600;color:#374151}
-#summary-table tr:last-child td{border-bottom:none}
-#summary-table tr:hover td{background:#f8fafc}
+#summary-table,.tbl-wrap{overflow-x:auto;margin-top:4px}
+#summary-table table,.tbl-wrap table{width:100%;border-collapse:collapse;font-size:12px}
+#summary-table th,.tbl-wrap th{padding:7px 10px;text-align:right;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #e2e8f0;white-space:nowrap}
+#summary-table th:first-child,.tbl-wrap th:first-child{text-align:left}
+#summary-table td,.tbl-wrap td{padding:7px 10px;text-align:right;border-bottom:1px solid #f1f5f9;color:#1e293b;font-variant-numeric:tabular-nums;white-space:nowrap}
+#summary-table td:first-child,.tbl-wrap td:first-child{text-align:left;font-weight:600;color:#374151}
+#summary-table tr:last-child td,.tbl-wrap tr:last-child td{border-bottom:none}
+#summary-table tr:hover td,.tbl-wrap tr:hover td{background:#f8fafc}
+.tbl-wrap .tbl-group-header td{background:#f8fafc;font-weight:700;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.05em}
 .td-pos{color:#16a34a;font-weight:600}
 .td-neg{color:#dc2626;font-weight:600}
 .td-neu{color:#94a3b8}
@@ -161,6 +162,24 @@ canvas{max-height:260px}
   </div>
 
   <div class="ctrl-sep"></div>
+
+  <!-- Campaign Estimate filter (trials tab only) -->
+  <div class="ctrl-group" id="ctrl-distcamp" style="display:none">
+    <span class="ctrl-label">Campaign (ESTIMATE)</span>
+    <div class="dd-wrap" id="dd-distcamp">
+      <button class="dd-btn" onclick="toggleDD('dd-distcamp')">
+        <span class="dd-lbl">All</span><span>▾</span>
+      </button>
+      <div class="dd-panel">
+        <input class="dd-search" placeholder="Search…" oninput="filterDDSearch(this)">
+        <div class="dd-list" id="list-distcamp"></div>
+        <div class="dd-actions">
+          <button class="dd-act-btn" onclick="ddAll('dd-distcamp','distCamps')">All</button>
+          <button class="dd-act-btn" onclick="ddClear('dd-distcamp','distCamps')">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Trial Channel (trials tab only) -->
   <div class="ctrl-group" id="ctrl-trial-channel" style="display:none">
@@ -271,13 +290,13 @@ canvas{max-height:260px}
     <div class="chart-card">
       <div class="chart-title">Summary</div>
       <div class="chart-sub" id="trials-tbl-sub">Today vs historical averages</div>
-      <div id="trials-summary-table"></div>
+      <div id="trials-summary-table" class="tbl-wrap"></div>
     </div>
   </div>
   <div class="chart-card" style="margin-top:0">
     <div class="chart-title">Campaign Estimate</div>
     <div class="chart-sub" id="dist-tbl-sub">Estimated trials by campaign — based on L4 same-DOW share applied to today's running total</div>
-    <div id="trials-dist-table"></div>
+    <div id="trials-dist-table" class="tbl-wrap"></div>
   </div>
 </div>
 
@@ -854,10 +873,11 @@ function switchTab(tab) {
   document.getElementById('tab-trials').classList.toggle('active', tab === 'trials');
   document.getElementById('section-spend').style.display   = tab === 'spend'  ? '' : 'none';
   document.getElementById('section-trials').style.display  = tab === 'trials' ? '' : 'none';
-  document.getElementById('ctrl-channel').style.display    = tab === 'spend'  ? '' : 'none';
-  document.getElementById('ctrl-camp').style.display       = tab === 'spend'  ? '' : 'none';
-  document.getElementById('ctrl-ag').style.display         = tab === 'spend'  ? '' : 'none';
+  document.getElementById('ctrl-channel').style.display       = tab === 'spend'  ? '' : 'none';
+  document.getElementById('ctrl-camp').style.display          = tab === 'spend'  ? '' : 'none';
+  document.getElementById('ctrl-ag').style.display            = tab === 'spend'  ? '' : 'none';
   document.getElementById('ctrl-trial-channel').style.display = tab === 'trials' ? '' : 'none';
+  document.getElementById('ctrl-distcamp').style.display      = tab === 'trials' ? '' : 'none';
   rebuildCompList();
   render();
 }
@@ -910,6 +930,21 @@ buildCheckList('list-tchan', ['Brand','NonBrand','Shopping'], true, function() {
   syncLabel('dd-tchan', state.tChannels, 'All');
   renderTrials();
 });
+
+// ── CAMPAIGN ESTIMATE FILTER ──────────────────────────────────────────────────
+state.distCamps = null;
+DD_STATE_KEYS['dd-distcamp'] = 'distCamps';
+DD_LABELS['dd-distcamp']     = 'All';
+
+(function() {
+  if (typeof DIST_DATA === 'undefined') return;
+  var camps = DIST_DATA.map(function(r){ return r[0]; }).sort();
+  buildCheckList('list-distcamp', camps, true, function() {
+    state.distCamps = getChecked('list-distcamp');
+    syncLabel('dd-distcamp', state.distCamps, 'All');
+    renderTrials();
+  });
+})();
 
 // ── TRIALS COMPUTATION ────────────────────────────────────────────────────────
 function computeTrialsHourly() {
@@ -1105,7 +1140,7 @@ function renderDistTable(todayTotals) {
   });
 
   var html = '<table><thead><tr>' +
-    '<th style="text-align:left">Campaign</th>' +
+    '<th>Campaign</th>' +
     '<th>Channel</th>' +
     '<th>L4 DoW avg</th>' +
     '<th>Share</th>' +
@@ -1114,16 +1149,17 @@ function renderDistTable(todayTotals) {
 
   var lastChan = null;
   rows.forEach(function(r) {
+    if (state.distCamps && !state.distCamps.has(r.camp)) return;
     if (r.chan !== lastChan) {
-      html += '<tr style="background:#f8fafc"><td colspan="5" style="text-align:left;font-weight:700;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px">' + r.chanLabel + '</td></tr>';
+      html += '<tr class="tbl-group-header"><td colspan="5">' + r.chanLabel + '</td></tr>';
       lastChan = r.chan;
     }
     html += '<tr>' +
-      '<td style="text-align:left;font-family:monospace;font-size:11px">' + r.camp + '</td>' +
+      '<td style="font-family:monospace;font-size:11px">' + r.camp + '</td>' +
       '<td>' + r.chanLabel + '</td>' +
       '<td>' + r.avg + '</td>' +
       '<td>' + (r.share * 100).toFixed(1) + '%</td>' +
-      '<td style="font-weight:700;color:#f5a623">' + r.est + '</td>' +
+      '<td class="td-pos">' + r.est + '</td>' +
       '</tr>';
   });
 
