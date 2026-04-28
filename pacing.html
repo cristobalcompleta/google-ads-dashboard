@@ -1308,26 +1308,41 @@ function computeProjection() {
   var spViewAgg  = {};  // h -> {brand,nonbrand,shopping}
   var spDateAgg  = {};  // date -> h -> {brand,nonbrand,shopping}
   var spCampDate = {};  // camp_lower -> {chan, byDate:{date->sp}}
+  var trViewAgg  = {};  // h -> {brand,nonbrand,shopping}
+  var trDateAgg  = {};  // date -> h -> {brand,nonbrand,shopping}
+  var campFiltered = !!state.distCamps;  // true when campaign filter is active
 
   PACING_DATA_GMT0.forEach(function(r) {
     var date=r[0], hour=+r[1], chanRaw=r[2], camp=r[3].toLowerCase(), sp=+r[5];
     if (hour < state.hrMin || hour > state.hrMax) return;
     var chan = PACING_CHAN_MAP[chanRaw]; if (!chan) return;
+    if (state.distCamps && !state.distCamps.has(camp)) return;  // apply campaign filter
     if (date === state.viewDate) {
       if (!spViewAgg[hour]) spViewAgg[hour] = {brand:0,nonbrand:0,shopping:0};
       spViewAgg[hour][chan] += sp;
+      if (campFiltered) {
+        var tr = +r[8];
+        if (!trViewAgg[hour]) trViewAgg[hour] = {brand:0,nonbrand:0,shopping:0};
+        trViewAgg[hour][chan] += tr;
+      }
     } else {
       if (!spDateAgg[date]) spDateAgg[date] = {};
       if (!spDateAgg[date][hour]) spDateAgg[date][hour] = {brand:0,nonbrand:0,shopping:0};
       spDateAgg[date][hour][chan] += sp;
       if (!spCampDate[camp]) spCampDate[camp] = {chan:chan, byDate:{}};
       spCampDate[camp].byDate[date] = (spCampDate[camp].byDate[date]||0) + sp;
+      if (campFiltered) {
+        var tr = +r[8];
+        if (!trDateAgg[date]) trDateAgg[date] = {};
+        if (!trDateAgg[date][hour]) trDateAgg[date][hour] = {brand:0,nonbrand:0,shopping:0};
+        trDateAgg[date][hour][chan] += tr;
+      }
     }
   });
 
-  var trViewAgg = {};  // h -> {brand,nonbrand,shopping}
-  var trDateAgg = {};  // date -> h -> {brand,nonbrand,shopping}
-  if (typeof TRIALS_DATA !== 'undefined') {
+  // Use TRIALS_DATA (aggregated, UTC) only when no campaign filter is active.
+  // When a campaign filter is set, trials are sourced from PACING_DATA above (r[8]).
+  if (!campFiltered && typeof TRIALS_DATA !== 'undefined') {
     TRIALS_DATA.forEach(function(r) {
       var date=r[0], hour=+r[1], brand=+r[2], nonbrand=+r[3], shopping=+r[4];
       if (hour < state.hrMin || hour > state.hrMax) return;
