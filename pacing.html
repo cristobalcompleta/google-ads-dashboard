@@ -96,6 +96,26 @@ canvas{max-height:260px}
 .tab-btn{background:none;border:none;border-bottom:2px solid transparent;padding:10px 18px;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;margin-bottom:-1px;transition:color .15s,border-color .15s}
 .tab-btn:hover{color:#334155}
 .tab-btn.active{color:#f5a623;border-bottom-color:#f5a623}
+
+/* ── TAB LAYOUT (main content + sidebar) ────────────────────────────────── */
+.tab-layout{display:flex;gap:20px;align-items:flex-start}
+.tab-content{flex:1;min-width:0;display:flex;flex-direction:column;gap:20px}
+.tab-sidebar{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;position:sticky;top:20px}
+
+/* ── STATUS BOX (blue) ──────────────────────────────────────────────────── */
+.status-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 18px;display:flex;flex-direction:column;gap:8px}
+.status-box-title{font-size:10px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.06em;padding-bottom:5px;border-bottom:1px solid #bfdbfe;margin-bottom:2px}
+.status-item{display:flex;flex-direction:column;gap:1px}
+.status-lbl{font-size:10px;color:#3b82f6;font-weight:600}
+.status-val{font-size:12px;color:#1e3a8a;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* ── README BOX (yellow) ────────────────────────────────────────────────── */
+.readme-box{background:#fefce8;border:1px solid #fde047;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.rm-section{display:flex;flex-direction:column;gap:4px}
+.rm-title{font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #fde047;padding-bottom:3px;margin-bottom:1px}
+.rm-body{font-size:11px;color:#78350f;line-height:1.65}
+.rm-body li{margin-left:14px;margin-bottom:2px}
+.rm-body strong{color:#92400e}
 </style>
 </head>
 <body>
@@ -263,102 +283,238 @@ canvas{max-height:260px}
 </div><!-- /controls -->
 
 <div class="main" id="section-spend">
-  <div class="legend" id="legend"></div>
-  <div class="charts-grid">
-    <div class="chart-card">
-      <div class="chart-title">Cost</div>
-      <div class="chart-sub">Cumulative spend per hour ($) — today vs historical avg</div>
-      <canvas id="cCost"></canvas>
+  <div class="tab-layout">
+    <div class="tab-content">
+      <div class="legend" id="legend"></div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Cost</div>
+          <div class="chart-sub">Cumulative spend per hour ($) — today vs historical avg</div>
+          <canvas id="cCost"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Summary</div>
+          <div class="chart-sub" id="tbl-sub">Today vs historical averages</div>
+          <div id="summary-table"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">CTR</div>
+          <div class="chart-sub">Cumulative CTR per hour (%) — today vs historical avg</div>
+          <canvas id="cCTR"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">CPC</div>
+          <div class="chart-sub">Cumulative CPC per hour ($) — today vs historical avg</div>
+          <canvas id="cCPC"></canvas>
+        </div>
+      </div>
     </div>
-    <div class="chart-card">
-      <div class="chart-title">Summary</div>
-      <div class="chart-sub" id="tbl-sub">Today vs historical averages</div>
-      <div id="summary-table"></div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">CTR</div>
-      <div class="chart-sub">Cumulative CTR per hour (%) — today vs historical avg</div>
-      <canvas id="cCTR"></canvas>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">CPC</div>
-      <div class="chart-sub">Cumulative CPC per hour ($) — today vs historical avg</div>
-      <canvas id="cCPC"></canvas>
+    <div class="tab-sidebar">
+      <div class="status-box">
+        <div class="status-box-title">Data freshness</div>
+        <div class="status-item">
+          <span class="status-lbl">Spend · GMT 0</span>
+          <span class="status-val status-spend-0">—</span>
+        </div>
+        <div class="status-item">
+          <span class="status-lbl">Spend · GMT -7</span>
+          <span class="status-val status-spend-7">—</span>
+        </div>
+        <div class="status-item">
+          <span class="status-lbl">Trials · UTC</span>
+          <span class="status-val status-trials">—</span>
+        </div>
+      </div>
+      <div class="readme-box">
+        <div class="rm-section">
+          <div class="rm-title">What you're looking at</div>
+          <div class="rm-body">Cumulative Google Ads spend by hour for the selected day, compared to historical averages. All charts and the summary table respect the Channel, Campaign, and Ad Group filters.</div>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Hour axis</div>
+          <div class="rm-body">All hours are <strong>GMT 0</strong>. Hour 0 = midnight UTC.</div>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Comparison lines</div>
+          <ul class="rm-body">
+            <li><strong>Avg [DOW]s</strong> — average of the last N same weekdays. Use "Same-DOW days" to change the sample size.</li>
+            <li><strong>L4W</strong> — last 28 days average, all weekdays.</li>
+          </ul>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Comparison dropdown</div>
+          <div class="rm-body">Removes specific days from both averages. Use it to exclude holidays or outliers that would distort benchmarks.</div>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Summary table</div>
+          <div class="rm-body">Capped to the last completed hour so all comparisons are apples-to-apples.</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="main" id="section-trials" style="display:none">
-  <div class="legend" id="legend-trials"></div>
-  <div class="charts-grid">
-    <div class="chart-card">
-      <div class="chart-title">Trials</div>
-      <div class="chart-sub">Cumulative trials per hour — today vs historical avg</div>
-      <canvas id="cTrials"></canvas>
+  <div class="tab-layout">
+    <div class="tab-content">
+      <div class="legend" id="legend-trials"></div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Trials</div>
+          <div class="chart-sub">Cumulative trials per hour — today vs historical avg</div>
+          <canvas id="cTrials"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Summary</div>
+          <div class="chart-sub" id="trials-tbl-sub">Today vs historical averages</div>
+          <div id="trials-summary-table" class="tbl-wrap"></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Campaign Estimate</div>
+        <div class="chart-sub" id="dist-tbl-sub">Estimated trials by campaign — based on L4 same-DOW share applied to today's running total</div>
+        <div id="trials-dist-table" class="tbl-wrap"></div>
+      </div>
     </div>
-    <div class="chart-card">
-      <div class="chart-title">Summary</div>
-      <div class="chart-sub" id="trials-tbl-sub">Today vs historical averages</div>
-      <div id="trials-summary-table" class="tbl-wrap"></div>
+    <div class="tab-sidebar">
+      <div class="status-box">
+        <div class="status-box-title">Data freshness</div>
+        <div class="status-item">
+          <span class="status-lbl">Spend · GMT 0</span>
+          <span class="status-val status-spend-0">—</span>
+        </div>
+        <div class="status-item">
+          <span class="status-lbl">Spend · GMT -7</span>
+          <span class="status-val status-spend-7">—</span>
+        </div>
+        <div class="status-item">
+          <span class="status-lbl">Trials · UTC</span>
+          <span class="status-val status-trials">—</span>
+        </div>
+      </div>
+      <div class="readme-box">
+        <div class="rm-section">
+          <div class="rm-title">What you're looking at</div>
+          <div class="rm-body">Cumulative trials by hour for the selected day, compared to historical averages.</div>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Hour axis</div>
+          <div class="rm-body">Hours are <strong>UTC (GMT 0)</strong>. Trial data comes from a different source than spend — there may be a small lag.</div>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Channel filter</div>
+          <div class="rm-body">Breaks trials into Brand, NonBrand, and Shopping. Affects the chart and summary table.</div>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Campaign Estimate table</div>
+          <div class="rm-body">Estimated trials per campaign — <strong>not actuals</strong>. Logic: take each campaign's L4 same-DOW trial share and apply it to today's running total. More reliable the further into the day you are.</div>
+        </div>
+      </div>
     </div>
-  </div>
-  <div class="chart-card" style="margin-top:0">
-    <div class="chart-title">Campaign Estimate</div>
-    <div class="chart-sub" id="dist-tbl-sub">Estimated trials by campaign — based on L4 same-DOW share applied to today's running total</div>
-    <div id="trials-dist-table" class="tbl-wrap"></div>
   </div>
 </div>
 
 <div class="main" id="section-proj" style="display:none">
-  <div class="stat-row">
-    <div class="stat-box">
-      <div class="stat-box-lbl">Spend so far</div>
-      <div class="stat-box-val" id="proj-spend-sf">—</div>
-      <div class="stat-box-sub" id="proj-spend-sf-sub"></div>
+  <div class="tab-layout">
+    <div class="tab-content">
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-box-lbl">Spend so far</div>
+          <div class="stat-box-val" id="proj-spend-sf">—</div>
+          <div class="stat-box-sub" id="proj-spend-sf-sub"></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-lbl">Trials so far</div>
+          <div class="stat-box-val" id="proj-trials-sf">—</div>
+          <div class="stat-box-sub" id="proj-trials-sf-sub"></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-lbl">Projected EOD Spend</div>
+          <div class="stat-box-val" id="proj-spend-eod">—</div>
+          <div class="stat-box-sub" id="proj-spend-eod-sub"></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-lbl">Projected EOD Trials</div>
+          <div class="stat-box-val" id="proj-trials-eod">—</div>
+          <div class="stat-box-sub" id="proj-trials-eod-sub"></div>
+        </div>
+        <div class="stat-box stat-box-accent">
+          <div class="stat-box-lbl">Current CAC</div>
+          <div class="stat-box-val" id="proj-cac-sf">—</div>
+          <div class="stat-box-sub" id="proj-cac-sf-sub"></div>
+        </div>
+        <div class="stat-box stat-box-accent">
+          <div class="stat-box-lbl">Projected EOD CAC</div>
+          <div class="stat-box-val" id="proj-cac-eod">—</div>
+          <div class="stat-box-sub" id="proj-cac-eod-sub"></div>
+        </div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Spend by Hour (GMT 0)</div>
+          <div class="chart-sub">Cumulative actual → projected · vs L4 DOW &amp; L4W</div>
+          <div class="legend" id="legend-proj"></div>
+          <canvas id="cProjSpend"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Trials by Hour (GMT 0)</div>
+          <div class="chart-sub">Cumulative actual → projected · vs L4 DOW &amp; L4W</div>
+          <canvas id="cProjTrials"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Projection Breakdown</div>
+        <div class="chart-sub" id="proj-tbl-sub">Spend · Trials · CAC — actual so far + projected EOD by channel and campaign</div>
+        <div id="proj-table" class="tbl-wrap"></div>
+      </div>
     </div>
-    <div class="stat-box">
-      <div class="stat-box-lbl">Trials so far</div>
-      <div class="stat-box-val" id="proj-trials-sf">—</div>
-      <div class="stat-box-sub" id="proj-trials-sf-sub"></div>
+    <div class="tab-sidebar">
+      <div class="status-box">
+        <div class="status-box-title">Data freshness</div>
+        <div class="status-item">
+          <span class="status-lbl">Spend · GMT 0</span>
+          <span class="status-val status-spend-0">—</span>
+        </div>
+        <div class="status-item">
+          <span class="status-lbl">Spend · GMT -7</span>
+          <span class="status-val status-spend-7">—</span>
+        </div>
+        <div class="status-item">
+          <span class="status-lbl">Trials · UTC</span>
+          <span class="status-val status-trials">—</span>
+        </div>
+      </div>
+      <div class="readme-box">
+        <div class="rm-section">
+          <div class="rm-title">What you're looking at</div>
+          <div class="rm-body">Today's spend and trials extrapolated to end-of-day, based on how today is pacing vs L4 same-DOW averages.</div>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">How the projection works</div>
+          <ol class="rm-body" style="margin-left:14px">
+            <li>Actual through the latest completed hour.</li>
+            <li>Compare to L4 DOW avg at that same hour → pace factor (e.g. 1.15x = 15% above avg).</li>
+            <li>Apply that factor to the remaining L4 DOW hourly shape.</li>
+          </ol>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Metric boxes</div>
+          <ul class="rm-body">
+            <li><strong>So far</strong> — actual through the latest data hour.</li>
+            <li><strong>Projected EOD</strong> — actual + remaining hours at current pace.</li>
+            <li><strong>CAC</strong> — Spend ÷ Trials. EOD CAC uses projected totals.</li>
+          </ul>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Campaign filter</div>
+          <div class="rm-body">Filters both spend and trials. CAC reflects only the selected campaigns' efficiency.</div>
+        </div>
+        <div class="rm-section">
+          <div class="rm-title">Caveat</div>
+          <div class="rm-body">Early in the day (&lt;8 hours of data), the pace factor is noisy. Trust projections more after midday.</div>
+        </div>
+      </div>
     </div>
-    <div class="stat-box">
-      <div class="stat-box-lbl">Projected EOD Spend</div>
-      <div class="stat-box-val" id="proj-spend-eod">—</div>
-      <div class="stat-box-sub" id="proj-spend-eod-sub"></div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-box-lbl">Projected EOD Trials</div>
-      <div class="stat-box-val" id="proj-trials-eod">—</div>
-      <div class="stat-box-sub" id="proj-trials-eod-sub"></div>
-    </div>
-    <div class="stat-box stat-box-accent">
-      <div class="stat-box-lbl">Current CAC</div>
-      <div class="stat-box-val" id="proj-cac-sf">—</div>
-      <div class="stat-box-sub" id="proj-cac-sf-sub"></div>
-    </div>
-    <div class="stat-box stat-box-accent">
-      <div class="stat-box-lbl">Projected EOD CAC</div>
-      <div class="stat-box-val" id="proj-cac-eod">—</div>
-      <div class="stat-box-sub" id="proj-cac-eod-sub"></div>
-    </div>
-  </div>
-  <div class="charts-grid">
-    <div class="chart-card">
-      <div class="chart-title">Spend by Hour (GMT 0)</div>
-      <div class="chart-sub">Cumulative actual → projected · vs L4 DOW &amp; L4W</div>
-      <div class="legend" id="legend-proj"></div>
-      <canvas id="cProjSpend"></canvas>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">Trials by Hour (GMT 0)</div>
-      <div class="chart-sub">Cumulative actual → projected · vs L4 DOW &amp; L4W</div>
-      <canvas id="cProjTrials"></canvas>
-    </div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title">Projection Breakdown</div>
-    <div class="chart-sub" id="proj-tbl-sub">Spend · Trials · CAC — actual so far + projected EOD by channel and campaign</div>
-    <div id="proj-table" class="tbl-wrap"></div>
   </div>
 </div>
 
@@ -405,6 +561,31 @@ var PACING_DATA_GMT0 = PACING_DATA.map(function(r) {
 });
 function weekLabel(dateStr) { return 'W' + String(isoWeek(dateStr)).padStart(2,'0'); }
 var DOW_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+// ── DATA FRESHNESS ────────────────────────────────────────────────────────────
+(function() {
+  // Latest hour in raw pacing data (GMT-7)
+  var spD7 = '', spH7 = -1;
+  PACING_DATA.forEach(function(r) {
+    if (r[0] > spD7 || (r[0] === spD7 && +r[1] > spH7)) { spD7 = r[0]; spH7 = +r[1]; }
+  });
+  // Latest hour in pacing data converted to GMT-0
+  var spD0 = '', spH0 = -1;
+  PACING_DATA_GMT0.forEach(function(r) {
+    if (r[0] > spD0 || (r[0] === spD0 && +r[1] > spH0)) { spD0 = r[0]; spH0 = +r[1]; }
+  });
+  // Latest hour in trials data (UTC)
+  var trD = '', trH = -1;
+  if (typeof TRIALS_DATA !== 'undefined') {
+    TRIALS_DATA.forEach(function(r) {
+      if (r[0] > trD || (r[0] === trD && +r[1] > trH)) { trD = r[0]; trH = +r[1]; }
+    });
+  }
+  function fmt(d, h) { return d ? d + ' · ' + String(h).padStart(2, '0') + ':00' : '—'; }
+  document.querySelectorAll('.status-spend-0').forEach(function(el) { el.textContent = fmt(spD0, spH0); });
+  document.querySelectorAll('.status-spend-7').forEach(function(el) { el.textContent = fmt(spD7, spH7); });
+  document.querySelectorAll('.status-trials').forEach(function(el)  { el.textContent = fmt(trD, trH); });
+})();
 
 // ── STATE ────────────────────────────────────────────────────────────────────
 var TODAY     = todayStr();
