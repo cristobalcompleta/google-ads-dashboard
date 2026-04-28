@@ -570,6 +570,21 @@ tr:hover td{background:#f8fafc}
       </div>
     </div>
 
+    <div class="dd-wrap">
+      <button class="dd-btn" onclick="toggleDD('p4_dowPanel')"><span id="p4_dowLabel">All Days</span><span>▾</span></button>
+      <div class="dd-panel" id="p4_dowPanel">
+        <div class="dd-list">
+          <label class="dd-item"><input type="checkbox" value="0" checked onchange="p4_onDOWChange()"> Sunday</label>
+          <label class="dd-item"><input type="checkbox" value="1" checked onchange="p4_onDOWChange()"> Monday</label>
+          <label class="dd-item"><input type="checkbox" value="2" checked onchange="p4_onDOWChange()"> Tuesday</label>
+          <label class="dd-item"><input type="checkbox" value="3" checked onchange="p4_onDOWChange()"> Wednesday</label>
+          <label class="dd-item"><input type="checkbox" value="4" checked onchange="p4_onDOWChange()"> Thursday</label>
+          <label class="dd-item"><input type="checkbox" value="5" checked onchange="p4_onDOWChange()"> Friday</label>
+          <label class="dd-item"><input type="checkbox" value="6" checked onchange="p4_onDOWChange()"> Saturday</label>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- CONTENT -->
@@ -3052,6 +3067,7 @@ function p2_renderFunnel(){
 
 let p4_selCT=new Set(["Brand","NonBrand","BrandShopping","NonBrandShopping"]);
 let p4_selCamp=null;
+let p4_selDOW=null;
 let p4_chartInst=null;
 
 function p4_filterList(listId,q){
@@ -3089,6 +3105,14 @@ function p4_onCampChange(){
   p4_updateCampLabel();
   p4_recalc();
 }
+function p4_onDOWChange(){
+  const checks=[...document.querySelectorAll("#p4_dowPanel input:checked")].map(x=>parseInt(x.value));
+  p4_selDOW=(checks.length===7)?null:new Set(checks);
+  const labels=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById("p4_dowLabel").textContent=
+    !p4_selDOW?"All Days":p4_selDOW.size===1?labels[[...p4_selDOW][0]]:`${p4_selDOW.size} days`;
+  p4_recalc();
+}
 
 function p4_rebuildCampList(){
   const list=document.getElementById("p4_campList");
@@ -3108,6 +3132,7 @@ function p4_sumPeriod(start,end){
     if(rd<s||rd>e) return;
     if(!p4_selCT.has(derivedType(r))) return;
     if(p4_selCamp&&!p4_selCamp.has(r.camp)) return;
+    if(p4_selDOW&&!p4_selDOW.has(new Date(r.d+"T00:00:00").getDay())) return;
     imp+=r.imp; cl+=r.cl; cost+=r.cost; trials+=r.trials;
   });
   return{imp,cl,cost,trials};
