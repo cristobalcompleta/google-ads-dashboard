@@ -467,6 +467,11 @@ canvas{max-height:260px}
         <div class="chart-sub" id="proj-tbl-sub">Spend · Trials · CAC — actual so far + projected EOD by channel and campaign</div>
         <div id="proj-table" class="tbl-wrap"></div>
       </div>
+      <div class="chart-card">
+        <div class="chart-title">EOD vs Benchmarks</div>
+        <div class="chart-sub" id="proj-bm-sub">Projected end-of-day vs yesterday, L4WoW, and L4W averages</div>
+        <div id="proj-bm-table" class="tbl-wrap"></div>
+      </div>
     </div>
     <div class="tab-sidebar">
       <div class="status-box">
@@ -1610,6 +1615,7 @@ function computeProjection() {
     trActHrly, trDowHrly, trWkHrly,
     spChanAct, trChanAct, spChanL4, trChanL4,
     spCampL4, spChanL4ForCamp, trCampL4, trChanL4ForCamp, allCampsSet,
+    spDateAgg, trDateAgg,
     dowLabel: 'Avg '+DOW_LABELS[vdow]+'s ('+spDowDates.length+')',
     weekLabel: 'L4W ('+spWkDates.length+' days)'
   };
@@ -1658,6 +1664,45 @@ function renderProjTable(r) {
   document.getElementById('proj-table').innerHTML = html;
   document.getElementById('proj-tbl-sub').textContent =
     'Actual through '+r.lastSpH+':00 (GMT 0) · Projected EOD using '+r.dowLabel+' pace shape';
+}
+
+// ── BENCHMARK COMPARISON TABLE ────────────────────────────────────────────────
+function renderBmTable(today, bmYst, bmL4DOW, bmL4W, dowLabel) {
+  function fmtSp(v)  { return v != null && v >= 1 ? '$' + Math.round(v).toLocaleString() : '—'; }
+  function fmtTr(v)  { return v != null && v >= 0.5 ? Math.round(v).toLocaleString() : '—'; }
+  function fmtCAC(v) { return v != null && isFinite(v) && v > 0 && v < 9999 ? '$' + v.toFixed(0) : '—'; }
+  function pctCell(todayV, bmV, invertColor) {
+    if (todayV == null || bmV == null || bmV === 0) return '<span class="td-neu">—</span>';
+    var delta = (todayV - bmV) / bmV * 100;
+    var cls = Math.abs(delta) < 0.05 ? 'td-neu'
+            : invertColor ? (delta > 0 ? 'td-neg' : 'td-pos')
+            : (delta > 0 ? 'td-pos' : 'td-neg');
+    return '<span class="' + cls + '">' + (delta > 0 ? '+' : '') + delta.toFixed(1) + '%</span>';
+  }
+  var rows = [
+    { label: 'Spend EOD',  todayV: today.sp,  ystV: bmYst.sp,  l4dowV: bmL4DOW.sp,  l4wV: bmL4W.sp,  fmt: fmtSp,  inv: false },
+    { label: 'Trials EOD', todayV: today.tr,  ystV: bmYst.tr,  l4dowV: bmL4DOW.tr,  l4wV: bmL4W.tr,  fmt: fmtTr,  inv: false },
+    { label: 'CAC EOD',    todayV: today.cac, ystV: bmYst.cac, l4dowV: bmL4DOW.cac, l4wV: bmL4W.cac, fmt: fmtCAC, inv: true  }
+  ];
+  var html = '<table><thead><tr>' +
+    '<th>Metric</th>' +
+    '<th>Today (proj)</th>' +
+    '<th>Yesterday</th><th>Δ%</th>' +
+    '<th>' + dowLabel + '</th><th>Δ%</th>' +
+    '<th>L4W (28 days)</th><th>Δ%</th>' +
+    '</tr></thead><tbody>';
+  rows.forEach(function(r) {
+    html += '<tr><td>' + r.label + '</td>' +
+      '<td>' + r.fmt(r.todayV) + '</td>' +
+      '<td>' + r.fmt(r.ystV)   + '</td><td>' + pctCell(r.todayV, r.ystV,   r.inv) + '</td>' +
+      '<td>' + r.fmt(r.l4dowV) + '</td><td>' + pctCell(r.todayV, r.l4dowV, r.inv) + '</td>' +
+      '<td>' + r.fmt(r.l4wV)   + '</td><td>' + pctCell(r.todayV, r.l4wV,   r.inv) + '</td>' +
+      '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('proj-bm-table').innerHTML = html;
+  document.getElementById('proj-bm-sub').textContent =
+    'Δ% = today proj vs benchmark actual · ' + dowLabel + ' = last 4 same weekdays · L4W = all days in last 28';
 }
 
 // ── PROJECTION RENDER ─────────────────────────────────────────────────────────
@@ -1780,6 +1825,42 @@ function renderProjection() {
   renderProjTable({spActual,spEOD,trActual,trEOD,cacSF,cacEOD,
     spChanAct,spChanEOD,trChanAct,trChanEOD,campRows,filtChans,
     lastSpH:d.lastSpH, dowLabel:d.dowLabel});
+
+  // ── BENCHMARK TABLE ──────────────────────────────────────────────────────────
+  // Sum all filtered channels for a single date across the current hour range
+  function bmDailySum(dateAgg, date) {
+    if (!dateAgg[date]) return null;
+    var total = 0;
+    d.hours.forEach(function(h) {
+      if (dateAgg[date][h]) {
+        CHAN_ORDER.forEach(function(c) { if (filtChans[c]) total += (dateAgg[date][h][c] || 0); });
+      }
+    });
+    return total > 0 ? total : null;
+  }
+  function bmDailyAvg(dateAgg, dates) {
+    var vals = dates.map(function(dt) { return bmDailySum(dateAgg, dt); })
+                    .filter(function(v) { return v !== null; });
+    if (!vals.length) return null;
+    return vals.reduce(function(a, b) { return a + b; }, 0) / vals.length;
+  }
+  function bmCAC(sp, tr) {
+    return { sp: sp, tr: tr, cac: (sp != null && tr != null && tr > 0) ? sp / tr : null };
+  }
+
+  var ystDateBm  = prevDayStr(state.viewDate);
+  var vdowBm     = dowOf(state.viewDate);
+  var cutoff28   = new Date(new Date(state.viewDate + 'T12:00:00').getTime() - 28 * 24 * 60 * 60 * 1000);
+  var spHistBm   = Object.keys(d.spDateAgg).sort().reverse()
+                     .filter(function(dt) { return !state.excludeDates.has(dt); });
+  var l4dowDatesBm = spHistBm.filter(function(dt) { return dowOf(dt) === vdowBm; }).slice(0, 4);
+  var l4wDatesBm   = spHistBm.filter(function(dt) { return new Date(dt + 'T12:00:00') >= cutoff28; });
+
+  var bmYst  = bmCAC(bmDailySum(d.spDateAgg, ystDateBm), bmDailySum(d.trDateAgg, ystDateBm));
+  var bmL4DOW = bmCAC(bmDailyAvg(d.spDateAgg, l4dowDatesBm), bmDailyAvg(d.trDateAgg, l4dowDatesBm));
+  var bmL4W   = bmCAC(bmDailyAvg(d.spDateAgg, l4wDatesBm),   bmDailyAvg(d.trDateAgg, l4wDatesBm));
+
+  renderBmTable({ sp: spEOD, tr: trEOD, cac: cacEOD }, bmYst, bmL4DOW, bmL4W, d.dowLabel);
 }
 
 // ── TRIALS RENDER ─────────────────────────────────────────────────────────────
