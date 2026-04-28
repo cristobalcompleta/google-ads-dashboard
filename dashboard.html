@@ -354,38 +354,60 @@ tr:hover td{background:#f8fafc}
       </div>
     </div>
 
-    <!-- Period date picker -->
-    <div class="inline-filter">
-      <span class="ctrl-label">Period</span>
+    <!-- Period A + B date pickers -->
+    <div class="inline-filter" style="gap:16px;flex-wrap:wrap">
+      <span class="ctrl-label">Period A</span>
       <input class="date-input" type="date" id="p1_pStart" onchange="p1_recalc()">
       <span class="period-sep-inline">→</span>
       <input class="date-input" type="date" id="p1_pEnd" onchange="p1_recalc()">
-      <span class="period-sep-inline" style="margin-left:4px">— campaign efficiency for spend decisions</span>
+      <span class="period-sep-inline" style="margin:0 8px;color:#cbd5e1">|</span>
+      <span class="ctrl-label">Period B</span>
+      <input class="date-input" type="date" id="p1_pBStart" onchange="p1_recalc()">
+      <span class="period-sep-inline">→</span>
+      <input class="date-input" type="date" id="p1_pBEnd" onchange="p1_recalc()">
+      <span class="period-sep-inline" style="margin-left:4px">— A vs B campaign comparison</span>
     </div>
 
     <!-- Period Performance Table -->
     <div class="p2-section" style="padding:0;overflow:hidden">
       <div class="section-header">
         <div>
-          <div class="section-title">Campaign Performance — Period View</div>
-          <div class="section-sub" id="p1_pTableSubtitle" style="margin-bottom:0">All filters applied · Default sort: Cost ↓</div>
+          <div class="section-title">Campaign Performance — Period A vs B</div>
+          <div class="section-sub" id="p1_pTableSubtitle" style="margin-bottom:0">All filters applied · Default sort: Cost A ↓</div>
         </div>
       </div>
       <div style="overflow-x:auto">
         <table>
           <thead>
             <tr>
-              <th class="sort-hd"     id="p1_sh_p_type" onclick="p1_pSortBy('type')">Type     <span class="sort-ind" id="p1_si_p_type">⇅</span></th>
-              <th class="sort-hd"     id="p1_sh_p_camp" onclick="p1_pSortBy('camp')">Campaign  <span class="sort-ind" id="p1_si_p_camp">⇅</span></th>
-              <th class="sort-hd num" id="p1_sh_p_cost" onclick="p1_pSortBy('cost')">Cost      <span class="sort-ind" id="p1_si_p_cost">↓</span></th>
-              <th class="sort-hd num" id="p1_sh_p_cac"  onclick="p1_pSortBy('cac')">CAC       <span class="sort-ind" id="p1_si_p_cac">⇅</span></th>
-              <th class="sort-hd num" id="p1_sh_p_ctr"  onclick="p1_pSortBy('ctr')">CTR       <span class="sort-ind" id="p1_si_p_ctr">⇅</span></th>
-              <th class="sort-hd num" id="p1_sh_p_cpc"  onclick="p1_pSortBy('cpc')">CPC       <span class="sort-ind" id="p1_si_p_cpc">⇅</span></th>
-              <th class="sort-hd num" id="p1_sh_p_cvr"  onclick="p1_pSortBy('cvr')">CVR       <span class="sort-ind" id="p1_si_p_cvr">⇅</span></th>
+              <th rowspan="2" class="sort-hd"     id="p1_sh_p_type" onclick="p1_pSortBy('type')">Type     <span class="sort-ind" id="p1_si_p_type">⇅</span></th>
+              <th rowspan="2" class="sort-hd"     id="p1_sh_p_camp" onclick="p1_pSortBy('camp')">Campaign  <span class="sort-ind" id="p1_si_p_camp">⇅</span></th>
+              <th colspan="3" class="tbl-group-hd">Cost</th>
+              <th colspan="3" class="tbl-group-hd">CAC</th>
+              <th colspan="3" class="tbl-group-hd">CTR</th>
+              <th colspan="3" class="tbl-group-hd">CPC</th>
+              <th colspan="3" class="tbl-group-hd">CVR</th>
+            </tr>
+            <tr>
+              <th class="sort-hd num" id="p1_sh_p_cost_a"   onclick="p1_pSortBy('cost_a')">A   <span class="sort-ind" id="p1_si_p_cost_a">↓</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cost_b"   onclick="p1_pSortBy('cost_b')">B   <span class="sort-ind" id="p1_si_p_cost_b">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cost_dp"  onclick="p1_pSortBy('cost_dp')">Δ%  <span class="sort-ind" id="p1_si_p_cost_dp">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cac_a"    onclick="p1_pSortBy('cac_a')">A   <span class="sort-ind" id="p1_si_p_cac_a">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cac_b"    onclick="p1_pSortBy('cac_b')">B   <span class="sort-ind" id="p1_si_p_cac_b">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cac_dp"   onclick="p1_pSortBy('cac_dp')">Δ%  <span class="sort-ind" id="p1_si_p_cac_dp">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_ctr_a"    onclick="p1_pSortBy('ctr_a')">A   <span class="sort-ind" id="p1_si_p_ctr_a">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_ctr_b"    onclick="p1_pSortBy('ctr_b')">B   <span class="sort-ind" id="p1_si_p_ctr_b">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_ctr_dp"   onclick="p1_pSortBy('ctr_dp')">Δ%  <span class="sort-ind" id="p1_si_p_ctr_dp">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cpc_a"    onclick="p1_pSortBy('cpc_a')">A   <span class="sort-ind" id="p1_si_p_cpc_a">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cpc_b"    onclick="p1_pSortBy('cpc_b')">B   <span class="sort-ind" id="p1_si_p_cpc_b">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cpc_dp"   onclick="p1_pSortBy('cpc_dp')">Δ%  <span class="sort-ind" id="p1_si_p_cpc_dp">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cvr_a"    onclick="p1_pSortBy('cvr_a')">A   <span class="sort-ind" id="p1_si_p_cvr_a">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cvr_b"    onclick="p1_pSortBy('cvr_b')">B   <span class="sort-ind" id="p1_si_p_cvr_b">⇅</span></th>
+              <th class="sort-hd num" id="p1_sh_p_cvr_dp"   onclick="p1_pSortBy('cvr_dp')">Δ%  <span class="sort-ind" id="p1_si_p_cvr_dp">⇅</span></th>
             </tr>
           </thead>
           <tbody id="p1_pTableBody">
-            <tr><td colspan="7" class="empty-state">Loading…</td></tr>
+            <tr><td colspan="17" class="empty-state">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -2261,9 +2283,9 @@ const p1_charts={};
 let p1_sort={col:"cost_t",dir:"desc"};
 let p1_tableData=[];
 const p1_COLS=["type","camp","cac_t","cac_dY","cac_dLW","cac_d7","cost_t","cost_dY","cost_dLW","cost_d7"];
-let p1_pSort={col:"cost",dir:"desc"};
+let p1_pSort={col:"cost_a",dir:"desc"};
 let p1_pTableData=[];
-const p1_PCOLS=["type","camp","cost","cac","ctr","cpc","cvr"];
+const p1_PCOLS=["type","camp","cost_a","cost_b","cost_dp","cac_a","cac_b","cac_dp","ctr_a","ctr_b","ctr_dp","cpc_a","cpc_b","cpc_dp","cvr_a","cvr_b","cvr_dp"];
 
 function p1_onCTChange(){
   p1_selCT=new Set([...document.querySelectorAll("#p1_ctPanel input:checked")].map(x=>x.value));
@@ -2398,17 +2420,21 @@ function p1_buildTableData(){
     const cac_7  = r7.trials>0 ? r7.cost/r7.trials : null; // pooled 7-day avg
 
     return {
-      type:     t.type,
-      camp:     t.camp,
-      cost_t:   t.cost,
-      cost_y:   y.cost,
-      cost_lw:  lw.cost,
-      cost_7:   r7.cost/7,       // daily avg over 7 days
+      type:       t.type,
+      camp:       t.camp,
+      cost_t:     t.cost,
+      cost_y:     y.cost,
+      cost_lw:    lw.cost,
+      cost_7:     r7.cost/7,
+      trials_t:   t.trials,
+      trials_y:   y.trials,
+      trials_lw:  lw.trials,
+      r7_cost:    r7.cost,
+      r7_trials:  r7.trials,
       cac_t,
       cac_y,
       cac_lw,
       cac_7,
-      // deltas (absolute)
       cost_dY:  t.cost  - y.cost,
       cost_dLW: t.cost  - lw.cost,
       cost_d7:  t.cost  - r7.cost/7,
@@ -2482,7 +2508,33 @@ function p1_renderTable(){
       ${p1_fmtDelta(r.cost_dLW, true)}
       ${p1_fmtDelta(r.cost_d7,  true)}
     </tr>`).join("");
-  document.getElementById("p1_tableBody").innerHTML=rows;
+
+  // Total row
+  const tot_cost_t   = data.reduce((s,r)=>s+r.cost_t,   0);
+  const tot_trials_t = data.reduce((s,r)=>s+r.trials_t,  0);
+  const tot_cost_y   = data.reduce((s,r)=>s+r.cost_y,   0);
+  const tot_trials_y = data.reduce((s,r)=>s+r.trials_y,  0);
+  const tot_cost_lw  = data.reduce((s,r)=>s+r.cost_lw,  0);
+  const tot_trials_lw= data.reduce((s,r)=>s+r.trials_lw, 0);
+  const tot_r7_cost  = data.reduce((s,r)=>s+r.r7_cost,  0);
+  const tot_r7_trials= data.reduce((s,r)=>s+r.r7_trials, 0);
+  const tot_cac_t  = tot_trials_t >0 ? tot_cost_t /tot_trials_t  : null;
+  const tot_cac_y  = tot_trials_y >0 ? tot_cost_y /tot_trials_y  : null;
+  const tot_cac_lw = tot_trials_lw>0 ? tot_cost_lw/tot_trials_lw : null;
+  const tot_cac_7  = tot_r7_trials>0 ? tot_r7_cost/tot_r7_trials : null;
+  const totRow=`
+    <tr style="font-weight:700;border-top:2px solid #e2e8f0;background:#f8fafc">
+      <td colspan="2">Total</td>
+      <td class="num">${tot_cac_t!==null?fmtD(tot_cac_t,2):"—"}</td>
+      ${p1_fmtDelta(tot_cac_t!==null&&tot_cac_y!==null  ? tot_cac_t-tot_cac_y  : null, false)}
+      ${p1_fmtDelta(tot_cac_t!==null&&tot_cac_lw!==null ? tot_cac_t-tot_cac_lw : null, false)}
+      ${p1_fmtDelta(tot_cac_t!==null&&tot_cac_7!==null  ? tot_cac_t-tot_cac_7  : null, false)}
+      <td class="num">${fmtD(tot_cost_t,0)}</td>
+      ${p1_fmtDelta(tot_cost_t - tot_cost_y,         true)}
+      ${p1_fmtDelta(tot_cost_t - tot_cost_lw,        true)}
+      ${p1_fmtDelta(tot_cost_t - tot_r7_cost/7,      true)}
+    </tr>`;
+  document.getElementById("p1_tableBody").innerHTML=rows+totRow;
 
   const selDate=document.getElementById("p1_day").value;
   const ctStr=p1_selCT.size===4?"All Types":p1_selCT.size===0?"None":[...p1_selCT].join(", ");
@@ -2490,11 +2542,9 @@ function p1_renderTable(){
     `${selDate} · ${ctStr} · ${data.length} campaigns`;
 }
 
-function p1_buildPeriodData(){
-  const start=document.getElementById("p1_pStart").value;
-  const end  =document.getElementById("p1_pEnd").value;
-  if(!start||!end) return [];
-  const s=new Date(start+"T00:00:00"), e=new Date(end+"T00:00:00");
+function p1_aggRange(startStr, endStr){
+  if(!startStr||!endStr) return {};
+  const s=new Date(startStr+"T00:00:00"), e=new Date(endStr+"T00:00:00");
   const map={};
   DATA.forEach(r=>{
     const rd=new Date(r.d+"T00:00:00");
@@ -2505,14 +2555,41 @@ function p1_buildPeriodData(){
     map[key].cost+=r.cost; map[key].trials+=r.trials;
     map[key].cl+=r.cl;     map[key].imp+=r.imp;
   });
-  return Object.values(map).map(d=>({
-    type: d.type, camp: d.camp,
-    cost: d.cost,
-    cac:  d.trials>0 ? d.cost/d.trials : null,
-    ctr:  d.imp>0    ? d.cl/d.imp      : null,
-    cpc:  d.cl>0     ? d.cost/d.cl     : null,
-    cvr:  d.cl>0     ? d.trials/d.cl   : null,
-  }));
+  return map;
+}
+
+function p1_buildPeriodData(){
+  const aStart=document.getElementById("p1_pStart").value;
+  const aEnd  =document.getElementById("p1_pEnd").value;
+  const bStart=document.getElementById("p1_pBStart").value;
+  const bEnd  =document.getElementById("p1_pBEnd").value;
+  if(!aStart||!aEnd) return [];
+  const mapA=p1_aggRange(aStart,aEnd);
+  const mapB=p1_aggRange(bStart,bEnd);
+  const allKeys=new Set([...Object.keys(mapA),...Object.keys(mapB)]);
+  const pct=(a,b)=>(a!==null&&b!==null&&a!==0)?(b-a)/a:null;
+  return [...allKeys].map(key=>{
+    const a=mapA[key]||{type:(mapB[key]||{}).type||'',camp:(mapB[key]||{}).camp||'',cost:0,trials:0,cl:0,imp:0};
+    const b=mapB[key]||{cost:0,trials:0,cl:0,imp:0};
+    const cost_a=a.cost, cost_b=b.cost;
+    const cac_a =a.trials>0?a.cost/a.trials:null;
+    const cac_b =b.trials>0?b.cost/b.trials:null;
+    const ctr_a =a.imp>0?a.cl/a.imp:null;
+    const ctr_b =b.imp>0?b.cl/b.imp:null;
+    const cpc_a =a.cl>0?a.cost/a.cl:null;
+    const cpc_b =b.cl>0?b.cost/b.cl:null;
+    const cvr_a =a.cl>0?a.trials/a.cl:null;
+    const cvr_b =b.cl>0?b.trials/b.cl:null;
+    return {
+      type:a.type, camp:a.camp,
+      cost_a, cost_b, cost_dp:cost_a!==0?(cost_b-cost_a)/cost_a:null,
+      cac_a,  cac_b,  cac_dp: pct(cac_a,cac_b),
+      ctr_a,  ctr_b,  ctr_dp: pct(ctr_a,ctr_b),
+      cpc_a,  cpc_b,  cpc_dp: pct(cpc_a,cpc_b),
+      cvr_a,  cvr_b,  cvr_dp: pct(cvr_a,cvr_b),
+      _a:a, _b:b,
+    };
+  });
 }
 
 function p1_pSortBy(col){
@@ -2535,6 +2612,16 @@ function p1_pUpdateSortHeaders(){
   });
 }
 
+function p1_fmtPctDelta(v, inv){
+  if(v===null||v===undefined||!isFinite(v)) return '<td class="num delta-neu">—</td>';
+  const pos=v>0, neg=v<0;
+  let cls;
+  if(inv) cls=pos?"delta-inv-pos":neg?"delta-inv-neg":"delta-neu";
+  else     cls=pos?"delta-pos"   :neg?"delta-neg"   :"delta-neu";
+  const sign=pos?"+":"";
+  return `<td class="num ${cls}">${sign}${(v*100).toFixed(1)}%</td>`;
+}
+
 function p1_renderPeriodTable(){
   const data=[...p1_pTableData];
   const col=p1_pSort.col, dir=p1_pSort.dir;
@@ -2549,35 +2636,83 @@ function p1_renderPeriodTable(){
     return dir==="asc"?av-bv:bv-av;
   });
 
-  const start=document.getElementById("p1_pStart").value;
-  const end  =document.getElementById("p1_pEnd").value;
+  const aStart=document.getElementById("p1_pStart").value;
+  const aEnd  =document.getElementById("p1_pEnd").value;
+  const bStart=document.getElementById("p1_pBStart").value;
+  const bEnd  =document.getElementById("p1_pBEnd").value;
+  const hasB  =bStart&&bEnd;
 
-  if(!start||!end){
+  if(!aStart||!aEnd){
     document.getElementById("p1_pTableBody").innerHTML=
-      '<tr><td colspan="7" class="empty-state">Set a period above to view campaign performance.</td></tr>';
+      '<tr><td colspan="17" class="empty-state">Set Period A above to view campaign performance.</td></tr>';
     return;
   }
   if(!data.length){
     document.getElementById("p1_pTableBody").innerHTML=
-      '<tr><td colspan="7" class="empty-state">No data for selected period / filters.</td></tr>';
+      '<tr><td colspan="17" class="empty-state">No data for selected period / filters.</td></tr>';
     return;
   }
 
+  const fmtPct=v=>v!==null?(v*100).toFixed(2)+"%":"—";
   const rows=data.map(r=>`
     <tr>
       <td>${r.type}</td>
       <td>${r.camp}</td>
-      <td class="num">${fmtD(r.cost,0)}</td>
-      <td class="num">${r.cac!==null?fmtD(r.cac,2):"—"}</td>
-      <td class="num">${r.ctr!==null?(r.ctr*100).toFixed(2)+"%":"—"}</td>
-      <td class="num">${r.cpc!==null?fmtD(r.cpc,2):"—"}</td>
-      <td class="num">${r.cvr!==null?(r.cvr*100).toFixed(2)+"%":"—"}</td>
+      <td class="num">${fmtD(r.cost_a,0)}</td>
+      <td class="num">${hasB?fmtD(r.cost_b,0):"—"}</td>
+      ${hasB?p1_fmtPctDelta(r.cost_dp,false):'<td class="num delta-neu">—</td>'}
+      <td class="num">${r.cac_a!==null?fmtD(r.cac_a,2):"—"}</td>
+      <td class="num">${hasB&&r.cac_b!==null?fmtD(r.cac_b,2):"—"}</td>
+      ${hasB?p1_fmtPctDelta(r.cac_dp,true):'<td class="num delta-neu">—</td>'}
+      <td class="num">${fmtPct(r.ctr_a)}</td>
+      <td class="num">${hasB?fmtPct(r.ctr_b):"—"}</td>
+      ${hasB?p1_fmtPctDelta(r.ctr_dp,false):'<td class="num delta-neu">—</td>'}
+      <td class="num">${r.cpc_a!==null?fmtD(r.cpc_a,2):"—"}</td>
+      <td class="num">${hasB&&r.cpc_b!==null?fmtD(r.cpc_b,2):"—"}</td>
+      ${hasB?p1_fmtPctDelta(r.cpc_dp,true):'<td class="num delta-neu">—</td>'}
+      <td class="num">${fmtPct(r.cvr_a)}</td>
+      <td class="num">${hasB?fmtPct(r.cvr_b):"—"}</td>
+      ${hasB?p1_fmtPctDelta(r.cvr_dp,false):'<td class="num delta-neu">—</td>'}
     </tr>`).join("");
-  document.getElementById("p1_pTableBody").innerHTML=rows;
+
+  // Total row
+  const tA={cost:0,trials:0,cl:0,imp:0}, tB={cost:0,trials:0,cl:0,imp:0};
+  data.forEach(r=>{ tA.cost+=r._a.cost; tA.trials+=r._a.trials; tA.cl+=r._a.cl; tA.imp+=r._a.imp; });
+  data.forEach(r=>{ tB.cost+=r._b.cost; tB.trials+=r._b.trials; tB.cl+=r._b.cl; tB.imp+=r._b.imp; });
+  const t_cac_a=tA.trials>0?tA.cost/tA.trials:null;
+  const t_cac_b=tB.trials>0?tB.cost/tB.trials:null;
+  const t_ctr_a=tA.imp>0?tA.cl/tA.imp:null;
+  const t_ctr_b=tB.imp>0?tB.cl/tB.imp:null;
+  const t_cpc_a=tA.cl>0?tA.cost/tA.cl:null;
+  const t_cpc_b=tB.cl>0?tB.cost/tB.cl:null;
+  const t_cvr_a=tA.cl>0?tA.trials/tA.cl:null;
+  const t_cvr_b=tB.cl>0?tB.trials/tB.cl:null;
+  const pct=(a,b)=>(a!==null&&b!==null&&a!==0)?(b-a)/a:null;
+  const totRow=`
+    <tr style="font-weight:700;border-top:2px solid #e2e8f0;background:#f8fafc">
+      <td colspan="2">Total</td>
+      <td class="num">${fmtD(tA.cost,0)}</td>
+      <td class="num">${hasB?fmtD(tB.cost,0):"—"}</td>
+      ${hasB?p1_fmtPctDelta(tA.cost!==0?(tB.cost-tA.cost)/tA.cost:null,false):'<td class="num delta-neu">—</td>'}
+      <td class="num">${t_cac_a!==null?fmtD(t_cac_a,2):"—"}</td>
+      <td class="num">${hasB&&t_cac_b!==null?fmtD(t_cac_b,2):"—"}</td>
+      ${hasB?p1_fmtPctDelta(pct(t_cac_a,t_cac_b),true):'<td class="num delta-neu">—</td>'}
+      <td class="num">${t_ctr_a!==null?(t_ctr_a*100).toFixed(2)+"%":"—"}</td>
+      <td class="num">${hasB&&t_ctr_b!==null?(t_ctr_b*100).toFixed(2)+"%":"—"}</td>
+      ${hasB?p1_fmtPctDelta(pct(t_ctr_a,t_ctr_b),false):'<td class="num delta-neu">—</td>'}
+      <td class="num">${t_cpc_a!==null?fmtD(t_cpc_a,2):"—"}</td>
+      <td class="num">${hasB&&t_cpc_b!==null?fmtD(t_cpc_b,2):"—"}</td>
+      ${hasB?p1_fmtPctDelta(pct(t_cpc_a,t_cpc_b),true):'<td class="num delta-neu">—</td>'}
+      <td class="num">${t_cvr_a!==null?(t_cvr_a*100).toFixed(2)+"%":"—"}</td>
+      <td class="num">${hasB&&t_cvr_b!==null?(t_cvr_b*100).toFixed(2)+"%":"—"}</td>
+      ${hasB?p1_fmtPctDelta(pct(t_cvr_a,t_cvr_b),false):'<td class="num delta-neu">—</td>'}
+    </tr>`;
+  document.getElementById("p1_pTableBody").innerHTML=rows+totRow;
 
   const ctStr=p1_selCT.size===4?"All Types":p1_selCT.size===0?"None":[...p1_selCT].join(", ");
+  const bLabel=hasB?` · B: ${bStart} → ${bEnd}`:" · B: not set";
   document.getElementById("p1_pTableSubtitle").textContent=
-    `${start} → ${end} · ${ctStr} · ${data.length} campaigns`;
+    `A: ${aStart} → ${aEnd}${bLabel} · ${ctStr} · ${data.length} campaigns`;
 }
 
 function p1_recalc(){
@@ -2593,8 +2728,10 @@ function p1_recalc(){
 function p1_init(){
   const latest=p0_latestDate();
   document.getElementById("p1_day").value=latest;
-  document.getElementById("p1_pEnd").value=latest;
   document.getElementById("p1_pStart").value=p0_addDays(latest,-6);
+  document.getElementById("p1_pEnd").value=latest;
+  document.getElementById("p1_pBStart").value=p0_addDays(latest,-13);
+  document.getElementById("p1_pBEnd").value=p0_addDays(latest,-7);
   document.getElementById("p1_chartStart").value=p0_addDays(latest,-29);
   document.getElementById("p1_chartEnd").value=latest;
   p1_recalc();
