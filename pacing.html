@@ -1525,29 +1525,18 @@ function computeProjection() {
     if (date === state.viewDate) {
       if (!spViewAgg[hour]) spViewAgg[hour] = {brand:0,nonbrand:0,shopping:0};
       spViewAgg[hour][chan] += sp;
-      if (campFiltered) {
-        var tr = +r[8];
-        if (!trViewAgg[hour]) trViewAgg[hour] = {brand:0,nonbrand:0,shopping:0};
-        trViewAgg[hour][chan] += tr;
-      }
     } else {
       if (!spDateAgg[date]) spDateAgg[date] = {};
       if (!spDateAgg[date][hour]) spDateAgg[date][hour] = {brand:0,nonbrand:0,shopping:0};
       spDateAgg[date][hour][chan] += sp;
       if (!spCampDate[camp]) spCampDate[camp] = {chan:chan, byDate:{}};
       spCampDate[camp].byDate[date] = (spCampDate[camp].byDate[date]||0) + sp;
-      if (campFiltered) {
-        var tr = +r[8];
-        if (!trDateAgg[date]) trDateAgg[date] = {};
-        if (!trDateAgg[date][hour]) trDateAgg[date][hour] = {brand:0,nonbrand:0,shopping:0};
-        trDateAgg[date][hour][chan] += tr;
-      }
     }
   });
 
-  // When no campaign filter: use TRIALS_DATA (accurate daily source matching dashboard.html).
-  // When campaign filter active: use r[8] from PACING_DATA (per-campaign estimate).
-  if (!campFiltered && typeof TRIALS_DATA !== 'undefined') {
+  // Always use TRIALS_DATA (accurate channel source matching dashboard.html).
+  // Campaign distribution is handled at render time using L4 shares.
+  if (typeof TRIALS_DATA !== 'undefined') {
     TRIALS_DATA.forEach(function(r) {
       var date=r[0], hour=+r[1], brand=+r[2], nonbrand=+r[3], shopping=+r[4];
       if (hour < state.hrMin || hour > state.hrMax) return;
