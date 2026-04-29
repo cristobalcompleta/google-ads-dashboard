@@ -1957,9 +1957,29 @@ function renderProjection() {
   var l4dowDatesBm = spHistBm.filter(function(dt) { return dowOf(dt) === vdowBm; }).slice(0, 4);
   var l4wDatesBm   = spHistBm.filter(function(dt) { return new Date(dt + 'T12:00:00') >= cutoff28; });
 
-  var bmYst  = bmCAC(bmDailySum(d.spDateAgg, ystDateBm), bmDailySum(d.trDateAgg, ystDateBm));
-  var bmL4DOW = bmCAC(bmDailyAvg(d.spDateAgg, l4dowDatesBm), bmDailyAvg(d.trDateAgg, l4dowDatesBm));
-  var bmL4W   = bmCAC(bmDailyAvg(d.spDateAgg, l4wDatesBm),   bmDailyAvg(d.trDateAgg, l4wDatesBm));
+  // Trial benchmark sums apply the same per-channel scale as today's projection
+  // so comparison columns reflect selected campaigns, not full channel.
+  function bmDailySumTr(date) {
+    if (!d.trDateAgg[date]) return null;
+    var total = 0;
+    d.hours.forEach(function(h) {
+      if (d.trDateAgg[date][h]) {
+        CHAN_ORDER.forEach(function(c) {
+          if (filtChans[c]) total += (d.trDateAgg[date][h][c] || 0) * (trChanScale ? trChanScale[c] : 1);
+        });
+      }
+    });
+    return total > 0 ? total : null;
+  }
+  function bmDailyAvgTr(dates) {
+    var vals = dates.map(function(dt){ return bmDailySumTr(dt); }).filter(function(v){ return v!==null; });
+    if (!vals.length) return null;
+    return vals.reduce(function(a,b){ return a+b; }, 0) / vals.length;
+  }
+
+  var bmYst   = bmCAC(bmDailySum(d.spDateAgg, ystDateBm),    bmDailySumTr(ystDateBm));
+  var bmL4DOW = bmCAC(bmDailyAvg(d.spDateAgg, l4dowDatesBm), bmDailyAvgTr(l4dowDatesBm));
+  var bmL4W   = bmCAC(bmDailyAvg(d.spDateAgg, l4wDatesBm),   bmDailyAvgTr(l4wDatesBm));
 
   renderBmTable({ sp: spEOD, tr: trEOD, cac: cacEOD }, bmYst, bmL4DOW, bmL4W, d.dowLabel);
 }
