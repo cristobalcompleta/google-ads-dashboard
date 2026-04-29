@@ -1836,6 +1836,25 @@ function renderProjection() {
     $('proj-trials-eod-sub').textContent = 'Completed day';
     $('proj-cac-sf-sub').textContent     = 'Final daily CAC';
     $('proj-cac-eod-sub').textContent    = 'Final daily CAC';
+
+    // Rebase channel totals to P2 so campaign rows reconcile to channel totals
+    CHAN_ORDER.forEach(function(c) {
+      if (!filtChans[c]) return;
+      spChanAct[c] = p2.spend[c];  spChanEOD[c] = p2.spend[c];
+      trChanAct[c] = p2.trials[c]; trChanEOD[c] = p2.trials[c];
+    });
+    // Recompute campRows using the corrected channel totals as base
+    campRows = [];
+    Object.keys(d.allCampsSet).forEach(function(camp) {
+      var chan = d.allCampsSet[camp]; if (!filtChans[chan]) return;
+      var spShr = d.spChanL4ForCamp[chan]>0 ? (d.spCampL4[camp] ? d.spCampL4[camp].sp : 0)/d.spChanL4ForCamp[chan] : 0;
+      var trShr = d.trChanL4ForCamp[chan]>0 ? (d.trCampL4[camp] ? d.trCampL4[camp].trials : 0)/d.trChanL4ForCamp[chan] : 0;
+      campRows.push({camp:camp, chan:chan,
+        spSF:  spChanAct[chan]*spShr, spEOD: spChanAct[chan]*spShr,
+        trSF:  trChanAct[chan]*trShr, trEOD: trChanAct[chan]*trShr
+      });
+    });
+    campRows.sort(function(a,b){ var co=CHAN_ORDER.indexOf(a.chan)-CHAN_ORDER.indexOf(b.chan); return co||b.spEOD-a.spEOD; });
   }
 
   // Legend
