@@ -1846,6 +1846,44 @@ function renderProjection() {
     campRows.sort(function(a,b){ var co=CHAN_ORDER.indexOf(a.chan)-CHAN_ORDER.indexOf(b.chan); return co||b.spEOD-a.spEOD; });
   }
 
+  // When campaign filter active: redistribute channel trial totals by selected camps' L4 share.
+  // This ensures: sum of selected camps = channel total = stat box.
+  if (state.distCamps) {
+    var trChanActOrig = {brand:trChanAct.brand, nonbrand:trChanAct.nonbrand, shopping:trChanAct.shopping};
+    var trChanEODOrig = {brand:trChanEOD.brand, nonbrand:trChanEOD.nonbrand, shopping:trChanEOD.shopping};
+    var trChanActF = {brand:0,nonbrand:0,shopping:0};
+    var trChanEODF = {brand:0,nonbrand:0,shopping:0};
+    state.distCamps.forEach(function(camp) {
+      var chan = d.allCampsSet[camp]; if (!chan || !filtChans[chan]) return;
+      var trShr = d.trChanL4ForCamp[chan] > 0 ? (d.trCampL4[camp] ? d.trCampL4[camp].trials : 0) / d.trChanL4ForCamp[chan] : 0;
+      trChanActF[chan] += trChanActOrig[chan] * trShr;
+      trChanEODF[chan] += trChanEODOrig[chan] * trShr;
+    });
+    CHAN_ORDER.forEach(function(c) { trChanAct[c] = trChanActF[c]; trChanEOD[c] = trChanEODF[c]; });
+    trActual = CHAN_ORDER.reduce(function(s,c){ return filtChans[c] ? s+trChanAct[c] : s; }, 0);
+    trEOD    = CHAN_ORDER.reduce(function(s,c){ return filtChans[c] ? s+trChanEOD[c] : s; }, 0);
+    cacSF    = trActual > 0 ? spActual / trActual : null;
+    cacEOD   = trEOD   > 0 ? spEOD    / trEOD    : null;
+    $('proj-trials-sf').textContent  = Math.round(trActual).toLocaleString();
+    $('proj-trials-eod').textContent = Math.round(trEOD).toLocaleString();
+    $('proj-cac-sf').textContent     = cacSF  ? '$'+cacSF.toFixed(0)  : '—';
+    $('proj-cac-eod').textContent    = cacEOD ? '$'+cacEOD.toFixed(0) : '—';
+    $('proj-trials-sf-sub').textContent  = 'Estimated · selected campaigns';
+    $('proj-trials-eod-sub').textContent = 'Estimated · selected campaigns';
+    // Rebuild campRows: each camp = original channel total × camp's own L4 share
+    campRows = [];
+    state.distCamps.forEach(function(camp) {
+      var chan = d.allCampsSet[camp]; if (!chan || !filtChans[chan]) return;
+      var spShr = d.spChanL4ForCamp[chan]>0 ? (d.spCampL4[camp] ? d.spCampL4[camp].sp : 0)/d.spChanL4ForCamp[chan] : 0;
+      var trShr = d.trChanL4ForCamp[chan]>0 ? (d.trCampL4[camp] ? d.trCampL4[camp].trials : 0)/d.trChanL4ForCamp[chan] : 0;
+      campRows.push({camp:camp, chan:chan,
+        spSF:  spChanAct[chan]*spShr,  spEOD: spChanEOD[chan]*spShr,
+        trSF:  trChanActOrig[chan]*trShr, trEOD: trChanEODOrig[chan]*trShr
+      });
+    });
+    campRows.sort(function(a,b){ var co=CHAN_ORDER.indexOf(a.chan)-CHAN_ORDER.indexOf(b.chan); return co||b.spEOD-a.spEOD; });
+  }
+
   // Legend
   $('legend-proj').innerHTML =
     '<div class="leg-item"><div class="leg-line" style="background:#f5a623;height:3px"></div> Spend actual</div>' +
