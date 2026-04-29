@@ -1846,24 +1846,35 @@ function renderProjection() {
     campRows.sort(function(a,b){ var co=CHAN_ORDER.indexOf(a.chan)-CHAN_ORDER.indexOf(b.chan); return co||b.spEOD-a.spEOD; });
   }
 
-  // When campaign filter active: redistribute channel trial totals by selected camps' L4 share.
-  // This ensures: sum of selected camps = channel total = stat box.
+  // When campaign filter active: scale all trial data by selected camps' L4 share fraction.
+  // Affects chart, stat boxes, channel rows, and campaign rows — all reconcile.
   if (state.distCamps) {
-    var trChanActOrig = {brand:trChanAct.brand, nonbrand:trChanAct.nonbrand, shopping:trChanAct.shopping};
-    var trChanEODOrig = {brand:trChanEOD.brand, nonbrand:trChanEOD.nonbrand, shopping:trChanEOD.shopping};
-    var trChanActF = {brand:0,nonbrand:0,shopping:0};
-    var trChanEODF = {brand:0,nonbrand:0,shopping:0};
+    // Per-channel scale factor = sum of selected camps' L4 trial shares in that channel
+    var trChanScale = {brand:0, nonbrand:0, shopping:0};
     state.distCamps.forEach(function(camp) {
       var chan = d.allCampsSet[camp]; if (!chan || !filtChans[chan]) return;
       var trShr = d.trChanL4ForCamp[chan] > 0 ? (d.trCampL4[camp] ? d.trCampL4[camp].trials : 0) / d.trChanL4ForCamp[chan] : 0;
-      trChanActF[chan] += trChanActOrig[chan] * trShr;
-      trChanEODF[chan] += trChanEODOrig[chan] * trShr;
+      trChanScale[chan] += trShr;
     });
-    CHAN_ORDER.forEach(function(c) { trChanAct[c] = trChanActF[c]; trChanEOD[c] = trChanEODF[c]; });
-    trActual = CHAN_ORDER.reduce(function(s,c){ return filtChans[c] ? s+trChanAct[c] : s; }, 0);
-    trEOD    = CHAN_ORDER.reduce(function(s,c){ return filtChans[c] ? s+trChanEOD[c] : s; }, 0);
-    cacSF    = trActual > 0 ? spActual / trActual : null;
-    cacEOD   = trEOD   > 0 ? spEOD    / trEOD    : null;
+    // Save originals for per-campaign row computation (each camp = original × its own share)
+    var trChanActOrig = {brand:trChanAct.brand, nonbrand:trChanAct.nonbrand, shopping:trChanAct.shopping};
+    var trChanEODOrig = {brand:trChanEOD.brand, nonbrand:trChanEOD.nonbrand, shopping:trChanEOD.shopping};
+    // Rescale hourly arrays — these feed the trial chart
+    trActRaw = d.hours.map(function(h,i){ return CHAN_ORDER.reduce(function(s,c){ return filtChans[c]?s+d.trActHrly[c][i]*trChanScale[c]:s; },0); });
+    trDowRaw = d.hours.map(function(h,i){ return CHAN_ORDER.reduce(function(s,c){ return filtChans[c]?s+d.trDowHrly[c][i]*trChanScale[c]:s; },0); });
+    trWkRaw  = d.hours.map(function(h,i){ return CHAN_ORDER.reduce(function(s,c){ return filtChans[c]?s+d.trWkHrly[c][i] *trChanScale[c]:s; },0); });
+    // Recompute actuals, scale factor, and cumulative projection arrays
+    trActual = 0; d.hours.forEach(function(h,i){ if(h<=d.lastTrH) trActual+=trActRaw[i]; });
+    trDowAtLast = 0; d.hours.forEach(function(h,i){ if(h<=d.lastTrH) trDowAtLast+=trDowRaw[i]; });
+    trScale = trDowAtLast > 0 ? trActual/trDowAtLast : 1;
+    trActualCum = makeActCum(trActRaw, d.lastTrH);
+    trProjCum   = makeProjCum(trActual, d.lastTrH, trScale, trDowRaw);
+    trEOD = trProjCum[trProjCum.length-1]; if (trEOD===null) trEOD=trActual;
+    cacSF  = trActual > 0 ? spActual/trActual : null;
+    cacEOD = trEOD   > 0 ? spEOD/trEOD       : null;
+    // Update channel totals for table channel rows
+    CHAN_ORDER.forEach(function(c) { trChanAct[c] = trChanActOrig[c]*trChanScale[c]; trChanEOD[c] = trChanEODOrig[c]*trChanScale[c]; });
+    // Override stat boxes
     $('proj-trials-sf').textContent  = Math.round(trActual).toLocaleString();
     $('proj-trials-eod').textContent = Math.round(trEOD).toLocaleString();
     $('proj-cac-sf').textContent     = cacSF  ? '$'+cacSF.toFixed(0)  : '—';
