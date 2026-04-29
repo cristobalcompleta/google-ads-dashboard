@@ -7,6 +7,7 @@
 <script>
 (function(){var p=sessionStorage.getItem('cu_pac_auth');if(p!=='Zd3@hN5&uE1sYg0pXi8kWa9qM'){var e=prompt('Enter password:');if(e!=='Zd3@hN5&uE1sYg0pXi8kWa9qM'){document.documentElement.innerHTML='<h2 style="font-family:sans-serif;margin:40px">Access denied.</h2>';throw'bad pw';}sessionStorage.setItem('cu_pac_auth','Zd3@hN5&uE1sYg0pXi8kWa9qM');}})();
 </script>
+<script src="page2-data.js"></script>
 <script src="pacing-data.js"></script>
 <script src="trials-data.js"></script>
 <script src="trials-dist.js"></script>
@@ -103,7 +104,7 @@ canvas{max-height:260px}
 /* ── TAB LAYOUT (main content + sidebar) ────────────────────────────────── */
 .tab-layout{display:grid;grid-template-columns:1fr 240px;gap:20px;align-items:start}
 .tab-content{min-width:0;display:flex;flex-direction:column;gap:20px}
-.tab-sidebar{display:flex;flex-direction:column;gap:12px;position:sticky;top:20px}
+.tab-sidebar{display:flex;flex-direction:column;gap:12px;position:sticky;top:20px;max-height:calc(100vh - 40px);overflow-y:auto}
 
 /* ── STATUS BOX (blue) ──────────────────────────────────────────────────── */
 .status-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 18px;display:flex;flex-direction:column;gap:8px}
@@ -569,6 +570,21 @@ var PACING_DATA_GMT0 = PACING_DATA.map(function(r) {
 });
 function weekLabel(dateStr) { return 'W' + String(isoWeek(dateStr)).padStart(2,'0'); }
 var DOW_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+// ── PAGE2 DAILY LOOKUP (source of truth — matches dashboard.html) ─────────────
+// page2-data t values: Brand, NonBrand, BrandShopping, NonBrandShopping
+// mapped to pacing channels: brand, nonbrand, shopping
+var P2_DAILY = {};
+(function() {
+  if (typeof DATA === 'undefined') return;
+  var tmap = {Brand:'brand', NonBrand:'nonbrand', BrandShopping:'shopping', NonBrandShopping:'shopping'};
+  DATA.forEach(function(r) {
+    var chan = tmap[r.t]; if (!chan) return;
+    if (!P2_DAILY[r.d]) P2_DAILY[r.d] = {spend:{brand:0,nonbrand:0,shopping:0}, trials:{brand:0,nonbrand:0,shopping:0}};
+    P2_DAILY[r.d].spend[chan]  += r.cost;
+    P2_DAILY[r.d].trials[chan] += r.trials;
+  });
+})();
 
 // ── DATA FRESHNESS ────────────────────────────────────────────────────────────
 (function() {
@@ -1506,26 +1522,45 @@ function computeProjection() {
     if (hour < state.hrMin || hour > state.hrMax) return;
     var chan = PACING_CHAN_MAP[chanRaw]; if (!chan) return;
     if (state.distCamps && !state.distCamps.has(camp)) return;  // apply campaign filter
-    var tr = +r[8];
     if (date === state.viewDate) {
       if (!spViewAgg[hour]) spViewAgg[hour] = {brand:0,nonbrand:0,shopping:0};
       spViewAgg[hour][chan] += sp;
-      if (!trViewAgg[hour]) trViewAgg[hour] = {brand:0,nonbrand:0,shopping:0};
-      trViewAgg[hour][chan] += tr;
+      if (campFiltered) {
+        var tr = +r[8];
+        if (!trViewAgg[hour]) trViewAgg[hour] = {brand:0,nonbrand:0,shopping:0};
+        trViewAgg[hour][chan] += tr;
+      }
     } else {
       if (!spDateAgg[date]) spDateAgg[date] = {};
       if (!spDateAgg[date][hour]) spDateAgg[date][hour] = {brand:0,nonbrand:0,shopping:0};
       spDateAgg[date][hour][chan] += sp;
       if (!spCampDate[camp]) spCampDate[camp] = {chan:chan, byDate:{}};
       spCampDate[camp].byDate[date] = (spCampDate[camp].byDate[date]||0) + sp;
-      if (!trDateAgg[date]) trDateAgg[date] = {};
-      if (!trDateAgg[date][hour]) trDateAgg[date][hour] = {brand:0,nonbrand:0,shopping:0};
-      trDateAgg[date][hour][chan] += tr;
+      if (campFiltered) {
+        var tr = +r[8];
+        if (!trDateAgg[date]) trDateAgg[date] = {};
+        if (!trDateAgg[date][hour]) trDateAgg[date][hour] = {brand:0,nonbrand:0,shopping:0};
+        trDateAgg[date][hour][chan] += tr;
+      }
     }
   });
 
-  // Trials always sourced from r[8] in PACING_DATA above — same source for both
-  // filtered and unfiltered views, so per-campaign rows always reconcile to the total.
+  // When no campaign filter: use TRIALS_DATA (accurate daily source matching dashboard.html).
+  // When campaign filter active: use r[8] from PACING_DATA (per-campaign estimate).
+  if (!campFiltered && typeof TRIALS_DATA !== 'undefined') {
+    TRIALS_DATA.forEach(function(r) {
+      var date=r[0], hour=+r[1], brand=+r[2], nonbrand=+r[3], shopping=+r[4];
+      if (hour < state.hrMin || hour > state.hrMax) return;
+      if (date === state.viewDate) {
+        if (!trViewAgg[hour]) trViewAgg[hour] = {brand:0,nonbrand:0,shopping:0};
+        trViewAgg[hour].brand+=brand; trViewAgg[hour].nonbrand+=nonbrand; trViewAgg[hour].shopping+=shopping;
+      } else {
+        if (!trDateAgg[date]) trDateAgg[date] = {};
+        if (!trDateAgg[date][hour]) trDateAgg[date][hour] = {brand:0,nonbrand:0,shopping:0};
+        trDateAgg[date][hour].brand+=brand; trDateAgg[date][hour].nonbrand+=nonbrand; trDateAgg[date][hour].shopping+=shopping;
+      }
+    });
+  }
 
   var hours = [];
   for (var h = state.hrMin; h <= state.hrMax; h++) hours.push(h);
@@ -1777,6 +1812,31 @@ function renderProjection() {
   $('proj-trials-eod-sub').textContent = d.dowLabel+' pace';
   $('proj-cac-sf-sub').textContent     = 'Spend ÷ trials so far';
   $('proj-cac-eod-sub').textContent    = 'Projected EOD spend ÷ trials';
+
+  // For completed days (no campaign filter): override stat boxes with page2-data
+  // to match dashboard.html numbers exactly.
+  var todayGMT7 = (function(){
+    var d7 = new Date(Date.now() - 7*3600*1000);
+    return d7.toISOString().slice(0,10);
+  })();
+  var p2 = P2_DAILY[state.viewDate];
+  if (p2 && state.viewDate < todayGMT7 && !state.distCamps) {
+    var p2sp = CHAN_ORDER.reduce(function(s,c){ return filtChans[c] ? s+p2.spend[c]  : s; }, 0);
+    var p2tr = CHAN_ORDER.reduce(function(s,c){ return filtChans[c] ? s+p2.trials[c] : s; }, 0);
+    var p2cac = p2tr > 0 ? p2sp/p2tr : null;
+    $('proj-spend-sf').textContent   = '$'+Math.round(p2sp).toLocaleString();
+    $('proj-spend-eod').textContent  = '$'+Math.round(p2sp).toLocaleString();
+    $('proj-trials-sf').textContent  = Math.round(p2tr).toLocaleString();
+    $('proj-trials-eod').textContent = Math.round(p2tr).toLocaleString();
+    $('proj-cac-sf').textContent     = p2cac ? '$'+p2cac.toFixed(0) : '—';
+    $('proj-cac-eod').textContent    = p2cac ? '$'+p2cac.toFixed(0) : '—';
+    $('proj-spend-sf-sub').textContent   = 'Final daily total';
+    $('proj-spend-eod-sub').textContent  = 'Completed day';
+    $('proj-trials-sf-sub').textContent  = 'Final daily total';
+    $('proj-trials-eod-sub').textContent = 'Completed day';
+    $('proj-cac-sf-sub').textContent     = 'Final daily CAC';
+    $('proj-cac-eod-sub').textContent    = 'Final daily CAC';
+  }
 
   // Legend
   $('legend-proj').innerHTML =
