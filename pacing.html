@@ -101,9 +101,9 @@ canvas{max-height:260px}
 .tab-btn.active{color:#f5a623;border-bottom-color:#f5a623}
 
 /* ── TAB LAYOUT (main content + sidebar) ────────────────────────────────── */
-.tab-layout{display:flex;gap:20px;align-items:flex-start}
-.tab-content{flex:1;min-width:0;display:flex;flex-direction:column;gap:20px}
-.tab-sidebar{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;position:sticky;top:20px;align-self:flex-start}
+.tab-layout{display:grid;grid-template-columns:1fr 240px;gap:20px;align-items:start}
+.tab-content{min-width:0;display:flex;flex-direction:column;gap:20px}
+.tab-sidebar{display:flex;flex-direction:column;gap:12px;position:sticky;top:20px}
 
 /* ── STATUS BOX (blue) ──────────────────────────────────────────────────── */
 .status-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 18px;display:flex;flex-direction:column;gap:8px}
@@ -1506,45 +1506,26 @@ function computeProjection() {
     if (hour < state.hrMin || hour > state.hrMax) return;
     var chan = PACING_CHAN_MAP[chanRaw]; if (!chan) return;
     if (state.distCamps && !state.distCamps.has(camp)) return;  // apply campaign filter
+    var tr = +r[8];
     if (date === state.viewDate) {
       if (!spViewAgg[hour]) spViewAgg[hour] = {brand:0,nonbrand:0,shopping:0};
       spViewAgg[hour][chan] += sp;
-      if (campFiltered) {
-        var tr = +r[8];
-        if (!trViewAgg[hour]) trViewAgg[hour] = {brand:0,nonbrand:0,shopping:0};
-        trViewAgg[hour][chan] += tr;
-      }
+      if (!trViewAgg[hour]) trViewAgg[hour] = {brand:0,nonbrand:0,shopping:0};
+      trViewAgg[hour][chan] += tr;
     } else {
       if (!spDateAgg[date]) spDateAgg[date] = {};
       if (!spDateAgg[date][hour]) spDateAgg[date][hour] = {brand:0,nonbrand:0,shopping:0};
       spDateAgg[date][hour][chan] += sp;
       if (!spCampDate[camp]) spCampDate[camp] = {chan:chan, byDate:{}};
       spCampDate[camp].byDate[date] = (spCampDate[camp].byDate[date]||0) + sp;
-      if (campFiltered) {
-        var tr = +r[8];
-        if (!trDateAgg[date]) trDateAgg[date] = {};
-        if (!trDateAgg[date][hour]) trDateAgg[date][hour] = {brand:0,nonbrand:0,shopping:0};
-        trDateAgg[date][hour][chan] += tr;
-      }
+      if (!trDateAgg[date]) trDateAgg[date] = {};
+      if (!trDateAgg[date][hour]) trDateAgg[date][hour] = {brand:0,nonbrand:0,shopping:0};
+      trDateAgg[date][hour][chan] += tr;
     }
   });
 
-  // Use TRIALS_DATA (aggregated, UTC) only when no campaign filter is active.
-  // When a campaign filter is set, trials are sourced from PACING_DATA above (r[8]).
-  if (!campFiltered && typeof TRIALS_DATA !== 'undefined') {
-    TRIALS_DATA.forEach(function(r) {
-      var date=r[0], hour=+r[1], brand=+r[2], nonbrand=+r[3], shopping=+r[4];
-      if (hour < state.hrMin || hour > state.hrMax) return;
-      if (date === state.viewDate) {
-        if (!trViewAgg[hour]) trViewAgg[hour] = {brand:0,nonbrand:0,shopping:0};
-        trViewAgg[hour].brand+=brand; trViewAgg[hour].nonbrand+=nonbrand; trViewAgg[hour].shopping+=shopping;
-      } else {
-        if (!trDateAgg[date]) trDateAgg[date] = {};
-        if (!trDateAgg[date][hour]) trDateAgg[date][hour] = {brand:0,nonbrand:0,shopping:0};
-        trDateAgg[date][hour].brand+=brand; trDateAgg[date][hour].nonbrand+=nonbrand; trDateAgg[date][hour].shopping+=shopping;
-      }
-    });
-  }
+  // Trials always sourced from r[8] in PACING_DATA above — same source for both
+  // filtered and unfiltered views, so per-campaign rows always reconcile to the total.
 
   var hours = [];
   for (var h = state.hrMin; h <= state.hrMax; h++) hours.push(h);
