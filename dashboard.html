@@ -135,6 +135,17 @@ tr:hover td{background:#f8fafc}
 .tab-readme{background:#fefce8;border-bottom:1px solid #fde047;padding:9px 28px;display:flex;align-items:baseline;gap:8px}
 .tab-readme .rm-title{border-bottom:none;padding-bottom:0;margin-bottom:0;white-space:nowrap;flex-shrink:0}
 .tab-readme .rm-body{line-height:1.5}
+
+/* ── TAB 10: VS TARGETS ───────────────────────────────────────────────────── */
+.pvt-ch-btn{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;color:#64748b;cursor:pointer;transition:all .15s}
+.pvt-ch-btn:hover{border-color:#94a3b8;color:#334155}
+.pvt-ch-btn.active[data-ch="branded_sem"]{border-color:#3b82f6;color:#1d4ed8;background:#eff6ff}
+.pvt-ch-btn.active[data-ch="nonbrand_sem"]{border-color:#f97316;color:#c2410c;background:#fff7ed}
+.pvt-ch-btn.active[data-ch="shopping"]{border-color:#10b981;color:#065f46;background:#ecfdf5}
+.pvt-view-btn{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:600;color:#64748b;cursor:pointer;transition:all .15s}
+.pvt-view-btn.active{background:#f5a623;border-color:#f5a623;color:#fff}
+.pvt-metric-sel{border:1px solid #cbd5e1;border-radius:6px;padding:4px 10px;font-size:12px;color:#334155;background:#fff;cursor:pointer}
+.pvt-metric-sel:focus{outline:none;border-color:#f5a623}
 </style>
 </head>
 <body>
@@ -157,6 +168,7 @@ tr:hover td{background:#f8fafc}
   <button class="tab-btn" id="tabBtn1" onclick="showTab(1)">Campaign Type Cost Spread</button>
   <button class="tab-btn" id="tabBtn2" onclick="showTab(2)">Campaign Cost Spread</button>
   <button class="tab-btn" id="tabBtn5" onclick="showTab(5)">Period Comparison</button>
+  <button class="tab-btn" id="tabBtn10" onclick="showTab(10)">vs Targets</button>
 </nav>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
@@ -1083,6 +1095,61 @@ tr:hover td{background:#f8fafc}
 </div>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 10 — VS TARGETS                                                      -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="tab10" class="tab-pane">
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Channels</span>
+      <button class="pvt-ch-btn active" data-ch="branded_sem" onclick="pvt_toggleCh('branded_sem')">Branded SEM</button>
+      <button class="pvt-ch-btn active" data-ch="nonbrand_sem" onclick="pvt_toggleCh('nonbrand_sem')">NonBrand SEM</button>
+      <button class="pvt-ch-btn active" data-ch="shopping" onclick="pvt_toggleCh('shopping')">Shopping</button>
+    </div>
+    <div class="ctrl-sep"></div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Bars</span>
+      <select class="pvt-metric-sel" id="pvtColMetric" onchange="pvt_renderChart()">
+        <option value="trials">Trials</option>
+        <option value="spend">Spend</option>
+        <option value="cac">CAC</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Line</span>
+      <select class="pvt-metric-sel" id="pvtLineMetric" onchange="pvt_renderChart()">
+        <option value="cac">CAC</option>
+        <option value="spend">Spend</option>
+        <option value="trials">Trials</option>
+      </select>
+    </div>
+    <div class="ctrl-sep"></div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">View</span>
+      <button class="pvt-view-btn" id="pvtView_cumul" onclick="pvt_setView('cumul')">Cumulative</button>
+      <button class="pvt-view-btn" id="pvtView_daily" onclick="pvt_setView('daily')">Daily</button>
+    </div>
+  </div>
+  <!-- CHART -->
+  <div class="p0-main">
+    <div class="section">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div>
+          <div class="section-title" id="pvt_chartTitle">May 2026 — Actuals vs Targets</div>
+          <div class="section-sub" id="pvt_chartSub">Solid = actuals · Dotted = forecast target</div>
+        </div>
+        <div style="display:flex;gap:16px;font-size:11px;color:#64748b;align-items:center">
+          <span><span style="display:inline-block;width:12px;height:3px;background:#3b82f6;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Branded SEM</span>
+          <span><span style="display:inline-block;width:12px;height:3px;background:#f97316;border-radius:2px;vertical-align:middle;margin-right:4px"></span>NonBrand SEM</span>
+          <span><span style="display:inline-block;width:12px;height:3px;background:#10b981;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Shopping</span>
+        </div>
+      </div>
+      <div style="height:420px;position:relative"><canvas id="pvt_chart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- DATA + SCRIPTS                                                          -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <script>
@@ -1515,6 +1582,7 @@ const D=[
 
 <script src="page2-data.js"></script>
 <script src="device-data.js"></script>
+<script src="targets-data.js"></script>
 
 <script>
 DATA.splice(0, DATA.length, ...DATA.filter(r => r.cat !== "Other"));
@@ -1531,6 +1599,7 @@ function showTab(n){
   document.getElementById("tabBtn"+n).classList.add("active");
   // Resize charts on tab switch
   if(n===0) { if(p0_chartInst) p0_chartInst.resize(); }
+  if(n===10){ if(pvt_chartInst) pvt_chartInst.resize(); }
   if(n===1) Object.values(p5_charts).forEach(c=>c.resize());
   if(n===2) Object.values(p1_charts).forEach(c=>c.resize());
   if(n===6) Object.values(p6_charts).forEach(c=>c.resize());
@@ -4383,6 +4452,283 @@ function pd_recalc(){
 function pd_init(){pd_buildWeekList();pd_rebuildCampList();pd_buildWeekSelector();pd_recalc();}
 
 // ══════════════════════════════════════════════════════════════════════════════
+// TAB 10 — VS TARGETS
+// ══════════════════════════════════════════════════════════════════════════════
+
+let pvt_chartInst = null;
+let pvt_mode = 'cumul';
+let pvt_channels = new Set(['branded_sem','nonbrand_sem','shopping']);
+
+const pvt_colors = {
+  branded_sem:  { bar:'rgba(59,130,246,0.65)',  line:'#3b82f6',  target:'rgba(59,130,246,0.45)'  },
+  nonbrand_sem: { bar:'rgba(249,115,22,0.65)',  line:'#f97316',  target:'rgba(249,115,22,0.45)'  },
+  shopping:     { bar:'rgba(16,185,129,0.65)',  line:'#10b981',  target:'rgba(16,185,129,0.45)'  }
+};
+const pvt_chLabel = { branded_sem:'Branded SEM', nonbrand_sem:'NonBrand SEM', shopping:'Shopping' };
+
+function pvt_toggleCh(chKey){
+  if(pvt_channels.has(chKey)){
+    if(pvt_channels.size===1) return;
+    pvt_channels.delete(chKey);
+  } else {
+    pvt_channels.add(chKey);
+  }
+  document.querySelectorAll('.pvt-ch-btn').forEach(b=>{
+    b.classList.toggle('active', pvt_channels.has(b.dataset.ch));
+  });
+  pvt_renderChart();
+}
+
+function pvt_setView(mode){
+  pvt_mode = mode;
+  document.querySelectorAll('.pvt-view-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pvtView_'+mode).classList.add('active');
+  pvt_renderChart();
+}
+
+function pvt_metricLabel(m){
+  return m==='trials'?'Trials':m==='spend'?'Spend ($)':'CAC ($)';
+}
+
+function pvt_metricVal(spend, trials, m){
+  if(m==='spend')  return spend>0||trials>0 ? spend : null;
+  if(m==='trials') return trials>0 ? trials : null;
+  if(m==='cac')    return trials>0 ? spend/trials : null;
+  return null;
+}
+
+function pvt_fmtAxis(m, v){
+  if(m==='trials') return Math.round(v).toLocaleString();
+  if(m==='spend')  return '$'+(v>=1000?(v/1000).toFixed(0)+'k':v.toFixed(0));
+  if(m==='cac')    return '$'+v.toFixed(0);
+  return v;
+}
+
+function pvt_fmtTip(m, v){
+  if(m==='trials') return Math.round(v).toLocaleString();
+  if(m==='spend')  return '$'+Math.round(v).toLocaleString();
+  if(m==='cac')    return '$'+v.toFixed(2);
+  return v;
+}
+
+function pvt_renderChart(){
+  const colMetric = document.getElementById('pvtColMetric').value;
+  const lineMetric = document.getElementById('pvtLineMetric').value;
+  const isCumul = pvt_mode==='cumul';
+  const active = [...pvt_channels];
+
+  // Build date array for May 2026
+  const dates=[], labels=[];
+  for(let i=1;i<=31;i++){
+    const d=`2026-05-${String(i).padStart(2,'0')}`;
+    dates.push(d);
+    labels.push(`5/${i}`);
+  }
+
+  // Actuals from DATA per channel per day
+  const actuals={};
+  active.forEach(ch=>{
+    const types=new Set(TARGETS_DATA.channels[ch].types);
+    actuals[ch]=dates.map(d=>{
+      const rows=DATA.filter(r=>r.d===d&&types.has(r.t));
+      return{
+        spend:rows.reduce((s,r)=>s+r.cost,0),
+        trials:rows.reduce((s,r)=>s+r.trials,0)
+      };
+    });
+  });
+
+  // Last day with any actual data
+  let lastIdx=-1;
+  dates.forEach((d,i)=>{
+    if(active.some(ch=>actuals[ch][i].spend>0||actuals[ch][i].trials>0)) lastIdx=i;
+  });
+
+  // Cumulative helpers
+  const makeCumul=arr=>{
+    let cs=0,ct=0;
+    return arr.map(v=>({spend:(cs+=v.spend),trials:(ct+=v.trials)}));
+  };
+
+  const actualsCumul={};
+  active.forEach(ch=>{ actualsCumul[ch]=makeCumul(actuals[ch]); });
+
+  const tgtDaily={};
+  active.forEach(ch=>{ tgtDaily[ch]=TARGETS_DATA.channels[ch].daily; });
+
+  const tgtCumul={};
+  active.forEach(ch=>{ tgtCumul[ch]=makeCumul(tgtDaily[ch]); });
+
+  // Combined target (sum of selected channels)
+  const combTgtDaily=dates.map((_,i)=>{
+    let s=0,t=0;
+    active.forEach(ch=>{s+=tgtDaily[ch][i].spend;t+=tgtDaily[ch][i].trials;});
+    return{spend:s,trials:t};
+  });
+  const combTgtCumul=makeCumul(combTgtDaily);
+
+  // Value getters
+  const getActual=(ch,i,m)=>{
+    if(i>lastIdx) return null;
+    const v=isCumul?actualsCumul[ch][i]:actuals[ch][i];
+    if(!isCumul&&v.spend===0&&v.trials===0) return null;
+    return pvt_metricVal(v.spend,v.trials,m);
+  };
+
+  const getTarget=(i,m)=>{
+    const v=isCumul?combTgtCumul[i]:combTgtDaily[i];
+    return pvt_metricVal(v.spend,v.trials,m);
+  };
+
+  // Line metric: combined actuals
+  const getCombActual=(i,m)=>{
+    if(i>lastIdx) return null;
+    let s=0,t=0;
+    active.forEach(ch=>{
+      const v=isCumul?actualsCumul[ch][i]:actuals[ch][i];
+      s+=v.spend; t+=v.trials;
+    });
+    if(!isCumul&&s===0&&t===0) return null;
+    return pvt_metricVal(s,t,m);
+  };
+
+  const isStacked = colMetric!=='cac';
+  const datasets=[];
+
+  // ── Actual bars (stacked for trials/spend, grouped for cac) ──────────────
+  active.forEach(ch=>{
+    const ds={
+      type:'bar',
+      label:pvt_chLabel[ch],
+      data:dates.map((_,i)=>getActual(ch,i,colMetric)),
+      backgroundColor:pvt_colors[ch].bar,
+      yAxisID:'y',
+      order:5
+    };
+    if(isStacked) ds.stack='actual';
+    datasets.push(ds);
+  });
+
+  // ── Target dotted line for col metric ────────────────────────────────────
+  if(isStacked){
+    // Combined target line (meaningful to compare against stacked actuals)
+    datasets.push({
+      type:'line',
+      label:'Target '+pvt_metricLabel(colMetric),
+      data:dates.map((_,i)=>getTarget(i,colMetric)),
+      borderColor:'rgba(100,116,139,0.7)',
+      borderDash:[6,4],
+      pointRadius:0,
+      fill:false,
+      tension:0.2,
+      yAxisID:'y',
+      order:2
+    });
+  } else {
+    // Per-channel target lines (CAC: can't sum across channels meaningfully)
+    active.forEach(ch=>{
+      datasets.push({
+        type:'line',
+        label:pvt_chLabel[ch]+' Target',
+        data:dates.map((_,i)=>{
+          const v=isCumul?tgtCumul[ch][i]:tgtDaily[ch][i];
+          return pvt_metricVal(v.spend,v.trials,colMetric);
+        }),
+        borderColor:pvt_colors[ch].target,
+        borderDash:[6,4],
+        pointRadius:0,
+        fill:false,
+        tension:0.2,
+        yAxisID:'y',
+        order:2
+      });
+    });
+  }
+
+  // ── Combined actual line for line metric ─────────────────────────────────
+  datasets.push({
+    type:'line',
+    label:pvt_metricLabel(lineMetric),
+    data:dates.map((_,i)=>getCombActual(i,lineMetric)),
+    borderColor:'#f5a623',
+    backgroundColor:'transparent',
+    pointBackgroundColor:'#f5a623',
+    pointRadius:3,
+    tension:0.3,
+    fill:false,
+    yAxisID:'y2',
+    order:1
+  });
+
+  // ── Target dotted line for line metric ───────────────────────────────────
+  datasets.push({
+    type:'line',
+    label:'Target '+pvt_metricLabel(lineMetric),
+    data:dates.map((_,i)=>getTarget(i,lineMetric)),
+    borderColor:'rgba(245,166,35,0.45)',
+    borderDash:[6,4],
+    pointRadius:0,
+    fill:false,
+    tension:0.2,
+    yAxisID:'y2',
+    order:3
+  });
+
+  const chartData={labels,datasets};
+  const chartOpts={
+    responsive:true,
+    maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{
+        position:'bottom',
+        labels:{font:{size:10},padding:10,boxWidth:10,boxHeight:10}
+      },
+      tooltip:{
+        callbacks:{
+          label:ctx=>{
+            if(ctx.parsed.y===null||ctx.parsed.y===undefined) return null;
+            const m=ctx.dataset.yAxisID==='y'?colMetric:lineMetric;
+            return`${ctx.dataset.label}: ${pvt_fmtTip(m,ctx.parsed.y)}`;
+          }
+        }
+      }
+    },
+    scales:{
+      x:{
+        grid:{display:false},
+        ticks:{font:{size:10}},
+        stacked:isStacked
+      },
+      y:{
+        position:'left',
+        grid:{color:'#f1f5f9'},
+        stacked:isStacked,
+        ticks:{font:{size:10},callback:v=>pvt_fmtAxis(colMetric,v)},
+        title:{display:true,text:pvt_metricLabel(colMetric),font:{size:10},color:'#94a3b8'}
+      },
+      y2:{
+        position:'right',
+        grid:{display:false},
+        ticks:{font:{size:10},callback:v=>pvt_fmtAxis(lineMetric,v)},
+        title:{display:true,text:pvt_metricLabel(lineMetric),font:{size:10},color:'#94a3b8'}
+      }
+    }
+  };
+
+  if(pvt_chartInst) pvt_chartInst.destroy();
+  pvt_chartInst=new Chart(
+    document.getElementById('pvt_chart').getContext('2d'),
+    {type:'bar',data:chartData,options:chartOpts}
+  );
+}
+
+function pvt_init(){
+  pvt_setView('cumul');
+  pvt_renderChart();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════════════════════
 p0_init();
@@ -4396,6 +4742,7 @@ p6_init();
 p7_init();
 pw_init();
 pd_init();
+pvt_init();
 </script>
 </body>
 </html>
