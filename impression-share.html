@@ -36,9 +36,6 @@ select:focus{border-color:#f5a623}
 .section{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px 24px}
 .section-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:2px}
 .section-sub{font-size:11px;color:#94a3b8;margin-bottom:18px}
-.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-.chart-wrap{position:relative}
-.chart-label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
 canvas{max-height:300px}
 table{width:100%;border-collapse:collapse}
 thead tr{background:#f8fafc}
@@ -54,21 +51,37 @@ tr:hover td{background:#f8fafc}
 .badge-shopping{background:#d1fae5;color:#065f46}
 .is-bar-wrap{display:flex;align-items:center;gap:8px;width:100%}
 .is-bar-bg{flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;min-width:60px}
-.is-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.is-bar-fill{height:100%;border-radius:3px}
 .is-val{font-size:11px;font-variant-numeric:tabular-nums;color:#334155;min-width:36px;text-align:right}
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.kpi-card{background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:16px 20px}
-.kpi-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-.kpi-val{font-size:24px;font-weight:800;color:#0f172a;line-height:1.1}
-.kpi-sub{font-size:11px;color:#64748b;margin-top:4px}
 .legend-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
 .legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b}
-.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .legend-line{width:18px;height:3px;border-radius:2px;flex-shrink:0}
-.empty-state{padding:48px;text-align:center;color:#94a3b8;font-size:13px}
 .stacked-legend{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap}
 .stacked-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b}
 .stacked-legend-box{width:14px;height:10px;border-radius:2px;flex-shrink:0}
+.empty-state{padding:48px;text-align:center;color:#94a3b8;font-size:13px}
+
+/* ── SUMMARY TAB ── */
+.p0-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.p0-kpi-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px 24px}
+.p0-kpi-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.p0-kpi-value{font-size:28px;font-weight:800;color:#0f172a;margin-bottom:4px;line-height:1.1}
+.p0-kpi-sub{font-size:11px;color:#64748b}
+.p0-insight-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.p0-insight-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:18px 20px;display:flex;flex-direction:column;gap:6px}
+.p0-hero{background:#1e293b;border-color:#334155}
+.p0-hero .p0-insight-title{color:#f5a623}
+.p0-hero .p0-insight-body{color:#94a3b8}
+.p0-green{background:#f0fdf4;border-color:#bbf7d0}
+.p0-green .p0-insight-title{color:#15803d}
+.p0-green .p0-insight-body{color:#166534}
+.p0-red{background:#fef2f2;border-color:#fecaca}
+.p0-red .p0-insight-title{color:#b91c1c}
+.p0-red .p0-insight-body{color:#991b1b}
+.p0-insight-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:2px}
+.p0-insight-title{font-size:15px;font-weight:800;line-height:1.2;color:#0f172a}
+.p0-insight-body{font-size:11px;color:#64748b;line-height:1.6;margin-top:2px}
+.charts-2col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
 </style>
 </head>
 <body>
@@ -82,7 +95,8 @@ tr:hover td{background:#f8fafc}
 </header>
 
 <div class="tab-nav">
-  <button class="tab-btn active" onclick="switchTab('is',this)">Impression Share</button>
+  <button class="tab-btn active" onclick="switchTab('summary',this)">Summary</button>
+  <button class="tab-btn" onclick="switchTab('is',this)">Impression Share</button>
   <button class="tab-btn" onclick="switchTab('auction',this)">Auction Insights</button>
 </div>
 
@@ -90,7 +104,7 @@ tr:hover td{background:#f8fafc}
 <div class="controls">
   <div class="ctrl-group">
     <span class="ctrl-label">Channel</span>
-    <select id="ctrl-type" onchange="render()">
+    <select id="ctrl-type" onchange="onTypeChange()">
       <option value="all">All</option>
       <option value="Brand">Brand Search</option>
       <option value="NonBrand">NonBrand Search</option>
@@ -99,13 +113,13 @@ tr:hover td{background:#f8fafc}
     </select>
   </div>
   <div class="ctrl-sep"></div>
-  <div class="ctrl-group">
+  <div class="ctrl-group" id="camp-ctrl-group">
     <span class="ctrl-label">Campaign</span>
     <select id="ctrl-camp" onchange="render()">
       <option value="all">All campaigns</option>
     </select>
   </div>
-  <div class="ctrl-sep"></div>
+  <div class="ctrl-sep" id="camp-ctrl-sep"></div>
   <div class="ctrl-group">
     <span class="ctrl-label">From</span>
     <input type="date" id="ctrl-start" class="date-input" onchange="render()">
@@ -115,36 +129,82 @@ tr:hover td{background:#f8fafc}
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- TAB 1: IMPRESSION SHARE                                                   -->
+<!-- TAB 0: SUMMARY                                                            -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
-<div id="tab-is" class="tab-pane active">
+<div id="tab-summary" class="tab-pane active">
 <div class="main">
 
-  <!-- KPI cards -->
-  <div class="kpi-row">
-    <div class="kpi-card">
-      <div class="kpi-label">Avg Search IS</div>
-      <div class="kpi-val" id="kpi-is">—</div>
-      <div class="kpi-sub">% of eligible impressions captured</div>
+  <div class="p0-kpi-grid">
+    <div class="p0-kpi-card">
+      <div class="p0-kpi-label">Avg Search IS</div>
+      <div class="p0-kpi-value" id="s-kpi-is">—</div>
+      <div class="p0-kpi-sub">Impressions captured</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Avg Lost IS (Budget)</div>
-      <div class="kpi-val" id="kpi-budget">—</div>
-      <div class="kpi-sub">Lost due to budget constraints</div>
+    <div class="p0-kpi-card">
+      <div class="p0-kpi-label">Avg Lost IS — Budget</div>
+      <div class="p0-kpi-value" id="s-kpi-budget">—</div>
+      <div class="p0-kpi-sub">Lost due to budget</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Avg Lost IS (Rank)</div>
-      <div class="kpi-val" id="kpi-rank">—</div>
-      <div class="kpi-sub">Lost due to Ad Rank</div>
+    <div class="p0-kpi-card">
+      <div class="p0-kpi-label">Avg Lost IS — Rank</div>
+      <div class="p0-kpi-value" id="s-kpi-rank">—</div>
+      <div class="p0-kpi-sub">Lost due to Ad Rank</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Avg Exact Match IS</div>
-      <div class="kpi-val" id="kpi-exact">—</div>
-      <div class="kpi-sub">IS for exact-match eligible queries</div>
+    <div class="p0-kpi-card">
+      <div class="p0-kpi-label">Avg Exact Match IS</div>
+      <div class="p0-kpi-value" id="s-kpi-exact">—</div>
+      <div class="p0-kpi-sub">Exact-match eligible queries</div>
     </div>
   </div>
 
-  <!-- IS over time -->
+  <div class="p0-insight-grid">
+    <div class="p0-insight-card p0-hero">
+      <div class="p0-insight-label">Opportunity</div>
+      <div class="p0-insight-title" id="s-insight-opp-title">—</div>
+      <div class="p0-insight-body" id="s-insight-opp-body">—</div>
+    </div>
+    <div class="p0-insight-card p0-green">
+      <div class="p0-insight-label">Strongest Campaign</div>
+      <div class="p0-insight-title" id="s-insight-best-title">—</div>
+      <div class="p0-insight-body" id="s-insight-best-body">—</div>
+    </div>
+    <div class="p0-insight-card p0-red">
+      <div class="p0-insight-label">Needs Attention</div>
+      <div class="p0-insight-title" id="s-insight-worst-title">—</div>
+      <div class="p0-insight-body" id="s-insight-worst-body">—</div>
+    </div>
+  </div>
+
+  <div class="charts-2col">
+    <div class="section">
+      <div class="section-title">IS Over Time</div>
+      <div class="section-sub">Captured vs. lost (budget + rank)</div>
+      <div class="stacked-legend">
+        <div class="stacked-legend-item"><div class="stacked-legend-box" style="background:#22c55e"></div>Captured</div>
+        <div class="stacked-legend-item"><div class="stacked-legend-box" style="background:#f97316"></div>Lost Budget</div>
+        <div class="stacked-legend-item"><div class="stacked-legend-box" style="background:#ef4444"></div>Lost Rank</div>
+      </div>
+      <canvas id="chart-summary-is"></canvas>
+    </div>
+    <div class="section">
+      <div class="section-title">Top Competitors</div>
+      <div class="section-sub">Avg IS over selected period</div>
+      <table>
+        <thead><tr><th>Competitor</th><th>Group</th><th class="num">Their IS</th><th class="num">Outranking</th></tr></thead>
+        <tbody id="s-comp-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 1: IMPRESSION SHARE                                                   -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-is" class="tab-pane">
+<div class="main">
+
   <div class="section">
     <div class="section-title">Search Impression Share Over Time</div>
     <div class="section-sub">Daily IS % — captured, lost to budget, lost to rank</div>
@@ -156,14 +216,12 @@ tr:hover td{background:#f8fafc}
     <canvas id="chart-is-stacked"></canvas>
   </div>
 
-  <!-- Exact Match IS -->
   <div class="section">
     <div class="section-title">Exact Match IS Over Time</div>
     <div class="section-sub">How well you capture impressions for exact-match eligible searches</div>
     <canvas id="chart-exact"></canvas>
   </div>
 
-  <!-- Per-campaign breakdown table -->
   <div class="section">
     <div class="section-title">Campaign Breakdown</div>
     <div class="section-sub">Average IS metrics over selected period, per campaign</div>
@@ -191,23 +249,20 @@ tr:hover td{background:#f8fafc}
 <div id="tab-auction" class="tab-pane">
 <div class="main">
 
-  <!-- Competitor IS over time -->
   <div class="section">
     <div class="section-title">Impression Share by Competitor Over Time</div>
-    <div class="section-sub">Your IS vs. competitors — daily average across selected campaigns</div>
+    <div class="section-sub">Competitor IS — daily, filtered by channel group</div>
     <div class="legend-row" id="auction-legend"></div>
     <canvas id="chart-auction-is"></canvas>
   </div>
 
-  <!-- Outranking share over time -->
   <div class="section">
     <div class="section-title">Outranking Share Over Time</div>
-    <div class="section-sub">% of auctions where your ad ranked higher than each competitor (or showed when theirs did not)</div>
+    <div class="section-sub">% of auctions where your ad ranked higher than each competitor</div>
     <div class="legend-row" id="outranking-legend"></div>
     <canvas id="chart-outranking"></canvas>
   </div>
 
-  <!-- Competitor summary table -->
   <div class="section">
     <div class="section-title">Competitor Summary</div>
     <div class="section-sub">Average metrics over selected period</div>
@@ -215,6 +270,7 @@ tr:hover td{background:#f8fafc}
       <thead>
         <tr>
           <th>Competitor</th>
+          <th>Group</th>
           <th class="num">Their IS</th>
           <th class="num">Overlap Rate</th>
           <th class="num">Outranking Share</th>
@@ -230,12 +286,8 @@ tr:hover td{background:#f8fafc}
 </div>
 
 <script>
-// ── State ─────────────────────────────────────────────────────────────────────
-let activeTab = 'is';
-let chartIsStacked = null;
-let chartExact     = null;
-let chartAuctionIS = null;
-let chartOutranking= null;
+// ── Constants ─────────────────────────────────────────────────────────────────
+const TODAY = new Date().toISOString().split('T')[0];
 
 const COLORS = [
   '#f5a623','#3b82f6','#22c55e','#ef4444','#a855f7',
@@ -243,25 +295,51 @@ const COLORS = [
   '#6366f1','#f59e0b','#10b981','#8b5cf6','#0ea5e9',
 ];
 
+// ── State ─────────────────────────────────────────────────────────────────────
+let activeTab = 'summary';
+let charts = {};
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
-  // Populate date range from data
-  const allDates = [...new Set(IS_DATA.map(r => r.d))].sort();
+  // Build campaign type map for cascade
+  window.campTypeMap = {};
+  IS_DATA.forEach(r => { campTypeMap[r.camp] = r.t; });
+
+  // Date range: full data range, excluding today
+  const allDates = [...new Set(IS_DATA.map(r => r.d))].filter(d => d < TODAY).sort();
   if (allDates.length) {
     document.getElementById('ctrl-start').value = allDates[0];
     document.getElementById('ctrl-end').value   = allDates[allDates.length - 1];
   }
 
-  // Populate campaign dropdown from IS_DATA (active campaigns only)
-  const camps = [...new Set(IS_DATA.map(r => r.camp))].sort();
+  // Populate campaign dropdown with all campaigns
+  rebuildCampDropdown('all');
+  render();
+}
+
+// ── Campaign dropdown cascade ──────────────────────────────────────────────────
+function rebuildCampDropdown(type) {
   const sel = document.getElementById('ctrl-camp');
+  // Keep "all" option, remove the rest
+  while (sel.options.length > 1) sel.remove(1);
+
+  const camps = [...new Set(IS_DATA.map(r => r.camp))].sort();
   camps.forEach(c => {
+    if (type !== 'all' && campTypeMap[c] !== type) return;
     const opt = document.createElement('option');
     opt.value = c;
     opt.textContent = c.replace(/_/g, ' ');
     sel.appendChild(opt);
   });
+}
 
+function onTypeChange() {
+  const type = document.getElementById('ctrl-type').value;
+  rebuildCampDropdown(type);
+  // Hide campaign filter on auction tab (not applicable — auction filtered by type only)
+  const showCamp = activeTab !== 'auction';
+  document.getElementById('camp-ctrl-group').style.display = showCamp ? '' : 'none';
+  document.getElementById('camp-ctrl-sep').style.display   = showCamp ? '' : 'none';
   render();
 }
 
@@ -272,10 +350,14 @@ function switchTab(tab, btn) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');
+  // Show/hide campaign filter based on tab
+  const showCamp = tab !== 'auction';
+  document.getElementById('camp-ctrl-group').style.display = showCamp ? '' : 'none';
+  document.getElementById('camp-ctrl-sep').style.display   = showCamp ? '' : 'none';
   render();
 }
 
-// ── Filtering helpers ─────────────────────────────────────────────────────────
+// ── Filters ───────────────────────────────────────────────────────────────────
 function getFilters() {
   return {
     type:  document.getElementById('ctrl-type').value,
@@ -287,170 +369,214 @@ function getFilters() {
 
 function filterIS(f) {
   return IS_DATA.filter(r => {
-    if (f.type !== 'all' && r.t !== f.type) return false;
-    if (f.camp !== 'all' && r.camp !== f.camp) return false;
-    if (f.start && r.d < f.start) return false;
-    if (f.end   && r.d > f.end)   return false;
+    if (r.d >= TODAY)                              return false; // exclude today
+    if (f.type !== 'all' && r.t !== f.type)        return false;
+    if (f.camp !== 'all' && r.camp !== f.camp)     return false;
+    if (f.start && r.d < f.start)                  return false;
+    if (f.end   && r.d > f.end)                    return false;
     return true;
   });
 }
 
 function filterAuction(f) {
+  // Auction data is grouped by Generic/BrandCore — filter by type only, not individual campaign
   return AUCTION_DATA.filter(r => {
-    if (f.type !== 'all' && r.t !== f.type) return false;
-    if (f.camp !== 'all' && r.camp !== f.camp) return false;
-    if (f.start && r.d < f.start) return false;
-    if (f.end   && r.d > f.end)   return false;
+    if (r.d >= TODAY)                              return false; // exclude today
+    if (f.type !== 'all' && r.t !== f.type)        return false;
+    if (f.start && r.d < f.start)                  return false;
+    if (f.end   && r.d > f.end)                    return false;
     return true;
   });
 }
 
-// ── Aggregation helpers ───────────────────────────────────────────────────────
-function groupByDate(rows, field) {
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+
+function avgByDate(rows, field) {
   const map = {};
   rows.forEach(r => {
     if (r[field] == null) return;
-    if (!map[r.d]) map[r.d] = { sum: 0, n: 0 };
-    map[r.d].sum += r[field];
-    map[r.d].n++;
+    if (!map[r.d]) map[r.d] = {sum:0, n:0};
+    map[r.d].sum += r[field]; map[r.d].n++;
   });
-  return map;
-}
-
-function avgByDate(rows, field) {
-  const g = groupByDate(rows, field);
-  return Object.fromEntries(Object.entries(g).map(([d, v]) => [d, v.n ? v.sum / v.n : null]));
+  return Object.fromEntries(Object.entries(map).map(([d,v]) => [d, v.n ? v.sum/v.n : null]));
 }
 
 function overallAvg(rows, field) {
   const vals = rows.map(r => r[field]).filter(v => v != null);
-  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
 }
 
-function fmt(v, decimals = 1) {
-  if (v == null) return '—';
-  return (v * 100).toFixed(decimals) + '%';
-}
+function fmt(v, d=1) { return v == null ? '—' : (v*100).toFixed(d)+'%'; }
 
 function barHtml(v, color) {
   if (v == null) return '<span style="color:#94a3b8">—</span>';
-  const pct = Math.min(100, Math.round(v * 100));
+  const pct = Math.min(100, Math.round(v*100));
   return `<div class="is-bar-wrap"><div class="is-bar-bg"><div class="is-bar-fill" style="width:${pct}%;background:${color}"></div></div><span class="is-val">${pct}%</span></div>`;
 }
 
 function typeBadge(t) {
-  if (t === 'Brand')            return '<span class="badge badge-brand">Brand</span>';
-  if (t === 'NonBrand')         return '<span class="badge badge-nonbrand">NonBrand</span>';
-  if (t === 'BrandShopping')    return '<span class="badge badge-brand">Brand Shop</span>';
-  if (t === 'NonBrandShopping') return '<span class="badge badge-shopping">NB Shop</span>';
+  if (t==='Brand')            return '<span class="badge badge-brand">Brand</span>';
+  if (t==='NonBrand')         return '<span class="badge badge-nonbrand">NonBrand</span>';
+  if (t==='BrandShopping')    return '<span class="badge badge-brand">Brand Shop</span>';
+  if (t==='NonBrandShopping') return '<span class="badge badge-shopping">NB Shop</span>';
   return t;
 }
 
+function groupBadge(camp) {
+  if (camp.includes('brandcore')) return '<span class="badge badge-brand">BrandCore</span>';
+  if (camp.includes('generic'))   return '<span class="badge badge-nonbrand">Generic</span>';
+  return '<span class="badge" style="background:#f1f5f9;color:#64748b">'+camp+'</span>';
+}
+
 // ── Chart helpers ─────────────────────────────────────────────────────────────
-function destroyChart(ref) { if (ref) { ref.destroy(); } return null; }
+function dc(key) { if(charts[key]) { charts[key].destroy(); delete charts[key]; } }
 
-function makeLineChart(id, labels, datasets, opts = {}) {
-  const ctx = document.getElementById(id).getContext('2d');
-  return new Chart(ctx, {
-    type: 'line',
-    data: { labels, datasets },
+function lineChart(id, labels, datasets) {
+  dc(id);
+  charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
+    type: 'line', data: {labels, datasets},
     options: {
-      responsive: true,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y != null ? (ctx.parsed.y * 100).toFixed(1) + '%' : '—'}`,
-          }
-        }
-      },
-      scales: {
-        x: { ticks: { maxTicksLimit: 20, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
-        y: {
-          ticks: { callback: v => (v * 100).toFixed(0) + '%', font: { size: 10 } },
-          grid: { color: '#f1f5f9' },
-          min: 0, max: 1,
-          ...( opts.yMax ? { max: opts.yMax } : {} ),
-        }
+      responsive:true, interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y!=null?(c.parsed.y*100).toFixed(1)+'%':'—'}`}}},
+      scales:{
+        x:{ticks:{maxTicksLimit:20,font:{size:10}},grid:{color:'#f1f5f9'}},
+        y:{ticks:{callback:v=>(v*100).toFixed(0)+'%',font:{size:10}},grid:{color:'#f1f5f9'},min:0,max:1}
       }
     }
   });
 }
 
-function makeStackedChart(id, labels, datasets) {
-  const ctx = document.getElementById(id).getContext('2d');
-  return new Chart(ctx, {
-    type: 'bar',
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y != null ? (ctx.parsed.y * 100).toFixed(1) + '%' : '—'}`,
-          }
-        }
-      },
-      scales: {
-        x: { stacked: true, ticks: { maxTicksLimit: 20, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
-        y: { stacked: true, ticks: { callback: v => (v * 100).toFixed(0) + '%', font: { size: 10 } }, grid: { color: '#f1f5f9' }, min: 0, max: 1 }
+function stackedChart(id, labels, datasets) {
+  dc(id);
+  charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
+    type:'bar', data:{labels,datasets},
+    options:{
+      responsive:true, interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y!=null?(c.parsed.y*100).toFixed(1)+'%':'—'}`}}},
+      scales:{
+        x:{stacked:true,ticks:{maxTicksLimit:20,font:{size:10}},grid:{color:'#f1f5f9'}},
+        y:{stacked:true,ticks:{callback:v=>(v*100).toFixed(0)+'%',font:{size:10}},grid:{color:'#f1f5f9'},min:0,max:1}
       }
     }
   });
 }
 
-// ── Main render ───────────────────────────────────────────────────────────────
+// ── Render dispatcher ─────────────────────────────────────────────────────────
 function render() {
-  if (activeTab === 'is') renderIS();
+  if (activeTab==='summary') renderSummary();
+  else if (activeTab==='is') renderIS();
   else renderAuction();
 }
 
-function renderIS() {
+// ── Summary tab ───────────────────────────────────────────────────────────────
+function renderSummary() {
   const f    = getFilters();
   const rows = filterIS(f);
 
   // KPIs
-  const avgIS     = overallAvg(rows, 'search_is');
-  const avgBudget = overallAvg(rows, 'lost_budget');
-  const avgRank   = overallAvg(rows, 'lost_rank');
-  const avgExact  = overallAvg(rows, 'exact_is');
-  document.getElementById('kpi-is').textContent     = fmt(avgIS);
-  document.getElementById('kpi-budget').textContent  = fmt(avgBudget);
-  document.getElementById('kpi-rank').textContent    = fmt(avgRank);
-  document.getElementById('kpi-exact').textContent   = fmt(avgExact);
+  document.getElementById('s-kpi-is').textContent     = fmt(overallAvg(rows,'search_is'));
+  document.getElementById('s-kpi-budget').textContent  = fmt(overallAvg(rows,'lost_budget'));
+  document.getElementById('s-kpi-rank').textContent    = fmt(overallAvg(rows,'lost_rank'));
+  document.getElementById('s-kpi-exact').textContent   = fmt(overallAvg(rows,'exact_is'));
 
-  // Time series — stacked bar
-  const dates   = [...new Set(rows.map(r => r.d))].sort();
-  const byDateIS     = avgByDate(rows, 'search_is');
-  const byDateBudget = avgByDate(rows, 'lost_budget');
-  const byDateRank   = avgByDate(rows, 'lost_rank');
-  const byDateExact  = avgByDate(rows, 'exact_is');
+  // Insight cards — best and worst campaign by avg IS
+  const byCamp = {};
+  rows.forEach(r => {
+    if (!byCamp[r.camp]) byCamp[r.camp] = {t:r.t, is:[], budget:[], rank:[]};
+    if (r.search_is   != null) byCamp[r.camp].is.push(r.search_is);
+    if (r.lost_budget != null) byCamp[r.camp].budget.push(r.lost_budget);
+    if (r.lost_rank   != null) byCamp[r.camp].rank.push(r.lost_rank);
+  });
 
-  chartIsStacked = destroyChart(chartIsStacked);
-  chartIsStacked = makeStackedChart('chart-is-stacked', dates, [
-    { label: 'Captured IS',    data: dates.map(d => byDateIS[d] ?? null),     backgroundColor: '#22c55e', borderRadius: 2 },
-    { label: 'Lost — Budget',  data: dates.map(d => byDateBudget[d] ?? null), backgroundColor: '#f97316', borderRadius: 2 },
-    { label: 'Lost — Rank',    data: dates.map(d => byDateRank[d] ?? null),   backgroundColor: '#ef4444', borderRadius: 2 },
+  const campAvgs = Object.entries(byCamp)
+    .map(([c,v]) => ({camp:c, t:v.t, avgIS:avg(v.is), avgBudget:avg(v.budget), avgRank:avg(v.rank)}))
+    .filter(x => x.avgIS != null)
+    .sort((a,b) => b.avgIS - a.avgIS);
+
+  if (campAvgs.length) {
+    const best  = campAvgs[0];
+    const worst = campAvgs[campAvgs.length-1];
+
+    // Opportunity: whichever has the biggest total loss
+    const biggestLoss = [...campAvgs].sort((a,b) => ((b.avgBudget||0)+(b.avgRank||0)) - ((a.avgBudget||0)+(a.avgRank||0)))[0];
+    const totalLoss = (biggestLoss.avgBudget||0) + (biggestLoss.avgRank||0);
+    document.getElementById('s-insight-opp-title').textContent = fmt(totalLoss) + ' IS being lost';
+    document.getElementById('s-insight-opp-body').textContent  =
+      `${biggestLoss.camp.replace(/_/g,' ')} has the highest combined loss — ${fmt(biggestLoss.avgBudget)} to budget, ${fmt(biggestLoss.avgRank)} to rank.`;
+
+    document.getElementById('s-insight-best-title').textContent = fmt(best.avgIS) + ' avg IS';
+    document.getElementById('s-insight-best-body').textContent  = best.camp.replace(/_/g,' ');
+
+    document.getElementById('s-insight-worst-title').textContent = fmt(worst.avgIS) + ' avg IS';
+    document.getElementById('s-insight-worst-body').textContent  = worst.camp.replace(/_/g,' ');
+  }
+
+  // Stacked IS chart
+  const dates         = [...new Set(rows.map(r=>r.d))].sort();
+  const byDateIS      = avgByDate(rows,'search_is');
+  const byDateBudget  = avgByDate(rows,'lost_budget');
+  const byDateRank    = avgByDate(rows,'lost_rank');
+
+  stackedChart('chart-summary-is', dates, [
+    {label:'Captured IS',   data:dates.map(d=>byDateIS[d]??null),     backgroundColor:'#22c55e', borderRadius:2},
+    {label:'Lost — Budget', data:dates.map(d=>byDateBudget[d]??null), backgroundColor:'#f97316', borderRadius:2},
+    {label:'Lost — Rank',   data:dates.map(d=>byDateRank[d]??null),   backgroundColor:'#ef4444', borderRadius:2},
   ]);
 
-  chartExact = destroyChart(chartExact);
-  chartExact = makeLineChart('chart-exact', dates, [{
-    label: 'Exact Match IS',
-    data: dates.map(d => byDateExact[d] ?? null),
-    borderColor: '#3b82f6',
-    backgroundColor: 'rgba(59,130,246,.08)',
-    fill: true,
-    tension: 0.3,
-    pointRadius: 2,
+  // Top competitors table
+  const aRows = filterAuction(f);
+  const byComp = {};
+  aRows.forEach(r => {
+    if (!byComp[r.competitor]) byComp[r.competitor] = {camp:r.camp, is:[], out:[]};
+    if (r.comp_is    != null) byComp[r.competitor].is.push(r.comp_is);
+    if (r.outranking != null) byComp[r.competitor].out.push(r.outranking);
+  });
+
+  const sorted = Object.entries(byComp)
+    .map(([comp,v]) => ({comp, camp:v.camp, avgIS:avg(v.is), avgOut:avg(v.out)}))
+    .filter(x => x.avgIS != null)
+    .sort((a,b) => b.avgIS - a.avgIS)
+    .slice(0,8);
+
+  document.getElementById('s-comp-table').innerHTML = sorted.length
+    ? sorted.map((x,i) => `<tr>
+        <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:6px"></span>${x.comp}</td>
+        <td>${groupBadge(x.camp)}</td>
+        <td class="num">${barHtml(x.avgIS, COLORS[i%COLORS.length])}</td>
+        <td class="num">${fmt(x.avgOut)}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" class="empty-state">No auction data for selected filters</td></tr>';
+}
+
+// ── IS tab ────────────────────────────────────────────────────────────────────
+function renderIS() {
+  const f    = getFilters();
+  const rows = filterIS(f);
+
+  const dates        = [...new Set(rows.map(r=>r.d))].sort();
+  const byDateIS     = avgByDate(rows,'search_is');
+  const byDateBudget = avgByDate(rows,'lost_budget');
+  const byDateRank   = avgByDate(rows,'lost_rank');
+  const byDateExact  = avgByDate(rows,'exact_is');
+
+  stackedChart('chart-is-stacked', dates, [
+    {label:'Captured IS',   data:dates.map(d=>byDateIS[d]??null),     backgroundColor:'#22c55e', borderRadius:2},
+    {label:'Lost — Budget', data:dates.map(d=>byDateBudget[d]??null), backgroundColor:'#f97316', borderRadius:2},
+    {label:'Lost — Rank',   data:dates.map(d=>byDateRank[d]??null),   backgroundColor:'#ef4444', borderRadius:2},
+  ]);
+
+  lineChart('chart-exact', dates, [{
+    label:'Exact Match IS',
+    data:dates.map(d=>byDateExact[d]??null),
+    borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.08)',
+    fill:true, tension:0.3, pointRadius:2,
   }]);
 
   // Campaign breakdown table
   const byCamp = {};
   rows.forEach(r => {
-    if (!byCamp[r.camp]) byCamp[r.camp] = { t: r.t, is: [], budget: [], rank: [], exact: [] };
+    if (!byCamp[r.camp]) byCamp[r.camp] = {t:r.t,is:[],budget:[],rank:[],exact:[]};
     const e = byCamp[r.camp];
     if (r.search_is   != null) e.is.push(r.search_is);
     if (r.lost_budget != null) e.budget.push(r.lost_budget);
@@ -458,105 +584,72 @@ function renderIS() {
     if (r.exact_is    != null) e.exact.push(r.exact_is);
   });
 
-  const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+  const entries = Object.entries(byCamp).sort((a,b)=>(avg(b[1].is)??-1)-(avg(a[1].is)??-1));
   const tbody = document.getElementById('is-table-body');
-  const campEntries = Object.entries(byCamp).sort((a,b) => {
-    const ai = avg(a[1].is) ?? -1, bi = avg(b[1].is) ?? -1;
-    return bi - ai;
-  });
 
-  if (!campEntries.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No data for selected filters</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = campEntries.map(([camp, v]) => `
-    <tr>
-      <td style="max-width:340px;overflow:hidden;text-overflow:ellipsis" title="${camp}">${camp.replace(/_/g,' ')}</td>
-      <td>${typeBadge(v.t)}</td>
-      <td class="num">${barHtml(avg(v.is),     '#22c55e')}</td>
-      <td class="num">${barHtml(avg(v.budget),  '#f97316')}</td>
-      <td class="num">${barHtml(avg(v.rank),    '#ef4444')}</td>
-      <td class="num">${barHtml(avg(v.exact),   '#3b82f6')}</td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = entries.length
+    ? entries.map(([camp,v]) => `<tr>
+        <td style="max-width:340px;overflow:hidden;text-overflow:ellipsis" title="${camp}">${camp.replace(/_/g,' ')}</td>
+        <td>${typeBadge(v.t)}</td>
+        <td class="num">${barHtml(avg(v.is),    '#22c55e')}</td>
+        <td class="num">${barHtml(avg(v.budget), '#f97316')}</td>
+        <td class="num">${barHtml(avg(v.rank),   '#ef4444')}</td>
+        <td class="num">${barHtml(avg(v.exact),  '#3b82f6')}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" class="empty-state">No data for selected filters</td></tr>';
 }
 
+// ── Auction tab ───────────────────────────────────────────────────────────────
 function renderAuction() {
   const f    = getFilters();
   const rows = filterAuction(f);
 
   if (!rows.length) {
-    document.getElementById('auction-legend').innerHTML   = '';
-    document.getElementById('outranking-legend').innerHTML= '';
+    ['auction-legend','outranking-legend'].forEach(id => document.getElementById(id).innerHTML='');
     document.getElementById('auction-table-body').innerHTML =
-      '<tr><td colspan="6" class="empty-state">No data for selected filters</td></tr>';
-    chartAuctionIS  = destroyChart(chartAuctionIS);
-    chartOutranking = destroyChart(chartOutranking);
+      '<tr><td colspan="7" class="empty-state">No data for selected filters</td></tr>';
+    dc('chart-auction-is'); dc('chart-outranking');
     return;
   }
 
-  const dates       = [...new Set(rows.map(r => r.d))].sort();
-  const competitors = [...new Set(rows.map(r => r.competitor))].sort();
+  const dates       = [...new Set(rows.map(r=>r.d))].sort();
+  const competitors = [...new Set(rows.map(r=>r.competitor))].sort();
 
-  // Group by competitor + date
-  const byCompDate = {};
+  // Aggregate by competitor + date
+  const byCD = {};
   rows.forEach(r => {
-    if (!byCompDate[r.competitor]) byCompDate[r.competitor] = {};
-    const key = r.d;
-    if (!byCompDate[r.competitor][key]) byCompDate[r.competitor][key] = { isSum:0, isN:0, outSum:0, outN:0, olapSum:0, olapN:0, topSum:0, topN:0, absSum:0, absN:0 };
-    const e = byCompDate[r.competitor][key];
-    if (r.comp_is    != null) { e.isSum   += r.comp_is;    e.isN++;   }
-    if (r.outranking != null) { e.outSum  += r.outranking; e.outN++;  }
-    if (r.overlap    != null) { e.olapSum += r.overlap;    e.olapN++; }
-    if (r.top_page   != null) { e.topSum  += r.top_page;   e.topN++;  }
-    if (r.abs_top    != null) { e.absSum  += r.abs_top;    e.absN++;  }
+    if (!byCD[r.competitor]) byCD[r.competitor] = {};
+    if (!byCD[r.competitor][r.d]) byCD[r.competitor][r.d] = {isS:0,isN:0,outS:0,outN:0,olapS:0,olapN:0,topS:0,topN:0,absS:0,absN:0};
+    const e = byCD[r.competitor][r.d];
+    if (r.comp_is    != null) {e.isS   +=r.comp_is;    e.isN++;}
+    if (r.outranking != null) {e.outS  +=r.outranking; e.outN++;}
+    if (r.overlap    != null) {e.olapS +=r.overlap;    e.olapN++;}
+    if (r.top_page   != null) {e.topS  +=r.top_page;   e.topN++;}
+    if (r.abs_top    != null) {e.absS  +=r.abs_top;    e.absN++;}
   });
 
-  const dsIS = competitors.map((comp, i) => ({
-    label: comp,
-    data: dates.map(d => {
-      const e = byCompDate[comp]?.[d];
-      return e && e.isN ? e.isSum / e.isN : null;
-    }),
-    borderColor: COLORS[i % COLORS.length],
-    backgroundColor: 'transparent',
-    tension: 0.3,
-    pointRadius: 2,
-    borderWidth: 2,
+  const ds = (field, sumK, nK) => competitors.map((comp,i) => ({
+    label:comp,
+    data:dates.map(d => { const e=byCD[comp]?.[d]; return e&&e[nK]?e[sumK]/e[nK]:null; }),
+    borderColor:COLORS[i%COLORS.length], backgroundColor:'transparent',
+    tension:0.3, pointRadius:2, borderWidth:2,
   }));
 
-  const dsOut = competitors.map((comp, i) => ({
-    label: comp,
-    data: dates.map(d => {
-      const e = byCompDate[comp]?.[d];
-      return e && e.outN ? e.outSum / e.outN : null;
-    }),
-    borderColor: COLORS[i % COLORS.length],
-    backgroundColor: 'transparent',
-    tension: 0.3,
-    pointRadius: 2,
-    borderWidth: 2,
-  }));
+  lineChart('chart-auction-is',  dates, ds('is',  'isS', 'isN'));
+  lineChart('chart-outranking',  dates, ds('out', 'outS','outN'));
 
-  chartAuctionIS  = destroyChart(chartAuctionIS);
-  chartOutranking = destroyChart(chartOutranking);
-  chartAuctionIS  = makeLineChart('chart-auction-is',  dates, dsIS);
-  chartOutranking = makeLineChart('chart-outranking',   dates, dsOut);
-
-  // Legends
-  const makeLegend = (id) => {
-    document.getElementById(id).innerHTML = competitors.map((c, i) =>
+  const makeLegend = id => {
+    document.getElementById(id).innerHTML = competitors.map((c,i) =>
       `<div class="legend-item"><div class="legend-line" style="background:${COLORS[i%COLORS.length]}"></div>${c}</div>`
     ).join('');
   };
   makeLegend('auction-legend');
   makeLegend('outranking-legend');
 
-  // Summary table — overall averages per competitor
+  // Summary table
   const byComp = {};
   rows.forEach(r => {
-    if (!byComp[r.competitor]) byComp[r.competitor] = { is:[], out:[], olap:[], top:[], abs:[] };
+    if (!byComp[r.competitor]) byComp[r.competitor] = {camp:r.camp, is:[],out:[],olap:[],top:[],abs:[]};
     const e = byComp[r.competitor];
     if (r.comp_is    != null) e.is.push(r.comp_is);
     if (r.outranking != null) e.out.push(r.outranking);
@@ -565,19 +658,16 @@ function renderAuction() {
     if (r.abs_top    != null) e.abs.push(r.abs_top);
   });
 
-  const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
-  const sorted = Object.entries(byComp).sort((a,b) => (avg(b[1].is)??-1) - (avg(a[1].is)??-1));
-
-  document.getElementById('auction-table-body').innerHTML = sorted.map(([comp, v], i) => `
-    <tr>
-      <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:6px"></span>${comp}</td>
-      <td class="num">${barHtml(avg(v.is),   COLORS[i%COLORS.length])}</td>
-      <td class="num">${fmt(avg(v.olap))}</td>
-      <td class="num">${fmt(avg(v.out))}</td>
-      <td class="num">${fmt(avg(v.top))}</td>
-      <td class="num">${fmt(avg(v.abs))}</td>
-    </tr>
-  `).join('');
+  const sorted = Object.entries(byComp).sort((a,b)=>(avg(b[1].is)??-1)-(avg(a[1].is)??-1));
+  document.getElementById('auction-table-body').innerHTML = sorted.map(([comp,v],i) => `<tr>
+    <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:6px"></span>${comp}</td>
+    <td>${groupBadge(v.camp)}</td>
+    <td class="num">${barHtml(avg(v.is), COLORS[i%COLORS.length])}</td>
+    <td class="num">${fmt(avg(v.olap))}</td>
+    <td class="num">${fmt(avg(v.out))}</td>
+    <td class="num">${fmt(avg(v.top))}</td>
+    <td class="num">${fmt(avg(v.abs))}</td>
+  </tr>`).join('');
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
