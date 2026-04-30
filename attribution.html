@@ -15,7 +15,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 header{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 28px;display:flex;align-items:center;gap:12px}
 .logo{width:36px;height:36px;background:#f5a623;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:12px;flex-shrink:0}
 .ht h1{font-size:16px;font-weight:700;color:#0f172a}
-.ht p{font-size:11px;color:#94a3b8;margin-top:1px}
+.ht p{font-size:11px;color:#94a3b8;margin-top:2px;letter-spacing:.01em}
 
 .controls{background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 28px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
 .ctrl-group{display:flex;align-items:center;gap:8px}
@@ -26,10 +26,6 @@ input[type=date],select{background:#fff;border:1px solid #cbd5e1;border-radius:6
 input[type=date]:focus,select:focus{border-color:#f5a623}
 select{min-width:160px;max-width:280px}
 
-.summary-bar{background:#fff;border-bottom:1px solid #e2e8f0;padding:8px 28px;display:flex;gap:28px;align-items:center;flex-wrap:wrap}
-.sb-item{display:flex;flex-direction:column;gap:2px}
-.sb-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em}
-.sb-val{font-size:14px;font-weight:700;color:#0f172a}
 
 .main{padding:20px 28px;display:flex;flex-direction:column;gap:20px}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -66,6 +62,17 @@ tbody td{padding:9px 12px;vertical-align:middle}
 .note{font-size:10px;color:#94a3b8;margin-top:10px;padding-top:8px;border-top:1px solid #f1f5f9}
 
 .pltv-zero{color:#94a3b8;font-style:italic}
+
+/* ── INFO BOX ────────────────────────────────────────────────────────────── */
+.info-box{background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:18px 22px}
+.info-box-title{font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.info-box-title::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#f5a623;flex-shrink:0}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px 28px}
+.info-row{display:flex;flex-direction:column;gap:2px;padding:6px 0;border-bottom:1px solid #fde68a}
+.info-row:last-child{border-bottom:none}
+.info-method{font-size:12px;font-weight:700;color:#78350f}
+.info-source{font-size:11px;color:#92400e;margin-top:1px}
+.info-desc{font-size:11px;color:#b45309;line-height:1.5;margin-top:3px}
 </style>
 </head>
 <body>
@@ -74,7 +81,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
   <div class="logo">CU</div>
   <div class="ht">
     <h1>Attribution Comparison</h1>
-    <p>Last Touch · MTA Attributed · MTA Conversions · Current Conversion Action — Trials, pLTV, CAC, ROAS</p>
+    <p id="ht-sub">—</p>
   </div>
 </header>
 
@@ -104,16 +111,45 @@ tbody td{padding:9px 12px;vertical-align:middle}
   </div>
 </div>
 
-<div class="summary-bar" id="summary-bar">
-  <div class="sb-item"><div class="sb-label">Period</div><div class="sb-val" id="sb-period">—</div></div>
-  <div class="sb-item"><div class="sb-label">Spend</div><div class="sb-val" id="sb-spend">—</div></div>
-  <div class="sb-item"><div class="sb-label">LT Trials</div><div class="sb-val" id="sb-lt-trials">—</div></div>
-  <div class="sb-item"><div class="sb-label">MTA Attributed</div><div class="sb-val" id="sb-mta-trials">—</div></div>
-  <div class="sb-item"><div class="sb-label">Sub Purchase</div><div class="sb-val" id="sb-sub-trials">—</div></div>
-  <div class="sb-item"><div class="sb-label">LT CAC</div><div class="sb-val" id="sb-lt-cac">—</div></div>
-</div>
-
 <div class="main">
+
+  <!-- Info box -->
+  <div class="info-box">
+    <div class="info-box-title">Attribution Methods</div>
+    <div class="info-grid">
+      <div class="info-row">
+        <div class="info-method">LT Trials / pLTV</div>
+        <div class="info-source">Source: Snowflake · fact_subscriptions_channels</div>
+        <div class="info-desc">Internal last-click model. Each trial is attributed 100% to the last Google Ads click before subscription. New customers only, no resurrections, Google sub-channel.</div>
+      </div>
+      <div class="info-row">
+        <div class="info-method">MTA Attributed Trials</div>
+        <div class="info-source">Source: Daily CSV exports · External IHC model</div>
+        <div class="info-desc">Fractional attribution built by the external agency. Credit is distributed across all touchpoints in the user path using the IHC model. Reported by UTM campaign, conversion date.</div>
+      </div>
+      <div class="info-row">
+        <div class="info-method">MTA Conv (conv time) / MTA Conv Value (conv time)</div>
+        <div class="info-source">Source: Google Ads · IHC_Trial_pLTV conversion · by conv. time</div>
+        <div class="info-desc">IHC model imported into Google Ads as a custom conversion. Reported by the date the trial occurred (conversion date). Conv value = predicted pLTV assigned by the IHC model.</div>
+      </div>
+      <div class="info-row">
+        <div class="info-method">MTA Conv (click time) / MTA Conv Value (click time)</div>
+        <div class="info-source">Source: Google Ads · IHC_Trial_pLTV conversion · click time</div>
+        <div class="info-desc">Same IHC_Trial_pLTV conversion, reported by the date the ad was clicked. Click-time is how Google Ads attributes performance to campaigns for bidding purposes.</div>
+      </div>
+      <div class="info-row">
+        <div class="info-method">Current Conv (conv time) / Conv Value (conv time)</div>
+        <div class="info-source">Source: Google Ads · Subscription Purchase · by conv. time</div>
+        <div class="info-desc">The current Google Ads conversion action used for campaign optimization. Reported by conversion date. This is CookUnity's active bidding signal.</div>
+      </div>
+      <div class="info-row">
+        <div class="info-method">Current Conv (click time) / Conv Value (click time) ← baseline</div>
+        <div class="info-source">Source: Google Ads · Subscription Purchase · click time</div>
+        <div class="info-desc">Same Subscription Purchase action, reported by click date. This is the standard Google Ads UI view and serves as the delta baseline for all Trials and pLTV comparisons.</div>
+      </div>
+    </div>
+  </div>
+
   <div class="two-col">
     <div class="card">
       <div class="card-header">Trials</div>
@@ -247,14 +283,15 @@ function render() {
   const a = getAgg();
   const spend = a.spend;
 
-  // Summary bar
-  $('sb-period').textContent = $('dt-start').value + ' → ' + $('dt-end').value;
-  $('sb-spend').textContent  = fmtD(spend);
-  $('sb-lt-trials').textContent  = fmtN(a.lt_trials);
-  $('sb-mta-trials').textContent = fmtF(a.mta_attr);
-  $('sb-sub-trials').textContent = fmtF(a.sub_clt_trials);
   const ltCAC = a.lt_trials > 0 ? spend / a.lt_trials : null;
-  $('sb-lt-cac').textContent = fmtCAC(ltCAC);
+  $('ht-sub').textContent = [
+    $('dt-start').value + ' → ' + $('dt-end').value,
+    'Spend ' + fmtD(spend),
+    'LT Trials ' + fmtN(a.lt_trials),
+    'MTA Attr. ' + fmtF(a.mta_attr),
+    'Sub Purchase ' + fmtF(a.sub_clt_trials),
+    'LT CAC ' + fmtCAC(ltCAC),
+  ].join('  ·  ');
 
   // ── Table 1: Trials ───────────────────────────────────────────────────
   const trialsBase = a.sub_clt_trials;
