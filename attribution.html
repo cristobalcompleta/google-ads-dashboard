@@ -17,7 +17,7 @@ header{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 28px;display
 .ht h1{font-size:16px;font-weight:700;color:#0f172a}
 .ht p{font-size:11px;color:#94a3b8;margin-top:2px;letter-spacing:.01em}
 
-.controls{background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 28px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.controls{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:12px 20px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
 .ctrl-group{display:flex;align-items:center;gap:8px}
 .ctrl-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
 .ctrl-sep{width:1px;height:24px;background:#e2e8f0;flex-shrink:0}
@@ -85,32 +85,6 @@ tbody td{padding:9px 12px;vertical-align:middle}
   </div>
 </header>
 
-<div class="controls">
-  <div class="ctrl-group">
-    <span class="ctrl-label">Date Range</span>
-    <input type="date" id="dt-start">
-    <span style="font-size:11px;color:#94a3b8">→</span>
-    <input type="date" id="dt-end">
-  </div>
-  <div class="ctrl-sep"></div>
-  <div class="ctrl-group">
-    <span class="ctrl-label">Channel</span>
-    <select id="sel-channel">
-      <option value="All">All Channels</option>
-      <option value="Brand">Brand</option>
-      <option value="NonBrand">NonBrand</option>
-      <option value="Shopping">Shopping</option>
-    </select>
-  </div>
-  <div class="ctrl-sep"></div>
-  <div class="ctrl-group">
-    <span class="ctrl-label">Campaign</span>
-    <select id="sel-campaign">
-      <option value="All">All Campaigns</option>
-    </select>
-  </div>
-</div>
-
 <div class="main">
 
   <!-- Info box -->
@@ -147,6 +121,33 @@ tbody td{padding:9px 12px;vertical-align:middle}
         <div class="info-source">Source: Google Ads · Subscription Purchase · click time</div>
         <div class="info-desc">Same Subscription Purchase action, reported by click date. This is the standard Google Ads UI view and serves as the delta baseline for all Trials and pLTV comparisons.</div>
       </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Date Range</span>
+      <input type="date" id="dt-start">
+      <span style="font-size:11px;color:#94a3b8">→</span>
+      <input type="date" id="dt-end">
+    </div>
+    <div class="ctrl-sep"></div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Channel</span>
+      <select id="sel-channel">
+        <option value="All">All Channels</option>
+        <option value="Brand">Brand</option>
+        <option value="NonBrand">NonBrand</option>
+        <option value="Shopping">Shopping</option>
+      </select>
+    </div>
+    <div class="ctrl-sep"></div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Campaign</span>
+      <select id="sel-campaign">
+        <option value="All">All Campaigns</option>
+      </select>
     </div>
   </div>
 
