@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CookUnity — Impression Share</title>
+<script>
+(function(){var p=sessionStorage.getItem('cu_dash_auth');if(p!=='Kx9#mP2$vL7nQw4jRt6yBc8eF'){var e=prompt('Enter password:');if(e!=='Kx9#mP2$vL7nQw4jRt6yBc8eF'){document.documentElement.innerHTML='<h2 style="font-family:sans-serif;margin:40px">Access denied.</h2>';throw'bad pw';}sessionStorage.setItem('cu_dash_auth','Kx9#mP2$vL7nQw4jRt6yBc8eF');}})();
+</script>
+<link rel="icon" type="image/png" href="logo.png">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="is-data.js"></script>
+<script src="auction-data.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;font-size:13px}
+header{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 28px;display:flex;align-items:center;gap:12px}
+.logo{width:36px;height:36px;background:#f5a623;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:12px;flex-shrink:0}
+.ht h1{font-size:16px;font-weight:700;color:#0f172a}
+.ht p{font-size:11px;color:#94a3b8;margin-top:1px}
+.tab-nav{background:#fff;border-bottom:2px solid #e2e8f0;padding:0 28px;display:flex;gap:0}
+.tab-btn{background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 18px;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;transition:color .15s,border-color .15s}
+.tab-btn:hover{color:#334155}
+.tab-btn.active{color:#f5a623;border-bottom-color:#f5a623}
+.controls{background:#fff;border-bottom:1px solid #e2e8f0;padding:8px 28px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.ctrl-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.ctrl-group{display:flex;align-items:center;gap:8px}
+.ctrl-sep{width:1px;height:24px;background:#e2e8f0;flex-shrink:0}
+select{border:1px solid #cbd5e1;border-radius:6px;padding:4px 10px;font-size:12px;color:#334155;background:#fff;cursor:pointer;outline:none}
+select:hover{border-color:#94a3b8}
+select:focus{border-color:#f5a623}
+.date-input{border:1px solid #cbd5e1;border-radius:5px;padding:4px 8px;font-size:12px;color:#1e293b;background:#fff;outline:none}
+.date-input:focus{border-color:#f5a623}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.main{padding:20px 28px;display:flex;flex-direction:column;gap:24px}
+.section{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px 24px}
+.section-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:2px}
+.section-sub{font-size:11px;color:#94a3b8;margin-bottom:18px}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.chart-wrap{position:relative}
+.chart-label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+canvas{max-height:300px}
+table{width:100%;border-collapse:collapse}
+thead tr{background:#f8fafc}
+th{padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;border-bottom:1px solid #e2e8f0}
+th.num{text-align:right}
+td{padding:9px 16px;font-size:12px;color:#1e293b;border-bottom:1px solid #f1f5f9;white-space:nowrap}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fafc}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px}
+.badge-brand{background:#dbeafe;color:#1d4ed8}
+.badge-nonbrand{background:#fef3c7;color:#b45309}
+.badge-shopping{background:#d1fae5;color:#065f46}
+.is-bar-wrap{display:flex;align-items:center;gap:8px;width:100%}
+.is-bar-bg{flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;min-width:60px}
+.is-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.is-val{font-size:11px;font-variant-numeric:tabular-nums;color:#334155;min-width:36px;text-align:right}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.kpi-card{background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:16px 20px}
+.kpi-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.kpi-val{font-size:24px;font-weight:800;color:#0f172a;line-height:1.1}
+.kpi-sub{font-size:11px;color:#64748b;margin-top:4px}
+.legend-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-line{width:18px;height:3px;border-radius:2px;flex-shrink:0}
+.empty-state{padding:48px;text-align:center;color:#94a3b8;font-size:13px}
+.stacked-legend{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap}
+.stacked-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b}
+.stacked-legend-box{width:14px;height:10px;border-radius:2px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">IS</div>
+  <div class="ht">
+    <h1>Impression Share Dashboard</h1>
+    <p>CookUnity — Google Ads · Search &amp; Shopping</p>
+  </div>
+</header>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('is',this)">Impression Share</button>
+  <button class="tab-btn" onclick="switchTab('auction',this)">Auction Insights</button>
+</div>
+
+<!-- ── SHARED CONTROLS ──────────────────────────────────────────────────────── -->
+<div class="controls">
+  <div class="ctrl-group">
+    <span class="ctrl-label">Channel</span>
+    <select id="ctrl-type" onchange="render()">
+      <option value="all">All</option>
+      <option value="Brand">Brand Search</option>
+      <option value="NonBrand">NonBrand Search</option>
+      <option value="BrandShopping">Brand Shopping</option>
+      <option value="NonBrandShopping">NonBrand Shopping</option>
+    </select>
+  </div>
+  <div class="ctrl-sep"></div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Campaign</span>
+    <select id="ctrl-camp" onchange="render()">
+      <option value="all">All campaigns</option>
+    </select>
+  </div>
+  <div class="ctrl-sep"></div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">From</span>
+    <input type="date" id="ctrl-start" class="date-input" onchange="render()">
+    <span style="font-size:11px;color:#94a3b8">to</span>
+    <input type="date" id="ctrl-end" class="date-input" onchange="render()">
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 1: IMPRESSION SHARE                                                   -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-is" class="tab-pane active">
+<div class="main">
+
+  <!-- KPI cards -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Search IS</div>
+      <div class="kpi-val" id="kpi-is">—</div>
+      <div class="kpi-sub">% of eligible impressions captured</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Lost IS (Budget)</div>
+      <div class="kpi-val" id="kpi-budget">—</div>
+      <div class="kpi-sub">Lost due to budget constraints</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Lost IS (Rank)</div>
+      <div class="kpi-val" id="kpi-rank">—</div>
+      <div class="kpi-sub">Lost due to Ad Rank</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Exact Match IS</div>
+      <div class="kpi-val" id="kpi-exact">—</div>
+      <div class="kpi-sub">IS for exact-match eligible queries</div>
+    </div>
+  </div>
+
+  <!-- IS over time -->
+  <div class="section">
+    <div class="section-title">Search Impression Share Over Time</div>
+    <div class="section-sub">Daily IS % — captured, lost to budget, lost to rank</div>
+    <div class="stacked-legend">
+      <div class="stacked-legend-item"><div class="stacked-legend-box" style="background:#22c55e"></div>Captured IS</div>
+      <div class="stacked-legend-item"><div class="stacked-legend-box" style="background:#f97316"></div>Lost — Budget</div>
+      <div class="stacked-legend-item"><div class="stacked-legend-box" style="background:#ef4444"></div>Lost — Rank</div>
+    </div>
+    <canvas id="chart-is-stacked"></canvas>
+  </div>
+
+  <!-- Exact Match IS -->
+  <div class="section">
+    <div class="section-title">Exact Match IS Over Time</div>
+    <div class="section-sub">How well you capture impressions for exact-match eligible searches</div>
+    <canvas id="chart-exact"></canvas>
+  </div>
+
+  <!-- Per-campaign breakdown table -->
+  <div class="section">
+    <div class="section-title">Campaign Breakdown</div>
+    <div class="section-sub">Average IS metrics over selected period, per campaign</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Campaign</th>
+          <th>Channel</th>
+          <th class="num">Search IS</th>
+          <th class="num">Lost — Budget</th>
+          <th class="num">Lost — Rank</th>
+          <th class="num">Exact Match IS</th>
+        </tr>
+      </thead>
+      <tbody id="is-table-body"></tbody>
+    </table>
+  </div>
+
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 2: AUCTION INSIGHTS                                                   -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-auction" class="tab-pane">
+<div class="main">
+
+  <!-- Competitor IS over time -->
+  <div class="section">
+    <div class="section-title">Impression Share by Competitor Over Time</div>
+    <div class="section-sub">Your IS vs. competitors — daily average across selected campaigns</div>
+    <div class="legend-row" id="auction-legend"></div>
+    <canvas id="chart-auction-is"></canvas>
+  </div>
+
+  <!-- Outranking share over time -->
+  <div class="section">
+    <div class="section-title">Outranking Share Over Time</div>
+    <div class="section-sub">% of auctions where your ad ranked higher than each competitor (or showed when theirs did not)</div>
+    <div class="legend-row" id="outranking-legend"></div>
+    <canvas id="chart-outranking"></canvas>
+  </div>
+
+  <!-- Competitor summary table -->
+  <div class="section">
+    <div class="section-title">Competitor Summary</div>
+    <div class="section-sub">Average metrics over selected period</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Competitor</th>
+          <th class="num">Their IS</th>
+          <th class="num">Overlap Rate</th>
+          <th class="num">Outranking Share</th>
+          <th class="num">Top of Page %</th>
+          <th class="num">Abs. Top %</th>
+        </tr>
+      </thead>
+      <tbody id="auction-table-body"></tbody>
+    </table>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let activeTab = 'is';
+let chartIsStacked = null;
+let chartExact     = null;
+let chartAuctionIS = null;
+let chartOutranking= null;
+
+const COLORS = [
+  '#f5a623','#3b82f6','#22c55e','#ef4444','#a855f7',
+  '#06b6d4','#f97316','#84cc16','#ec4899','#14b8a6',
+  '#6366f1','#f59e0b','#10b981','#8b5cf6','#0ea5e9',
+];
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function init() {
+  // Populate date range from data
+  const allDates = [...new Set(IS_DATA.map(r => r.d))].sort();
+  if (allDates.length) {
+    document.getElementById('ctrl-start').value = allDates[0];
+    document.getElementById('ctrl-end').value   = allDates[allDates.length - 1];
+  }
+
+  // Populate campaign dropdown from IS_DATA (active campaigns only)
+  const camps = [...new Set(IS_DATA.map(r => r.camp))].sort();
+  const sel = document.getElementById('ctrl-camp');
+  camps.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c.replace(/_/g, ' ');
+    sel.appendChild(opt);
+  });
+
+  render();
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  render();
+}
+
+// ── Filtering helpers ─────────────────────────────────────────────────────────
+function getFilters() {
+  return {
+    type:  document.getElementById('ctrl-type').value,
+    camp:  document.getElementById('ctrl-camp').value,
+    start: document.getElementById('ctrl-start').value,
+    end:   document.getElementById('ctrl-end').value,
+  };
+}
+
+function filterIS(f) {
+  return IS_DATA.filter(r => {
+    if (f.type !== 'all' && r.t !== f.type) return false;
+    if (f.camp !== 'all' && r.camp !== f.camp) return false;
+    if (f.start && r.d < f.start) return false;
+    if (f.end   && r.d > f.end)   return false;
+    return true;
+  });
+}
+
+function filterAuction(f) {
+  return AUCTION_DATA.filter(r => {
+    if (f.type !== 'all' && r.t !== f.type) return false;
+    if (f.camp !== 'all' && r.camp !== f.camp) return false;
+    if (f.start && r.d < f.start) return false;
+    if (f.end   && r.d > f.end)   return false;
+    return true;
+  });
+}
+
+// ── Aggregation helpers ───────────────────────────────────────────────────────
+function groupByDate(rows, field) {
+  const map = {};
+  rows.forEach(r => {
+    if (r[field] == null) return;
+    if (!map[r.d]) map[r.d] = { sum: 0, n: 0 };
+    map[r.d].sum += r[field];
+    map[r.d].n++;
+  });
+  return map;
+}
+
+function avgByDate(rows, field) {
+  const g = groupByDate(rows, field);
+  return Object.fromEntries(Object.entries(g).map(([d, v]) => [d, v.n ? v.sum / v.n : null]));
+}
+
+function overallAvg(rows, field) {
+  const vals = rows.map(r => r[field]).filter(v => v != null);
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+}
+
+function fmt(v, decimals = 1) {
+  if (v == null) return '—';
+  return (v * 100).toFixed(decimals) + '%';
+}
+
+function barHtml(v, color) {
+  if (v == null) return '<span style="color:#94a3b8">—</span>';
+  const pct = Math.min(100, Math.round(v * 100));
+  return `<div class="is-bar-wrap"><div class="is-bar-bg"><div class="is-bar-fill" style="width:${pct}%;background:${color}"></div></div><span class="is-val">${pct}%</span></div>`;
+}
+
+function typeBadge(t) {
+  if (t === 'Brand')            return '<span class="badge badge-brand">Brand</span>';
+  if (t === 'NonBrand')         return '<span class="badge badge-nonbrand">NonBrand</span>';
+  if (t === 'BrandShopping')    return '<span class="badge badge-brand">Brand Shop</span>';
+  if (t === 'NonBrandShopping') return '<span class="badge badge-shopping">NB Shop</span>';
+  return t;
+}
+
+// ── Chart helpers ─────────────────────────────────────────────────────────────
+function destroyChart(ref) { if (ref) { ref.destroy(); } return null; }
+
+function makeLineChart(id, labels, datasets, opts = {}) {
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y != null ? (ctx.parsed.y * 100).toFixed(1) + '%' : '—'}`,
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { maxTicksLimit: 20, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+        y: {
+          ticks: { callback: v => (v * 100).toFixed(0) + '%', font: { size: 10 } },
+          grid: { color: '#f1f5f9' },
+          min: 0, max: 1,
+          ...( opts.yMax ? { max: opts.yMax } : {} ),
+        }
+      }
+    }
+  });
+}
+
+function makeStackedChart(id, labels, datasets) {
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y != null ? (ctx.parsed.y * 100).toFixed(1) + '%' : '—'}`,
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, ticks: { maxTicksLimit: 20, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+        y: { stacked: true, ticks: { callback: v => (v * 100).toFixed(0) + '%', font: { size: 10 } }, grid: { color: '#f1f5f9' }, min: 0, max: 1 }
+      }
+    }
+  });
+}
+
+// ── Main render ───────────────────────────────────────────────────────────────
+function render() {
+  if (activeTab === 'is') renderIS();
+  else renderAuction();
+}
+
+function renderIS() {
+  const f    = getFilters();
+  const rows = filterIS(f);
+
+  // KPIs
+  const avgIS     = overallAvg(rows, 'search_is');
+  const avgBudget = overallAvg(rows, 'lost_budget');
+  const avgRank   = overallAvg(rows, 'lost_rank');
+  const avgExact  = overallAvg(rows, 'exact_is');
+  document.getElementById('kpi-is').textContent     = fmt(avgIS);
+  document.getElementById('kpi-budget').textContent  = fmt(avgBudget);
+  document.getElementById('kpi-rank').textContent    = fmt(avgRank);
+  document.getElementById('kpi-exact').textContent   = fmt(avgExact);
+
+  // Time series — stacked bar
+  const dates   = [...new Set(rows.map(r => r.d))].sort();
+  const byDateIS     = avgByDate(rows, 'search_is');
+  const byDateBudget = avgByDate(rows, 'lost_budget');
+  const byDateRank   = avgByDate(rows, 'lost_rank');
+  const byDateExact  = avgByDate(rows, 'exact_is');
+
+  chartIsStacked = destroyChart(chartIsStacked);
+  chartIsStacked = makeStackedChart('chart-is-stacked', dates, [
+    { label: 'Captured IS',    data: dates.map(d => byDateIS[d] ?? null),     backgroundColor: '#22c55e', borderRadius: 2 },
+    { label: 'Lost — Budget',  data: dates.map(d => byDateBudget[d] ?? null), backgroundColor: '#f97316', borderRadius: 2 },
+    { label: 'Lost — Rank',    data: dates.map(d => byDateRank[d] ?? null),   backgroundColor: '#ef4444', borderRadius: 2 },
+  ]);
+
+  chartExact = destroyChart(chartExact);
+  chartExact = makeLineChart('chart-exact', dates, [{
+    label: 'Exact Match IS',
+    data: dates.map(d => byDateExact[d] ?? null),
+    borderColor: '#3b82f6',
+    backgroundColor: 'rgba(59,130,246,.08)',
+    fill: true,
+    tension: 0.3,
+    pointRadius: 2,
+  }]);
+
+  // Campaign breakdown table
+  const byCamp = {};
+  rows.forEach(r => {
+    if (!byCamp[r.camp]) byCamp[r.camp] = { t: r.t, is: [], budget: [], rank: [], exact: [] };
+    const e = byCamp[r.camp];
+    if (r.search_is   != null) e.is.push(r.search_is);
+    if (r.lost_budget != null) e.budget.push(r.lost_budget);
+    if (r.lost_rank   != null) e.rank.push(r.lost_rank);
+    if (r.exact_is    != null) e.exact.push(r.exact_is);
+  });
+
+  const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+  const tbody = document.getElementById('is-table-body');
+  const campEntries = Object.entries(byCamp).sort((a,b) => {
+    const ai = avg(a[1].is) ?? -1, bi = avg(b[1].is) ?? -1;
+    return bi - ai;
+  });
+
+  if (!campEntries.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No data for selected filters</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = campEntries.map(([camp, v]) => `
+    <tr>
+      <td style="max-width:340px;overflow:hidden;text-overflow:ellipsis" title="${camp}">${camp.replace(/_/g,' ')}</td>
+      <td>${typeBadge(v.t)}</td>
+      <td class="num">${barHtml(avg(v.is),     '#22c55e')}</td>
+      <td class="num">${barHtml(avg(v.budget),  '#f97316')}</td>
+      <td class="num">${barHtml(avg(v.rank),    '#ef4444')}</td>
+      <td class="num">${barHtml(avg(v.exact),   '#3b82f6')}</td>
+    </tr>
+  `).join('');
+}
+
+function renderAuction() {
+  const f    = getFilters();
+  const rows = filterAuction(f);
+
+  if (!rows.length) {
+    document.getElementById('auction-legend').innerHTML   = '';
+    document.getElementById('outranking-legend').innerHTML= '';
+    document.getElementById('auction-table-body').innerHTML =
+      '<tr><td colspan="6" class="empty-state">No data for selected filters</td></tr>';
+    chartAuctionIS  = destroyChart(chartAuctionIS);
+    chartOutranking = destroyChart(chartOutranking);
+    return;
+  }
+
+  const dates       = [...new Set(rows.map(r => r.d))].sort();
+  const competitors = [...new Set(rows.map(r => r.competitor))].sort();
+
+  // Group by competitor + date
+  const byCompDate = {};
+  rows.forEach(r => {
+    if (!byCompDate[r.competitor]) byCompDate[r.competitor] = {};
+    const key = r.d;
+    if (!byCompDate[r.competitor][key]) byCompDate[r.competitor][key] = { isSum:0, isN:0, outSum:0, outN:0, olapSum:0, olapN:0, topSum:0, topN:0, absSum:0, absN:0 };
+    const e = byCompDate[r.competitor][key];
+    if (r.comp_is    != null) { e.isSum   += r.comp_is;    e.isN++;   }
+    if (r.outranking != null) { e.outSum  += r.outranking; e.outN++;  }
+    if (r.overlap    != null) { e.olapSum += r.overlap;    e.olapN++; }
+    if (r.top_page   != null) { e.topSum  += r.top_page;   e.topN++;  }
+    if (r.abs_top    != null) { e.absSum  += r.abs_top;    e.absN++;  }
+  });
+
+  const dsIS = competitors.map((comp, i) => ({
+    label: comp,
+    data: dates.map(d => {
+      const e = byCompDate[comp]?.[d];
+      return e && e.isN ? e.isSum / e.isN : null;
+    }),
+    borderColor: COLORS[i % COLORS.length],
+    backgroundColor: 'transparent',
+    tension: 0.3,
+    pointRadius: 2,
+    borderWidth: 2,
+  }));
+
+  const dsOut = competitors.map((comp, i) => ({
+    label: comp,
+    data: dates.map(d => {
+      const e = byCompDate[comp]?.[d];
+      return e && e.outN ? e.outSum / e.outN : null;
+    }),
+    borderColor: COLORS[i % COLORS.length],
+    backgroundColor: 'transparent',
+    tension: 0.3,
+    pointRadius: 2,
+    borderWidth: 2,
+  }));
+
+  chartAuctionIS  = destroyChart(chartAuctionIS);
+  chartOutranking = destroyChart(chartOutranking);
+  chartAuctionIS  = makeLineChart('chart-auction-is',  dates, dsIS);
+  chartOutranking = makeLineChart('chart-outranking',   dates, dsOut);
+
+  // Legends
+  const makeLegend = (id) => {
+    document.getElementById(id).innerHTML = competitors.map((c, i) =>
+      `<div class="legend-item"><div class="legend-line" style="background:${COLORS[i%COLORS.length]}"></div>${c}</div>`
+    ).join('');
+  };
+  makeLegend('auction-legend');
+  makeLegend('outranking-legend');
+
+  // Summary table — overall averages per competitor
+  const byComp = {};
+  rows.forEach(r => {
+    if (!byComp[r.competitor]) byComp[r.competitor] = { is:[], out:[], olap:[], top:[], abs:[] };
+    const e = byComp[r.competitor];
+    if (r.comp_is    != null) e.is.push(r.comp_is);
+    if (r.outranking != null) e.out.push(r.outranking);
+    if (r.overlap    != null) e.olap.push(r.overlap);
+    if (r.top_page   != null) e.top.push(r.top_page);
+    if (r.abs_top    != null) e.abs.push(r.abs_top);
+  });
+
+  const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+  const sorted = Object.entries(byComp).sort((a,b) => (avg(b[1].is)??-1) - (avg(a[1].is)??-1));
+
+  document.getElementById('auction-table-body').innerHTML = sorted.map(([comp, v], i) => `
+    <tr>
+      <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:6px"></span>${comp}</td>
+      <td class="num">${barHtml(avg(v.is),   COLORS[i%COLORS.length])}</td>
+      <td class="num">${fmt(avg(v.olap))}</td>
+      <td class="num">${fmt(avg(v.out))}</td>
+      <td class="num">${fmt(avg(v.top))}</td>
+      <td class="num">${fmt(avg(v.abs))}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

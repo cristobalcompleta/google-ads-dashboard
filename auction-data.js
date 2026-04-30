@@ -1,0 +1,1 @@
+const AUCTION_DATA=[];
