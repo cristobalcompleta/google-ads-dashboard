@@ -63,7 +63,7 @@ tr:hover td{background:#f8fafc}
 .ms-trigger{display:flex;align-items:center;gap:6px;border:1px solid #cbd5e1;border-radius:6px;padding:5px 10px;font-size:12px;color:#334155;background:#fff;cursor:pointer;user-select:none;min-width:150px;white-space:nowrap}
 .ms-trigger:hover{border-color:#94a3b8}
 .ms-caret{font-size:9px;color:#94a3b8;margin-left:auto;flex-shrink:0}
-.ms-panel{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.10);padding:4px 0;z-index:200;min-width:200px;display:none}
+.ms-panel{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.10);padding:4px 0;z-index:200;min-width:210px;max-height:320px;overflow-y:auto;display:none}
 .ms-panel.is-open{display:block}
 .ms-option{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;font-size:12px;color:#334155;user-select:none}
 .ms-option:hover{background:#f8fafc}
@@ -71,19 +71,20 @@ tr:hover td{background:#f8fafc}
 .ms-divider{height:1px;background:#f1f5f9;margin:4px 0}
 
 /* ── SUMMARY TAB ── */
-.p0-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.p0-kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
 .p0-kpi-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px 24px}
 .p0-kpi-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
 .p0-kpi-value{font-size:28px;font-weight:800;color:#0f172a;margin-bottom:4px;line-height:1.1}
 .p0-kpi-sub{font-size:11px;color:#64748b}
-.p0-opp-card{background:#1e293b;border-radius:12px;border:1px solid #334155;padding:22px 28px;display:flex;align-items:center;gap:40px}
-.p0-opp-main{}
-.p0-opp-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-bottom:6px}
-.p0-opp-title{font-size:30px;font-weight:800;color:#f5a623;line-height:1.1}
-.p0-opp-body{font-size:11px;color:#94a3b8;margin-top:6px;line-height:1.6}
-.p0-opp-stats{display:flex;gap:28px;margin-left:auto;flex-shrink:0}
-.p0-opp-stat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#475569;margin-bottom:4px}
-.p0-opp-stat-val{font-size:22px;font-weight:800;line-height:1}
+/* Opportunity card — dark, first in grid */
+.p0-opp-kpi{background:#1e293b;border-color:#334155}
+.p0-opp-kpi .p0-kpi-label{color:#64748b}
+.p0-opp-kpi .p0-kpi-value{color:#f5a623}
+.p0-opp-kpi .p0-kpi-sub{color:#475569}
+.p0-opp-breakdown{display:flex;gap:14px;margin-top:10px}
+.p0-opp-breakdown-item{}
+.p0-opp-breakdown-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#475569;margin-bottom:2px}
+.p0-opp-breakdown-val{font-size:15px;font-weight:800;line-height:1}
 .charts-2col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
 </style>
 </head>
@@ -106,7 +107,7 @@ tr:hover td{background:#f8fafc}
 <!-- ── CONTROLS ───────────────────────────────────────────────────────────────── -->
 <div class="controls">
 
-  <!-- IS / Summary filters (channel + campaign) -->
+  <!-- IS / Summary filters -->
   <div id="is-filters" style="display:flex;align-items:center;gap:16px">
     <div class="ctrl-group">
       <span class="ctrl-label">Channel</span>
@@ -141,7 +142,7 @@ tr:hover td{background:#f8fafc}
     <div class="ctrl-sep"></div>
   </div>
 
-  <!-- Auction filters (campaign only: Generic / BrandCore) -->
+  <!-- Auction filters -->
   <div id="auction-filters" style="display:none;align-items:center;gap:16px">
     <div class="ctrl-group">
       <span class="ctrl-label">Campaign</span>
@@ -155,6 +156,19 @@ tr:hover td{background:#f8fafc}
           <div class="ms-divider"></div>
           <label class="ms-option"><input type="checkbox" value="nonbrand_search_generic" onchange="onMsChange('acamp',this)"> Generic</label>
           <label class="ms-option"><input type="checkbox" value="brand_search_brandcore" onchange="onMsChange('acamp',this)"> BrandCore</label>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-sep"></div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Competitor</span>
+      <div class="ms-wrap" id="ms-comp-wrap">
+        <div class="ms-trigger" onclick="toggleMs('comp',event)">
+          <span id="ms-comp-text">All Competitors</span>
+          <span class="ms-caret">&#9662;</span>
+        </div>
+        <div class="ms-panel" id="ms-comp-panel">
+          <!-- populated by JS -->
         </div>
       </div>
     </div>
@@ -177,7 +191,23 @@ tr:hover td{background:#f8fafc}
 <div id="tab-summary" class="tab-pane active">
 <div class="main">
 
+  <!-- 5-col KPI grid: Opportunity | Avg IS | Lost Budget | Lost Rank | Exact IS -->
   <div class="p0-kpi-grid">
+    <div class="p0-kpi-card p0-opp-kpi">
+      <div class="p0-kpi-label">Opportunity</div>
+      <div class="p0-kpi-value" id="s-opp-pct">—</div>
+      <div class="p0-kpi-sub">IS not captured</div>
+      <div class="p0-opp-breakdown">
+        <div class="p0-opp-breakdown-item">
+          <div class="p0-opp-breakdown-label">Budget</div>
+          <div class="p0-opp-breakdown-val" id="s-opp-budget" style="color:#f97316">—</div>
+        </div>
+        <div class="p0-opp-breakdown-item">
+          <div class="p0-opp-breakdown-label">Rank</div>
+          <div class="p0-opp-breakdown-val" id="s-opp-rank" style="color:#ef4444">—</div>
+        </div>
+      </div>
+    </div>
     <div class="p0-kpi-card">
       <div class="p0-kpi-label">Avg Search IS</div>
       <div class="p0-kpi-value" id="s-kpi-is">—</div>
@@ -197,24 +227,6 @@ tr:hover td{background:#f8fafc}
       <div class="p0-kpi-label">Avg Exact Match IS</div>
       <div class="p0-kpi-value" id="s-kpi-exact">—</div>
       <div class="p0-kpi-sub">Exact-match eligible queries</div>
-    </div>
-  </div>
-
-  <div class="p0-opp-card">
-    <div class="p0-opp-main">
-      <div class="p0-opp-label">Opportunity</div>
-      <div class="p0-opp-title" id="s-opp-title">—</div>
-      <div class="p0-opp-body" id="s-opp-body">IS not captured across selected campaigns &amp; period</div>
-    </div>
-    <div class="p0-opp-stats">
-      <div>
-        <div class="p0-opp-stat-label">Lost to Budget</div>
-        <div class="p0-opp-stat-val" id="s-opp-budget" style="color:#f97316">—</div>
-      </div>
-      <div>
-        <div class="p0-opp-stat-label">Lost to Rank</div>
-        <div class="p0-opp-stat-val" id="s-opp-rank" style="color:#ef4444">—</div>
-      </div>
     </div>
   </div>
 
@@ -342,43 +354,43 @@ const TYPE_LABELS = {
   Brand:'Brand Search', NonBrand:'NonBrand Search',
   BrandShopping:'Brand Shopping', NonBrandShopping:'NB Shopping',
 };
-
 const ACAMP_LABELS = {
   'nonbrand_search_generic':'Generic',
   'brand_search_brandcore':'BrandCore',
 };
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let activeTab = 'summary';
-let charts    = {};
+let activeTab   = 'summary';
+let charts      = {};
 let campTypeMap = {};
 
-// Multi-select state
 const MS = {
   type:  new Set(['all']),
   camp:  new Set(['all']),
   acamp: new Set(['all']),
+  comp:  new Set(['all']),
 };
 
-// ── Multi-select logic ────────────────────────────────────────────────────────
+// ── Multi-select ──────────────────────────────────────────────────────────────
 function toggleMs(key, evt) {
   evt.stopPropagation();
-  const panel = document.getElementById('ms-' + key + '-panel');
+  const panel  = document.getElementById('ms-' + key + '-panel');
   const isOpen = panel.classList.contains('is-open');
-  // Close all panels
   document.querySelectorAll('.ms-panel').forEach(p => p.classList.remove('is-open'));
   if (!isOpen) panel.classList.add('is-open');
 }
 
-document.addEventListener('click', () => {
-  document.querySelectorAll('.ms-panel').forEach(p => p.classList.remove('is-open'));
+// Close panels only when clicking OUTSIDE any ms-wrap
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ms-wrap')) {
+    document.querySelectorAll('.ms-panel').forEach(p => p.classList.remove('is-open'));
+  }
 });
 
 function onMsChange(key, cb) {
   const sel = MS[key];
 
   if (cb.value === 'all') {
-    // "All" clicked — uncheck specifics
     document.querySelectorAll('#ms-' + key + '-panel input[type=checkbox]').forEach(c => {
       c.checked = (c.value === 'all');
     });
@@ -387,23 +399,23 @@ function onMsChange(key, cb) {
   } else {
     if (cb.checked) {
       sel.delete('all');
-      document.querySelector('#ms-' + key + '-panel input[value="all"]').checked = false;
+      const allCb = document.querySelector('#ms-' + key + '-panel input[value="all"]');
+      if (allCb) allCb.checked = false;
       sel.add(cb.value);
     } else {
       sel.delete(cb.value);
       if (sel.size === 0) {
         sel.add('all');
-        document.querySelector('#ms-' + key + '-panel input[value="all"]').checked = true;
+        const allCb = document.querySelector('#ms-' + key + '-panel input[value="all"]');
+        if (allCb) allCb.checked = true;
       }
     }
   }
 
   updateMsLabel(key);
 
-  if (key === 'type') {
-    // Cascade: rebuild campaign dropdown, reset camp selection
-    rebuildCampDropdown();
-  }
+  if (key === 'type')  rebuildCampDropdown();
+  if (key === 'acamp') rebuildCompDropdown();
 
   render();
 }
@@ -412,7 +424,9 @@ function updateMsLabel(key) {
   const sel = MS[key];
   let text;
   if (sel.has('all')) {
-    text = (key === 'type') ? 'All Channels' : 'All Campaigns';
+    if (key === 'type')  text = 'All Channels';
+    else if (key === 'comp') text = 'All Competitors';
+    else text = 'All Campaigns';
   } else if (sel.size === 1) {
     const val = [...sel][0];
     if (key === 'type')  text = TYPE_LABELS[val]  || val;
@@ -424,24 +438,43 @@ function updateMsLabel(key) {
   document.getElementById('ms-' + key + '-text').textContent = text;
 }
 
-// ── Campaign dropdown cascade ─────────────────────────────────────────────────
+// ── Cascade: Campaign dropdown from Channel ───────────────────────────────────
 function rebuildCampDropdown() {
   const typeSel  = MS.type;
   const camps    = [...new Set(IS_DATA.map(r => r.camp))].sort();
   const filtered = camps.filter(c => typeSel.has('all') || typeSel.has(campTypeMap[c]));
 
-  const panel = document.getElementById('ms-camp-panel');
-  panel.innerHTML =
+  document.getElementById('ms-camp-panel').innerHTML =
     `<label class="ms-option"><input type="checkbox" value="all" checked onchange="onMsChange('camp',this)"> All</label>` +
     `<div class="ms-divider"></div>` +
     filtered.map(c =>
       `<label class="ms-option"><input type="checkbox" value="${c}" onchange="onMsChange('camp',this)"> ${c.replace(/_/g,' ')}</label>`
     ).join('');
 
-  // Reset camp selection to 'all'
   MS.camp.clear();
   MS.camp.add('all');
   updateMsLabel('camp');
+}
+
+// ── Cascade: Competitor dropdown from Auction campaign ────────────────────────
+function rebuildCompDropdown() {
+  const acampSel = MS.acamp;
+  const competitors = [...new Set(
+    AUCTION_DATA
+      .filter(r => r.d < TODAY && (acampSel.has('all') || acampSel.has(r.camp)))
+      .map(r => r.competitor)
+  )].sort();
+
+  document.getElementById('ms-comp-panel').innerHTML =
+    `<label class="ms-option"><input type="checkbox" value="all" checked onchange="onMsChange('comp',this)"> All</label>` +
+    `<div class="ms-divider"></div>` +
+    competitors.map(c =>
+      `<label class="ms-option"><input type="checkbox" value="${c}" onchange="onMsChange('comp',this)"> ${c}</label>`
+    ).join('');
+
+  MS.comp.clear();
+  MS.comp.add('all');
+  updateMsLabel('comp');
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
@@ -456,9 +489,7 @@ function switchTab(tab, btn) {
   document.getElementById('is-filters').style.display      = isAuction ? 'none' : 'flex';
   document.getElementById('auction-filters').style.display = isAuction ? 'flex' : 'none';
 
-  // Close any open panels
   document.querySelectorAll('.ms-panel').forEach(p => p.classList.remove('is-open'));
-
   render();
 }
 
@@ -468,6 +499,7 @@ function getFilters() {
     types:  MS.type,
     camps:  MS.camp,
     acamps: MS.acamp,
+    comp:   MS.comp,
     start:  document.getElementById('ctrl-start').value,
     end:    document.getElementById('ctrl-end').value,
   };
@@ -475,21 +507,22 @@ function getFilters() {
 
 function filterIS(f) {
   return IS_DATA.filter(r => {
-    if (r.d >= TODAY)                                      return false;
-    if (!f.types.has('all') && !f.types.has(r.t))         return false;
-    if (!f.camps.has('all') && !f.camps.has(r.camp))      return false;
-    if (f.start && r.d < f.start)                         return false;
-    if (f.end   && r.d > f.end)                           return false;
+    if (r.d >= TODAY)                                     return false;
+    if (!f.types.has('all') && !f.types.has(r.t))        return false;
+    if (!f.camps.has('all') && !f.camps.has(r.camp))     return false;
+    if (f.start && r.d < f.start)                        return false;
+    if (f.end   && r.d > f.end)                          return false;
     return true;
   });
 }
 
 function filterAuction(f) {
   return AUCTION_DATA.filter(r => {
-    if (r.d >= TODAY)                                      return false;
-    if (!f.acamps.has('all') && !f.acamps.has(r.camp))    return false;
-    if (f.start && r.d < f.start)                         return false;
-    if (f.end   && r.d > f.end)                           return false;
+    if (r.d >= TODAY)                                          return false;
+    if (!f.acamps.has('all') && !f.acamps.has(r.camp))        return false;
+    if (!f.comp.has('all')   && !f.comp.has(r.competitor))    return false;
+    if (f.start && r.d < f.start)                             return false;
+    if (f.end   && r.d > f.end)                               return false;
     return true;
   });
 }
@@ -580,22 +613,21 @@ function renderSummary() {
   const f    = getFilters();
   const rows = filterIS(f);
 
-  // KPIs — use rows with non-null values for each metric
-  document.getElementById('s-kpi-is').textContent    = fmt(overallAvg(rows, 'search_is'));
-  document.getElementById('s-kpi-budget').textContent = fmt(overallAvg(rows, 'lost_budget'));
-  document.getElementById('s-kpi-rank').textContent   = fmt(overallAvg(rows, 'lost_rank'));
-  document.getElementById('s-kpi-exact').textContent  = fmt(overallAvg(rows, 'exact_is'));
+  // KPIs
+  document.getElementById('s-kpi-is').textContent     = fmt(overallAvg(rows, 'search_is'));
+  document.getElementById('s-kpi-budget').textContent  = fmt(overallAvg(rows, 'lost_budget'));
+  document.getElementById('s-kpi-rank').textContent    = fmt(overallAvg(rows, 'lost_rank'));
+  document.getElementById('s-kpi-exact').textContent   = fmt(overallAvg(rows, 'exact_is'));
 
-  // Opportunity: total IS not captured = 1 - avg_IS
-  // Use only rows where all three IS metrics are present to keep numbers consistent
-  const validRows  = rows.filter(r => r.search_is != null && r.lost_budget != null && r.lost_rank != null);
-  const avgIS      = overallAvg(validRows, 'search_is');
-  const avgBudget  = overallAvg(validRows, 'lost_budget');
-  const avgRank    = overallAvg(validRows, 'lost_rank');
-  const lostTotal  = avgIS != null ? 1 - avgIS : null;
+  // Opportunity: 1 - avg_IS (using only rows where all three IS metrics are present)
+  const valid   = rows.filter(r => r.search_is != null && r.lost_budget != null && r.lost_rank != null);
+  const avgIS   = overallAvg(valid, 'search_is');
+  const avgBudg = overallAvg(valid, 'lost_budget');
+  const avgRank = overallAvg(valid, 'lost_rank');
+  const lost    = avgIS != null ? 1 - avgIS : null;
 
-  document.getElementById('s-opp-title').textContent  = lostTotal != null ? fmt(lostTotal) + ' IS not captured' : '—';
-  document.getElementById('s-opp-budget').textContent = fmt(avgBudget);
+  document.getElementById('s-opp-pct').textContent    = fmt(lost);
+  document.getElementById('s-opp-budget').textContent = fmt(avgBudg);
   document.getElementById('s-opp-rank').textContent   = fmt(avgRank);
 
   // Stacked IS chart
@@ -610,8 +642,8 @@ function renderSummary() {
     {label:'Lost — Rank',   data:dates.map(d => byDateRank[d]   ?? null), backgroundColor:'#ef4444', borderRadius:2},
   ]);
 
-  // Top competitors table (uses global auction data, filtered by dates only)
-  const aRows = filterAuction(f);
+  // Top competitors table
+  const aRows  = filterAuction(f);
   const byComp = {};
   aRows.forEach(r => {
     if (!byComp[r.competitor]) byComp[r.competitor] = {camp:r.camp, is:[], out:[]};
@@ -626,7 +658,7 @@ function renderSummary() {
     .slice(0, 8);
 
   document.getElementById('s-comp-table').innerHTML = sorted.length
-    ? sorted.map((x,i) => `<tr>
+    ? sorted.map((x, i) => `<tr>
         <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:6px"></span>${x.comp}</td>
         <td>${groupBadge(x.camp)}</td>
         <td class="num">${barHtml(x.avgIS, COLORS[i%COLORS.length])}</td>
@@ -659,7 +691,6 @@ function renderIS() {
     fill:true, tension:0.3, pointRadius:2,
   }]);
 
-  // Campaign breakdown table
   const byCamp = {};
   rows.forEach(r => {
     if (!byCamp[r.camp]) byCamp[r.camp] = {t:r.t, is:[], budget:[], rank:[], exact:[]};
@@ -671,7 +702,6 @@ function renderIS() {
   });
 
   const entries = Object.entries(byCamp).sort((a,b) => (avg(b[1].is)??-1) - (avg(a[1].is)??-1));
-
   document.getElementById('is-table-body').innerHTML = entries.length
     ? entries.map(([camp, v]) => `<tr>
         <td style="max-width:340px;overflow:hidden;text-overflow:ellipsis" title="${camp}">${camp.replace(/_/g,' ')}</td>
@@ -700,7 +730,6 @@ function renderAuction() {
   const dates       = [...new Set(rows.map(r => r.d))].sort();
   const competitors = [...new Set(rows.map(r => r.competitor))].sort();
 
-  // Aggregate by competitor + date
   const byCD = {};
   rows.forEach(r => {
     if (!byCD[r.competitor]) byCD[r.competitor] = {};
@@ -731,7 +760,6 @@ function renderAuction() {
   makeLegend('auction-legend');
   makeLegend('outranking-legend');
 
-  // Summary table
   const byComp = {};
   rows.forEach(r => {
     if (!byComp[r.competitor]) byComp[r.competitor] = {camp:r.camp, is:[],out:[],olap:[],top:[],abs:[]};
@@ -757,19 +785,16 @@ function renderAuction() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
-  // Build campaign type map
   IS_DATA.forEach(r => { campTypeMap[r.camp] = r.t; });
 
-  // Date range: full data range excluding today
   const allDates = [...new Set(IS_DATA.map(r => r.d))].filter(d => d < TODAY).sort();
   if (allDates.length) {
     document.getElementById('ctrl-start').value = allDates[0];
     document.getElementById('ctrl-end').value   = allDates[allDates.length - 1];
   }
 
-  // Populate campaign dropdown
   rebuildCampDropdown();
-
+  rebuildCompDropdown();
   render();
 }
 
