@@ -21,13 +21,10 @@ header{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 28px;display
 .tab-btn{background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 18px;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;transition:color .15s,border-color .15s}
 .tab-btn:hover{color:#334155}
 .tab-btn.active{color:#f5a623;border-bottom-color:#f5a623}
-.controls{background:#fff;border-bottom:1px solid #e2e8f0;padding:8px 28px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.controls{background:#fff;border-bottom:1px solid #e2e8f0;padding:8px 28px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;position:relative;z-index:10}
 .ctrl-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
 .ctrl-group{display:flex;align-items:center;gap:8px}
 .ctrl-sep{width:1px;height:24px;background:#e2e8f0;flex-shrink:0}
-select{border:1px solid #cbd5e1;border-radius:6px;padding:4px 10px;font-size:12px;color:#334155;background:#fff;cursor:pointer;outline:none}
-select:hover{border-color:#94a3b8}
-select:focus{border-color:#f5a623}
 .date-input{border:1px solid #cbd5e1;border-radius:5px;padding:4px 8px;font-size:12px;color:#1e293b;background:#fff;outline:none}
 .date-input:focus{border-color:#f5a623}
 .tab-pane{display:none}
@@ -61,26 +58,32 @@ tr:hover td{background:#f8fafc}
 .stacked-legend-box{width:14px;height:10px;border-radius:2px;flex-shrink:0}
 .empty-state{padding:48px;text-align:center;color:#94a3b8;font-size:13px}
 
+/* ── Multi-select ── */
+.ms-wrap{position:relative;display:inline-block}
+.ms-trigger{display:flex;align-items:center;gap:6px;border:1px solid #cbd5e1;border-radius:6px;padding:5px 10px;font-size:12px;color:#334155;background:#fff;cursor:pointer;user-select:none;min-width:150px;white-space:nowrap}
+.ms-trigger:hover{border-color:#94a3b8}
+.ms-caret{font-size:9px;color:#94a3b8;margin-left:auto;flex-shrink:0}
+.ms-panel{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.10);padding:4px 0;z-index:200;min-width:200px;display:none}
+.ms-panel.is-open{display:block}
+.ms-option{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;font-size:12px;color:#334155;user-select:none}
+.ms-option:hover{background:#f8fafc}
+.ms-option input[type=checkbox]{accent-color:#f5a623;width:13px;height:13px;cursor:pointer;flex-shrink:0}
+.ms-divider{height:1px;background:#f1f5f9;margin:4px 0}
+
 /* ── SUMMARY TAB ── */
 .p0-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .p0-kpi-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px 24px}
 .p0-kpi-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
 .p0-kpi-value{font-size:28px;font-weight:800;color:#0f172a;margin-bottom:4px;line-height:1.1}
 .p0-kpi-sub{font-size:11px;color:#64748b}
-.p0-insight-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.p0-insight-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:18px 20px;display:flex;flex-direction:column;gap:6px}
-.p0-hero{background:#1e293b;border-color:#334155}
-.p0-hero .p0-insight-title{color:#f5a623}
-.p0-hero .p0-insight-body{color:#94a3b8}
-.p0-green{background:#f0fdf4;border-color:#bbf7d0}
-.p0-green .p0-insight-title{color:#15803d}
-.p0-green .p0-insight-body{color:#166534}
-.p0-red{background:#fef2f2;border-color:#fecaca}
-.p0-red .p0-insight-title{color:#b91c1c}
-.p0-red .p0-insight-body{color:#991b1b}
-.p0-insight-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:2px}
-.p0-insight-title{font-size:15px;font-weight:800;line-height:1.2;color:#0f172a}
-.p0-insight-body{font-size:11px;color:#64748b;line-height:1.6;margin-top:2px}
+.p0-opp-card{background:#1e293b;border-radius:12px;border:1px solid #334155;padding:22px 28px;display:flex;align-items:center;gap:40px}
+.p0-opp-main{}
+.p0-opp-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-bottom:6px}
+.p0-opp-title{font-size:30px;font-weight:800;color:#f5a623;line-height:1.1}
+.p0-opp-body{font-size:11px;color:#94a3b8;margin-top:6px;line-height:1.6}
+.p0-opp-stats{display:flex;gap:28px;margin-left:auto;flex-shrink:0}
+.p0-opp-stat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#475569;margin-bottom:4px}
+.p0-opp-stat-val{font-size:22px;font-weight:800;line-height:1}
 .charts-2col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
 </style>
 </head>
@@ -100,32 +103,72 @@ tr:hover td{background:#f8fafc}
   <button class="tab-btn" onclick="switchTab('auction',this)">Auction Insights</button>
 </div>
 
-<!-- ── SHARED CONTROLS ──────────────────────────────────────────────────────── -->
+<!-- ── CONTROLS ───────────────────────────────────────────────────────────────── -->
 <div class="controls">
-  <div class="ctrl-group">
-    <span class="ctrl-label">Channel</span>
-    <select id="ctrl-type" onchange="onTypeChange()">
-      <option value="all">All</option>
-      <option value="Brand">Brand Search</option>
-      <option value="NonBrand">NonBrand Search</option>
-      <option value="BrandShopping">Brand Shopping</option>
-      <option value="NonBrandShopping">NonBrand Shopping</option>
-    </select>
+
+  <!-- IS / Summary filters (channel + campaign) -->
+  <div id="is-filters" style="display:flex;align-items:center;gap:16px">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Channel</span>
+      <div class="ms-wrap" id="ms-type-wrap">
+        <div class="ms-trigger" onclick="toggleMs('type',event)">
+          <span id="ms-type-text">All Channels</span>
+          <span class="ms-caret">&#9662;</span>
+        </div>
+        <div class="ms-panel" id="ms-type-panel">
+          <label class="ms-option"><input type="checkbox" value="all" checked onchange="onMsChange('type',this)"> All</label>
+          <div class="ms-divider"></div>
+          <label class="ms-option"><input type="checkbox" value="Brand" onchange="onMsChange('type',this)"> Brand Search</label>
+          <label class="ms-option"><input type="checkbox" value="NonBrand" onchange="onMsChange('type',this)"> NonBrand Search</label>
+          <label class="ms-option"><input type="checkbox" value="BrandShopping" onchange="onMsChange('type',this)"> Brand Shopping</label>
+          <label class="ms-option"><input type="checkbox" value="NonBrandShopping" onchange="onMsChange('type',this)"> NB Shopping</label>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-sep"></div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Campaign</span>
+      <div class="ms-wrap" id="ms-camp-wrap">
+        <div class="ms-trigger" onclick="toggleMs('camp',event)">
+          <span id="ms-camp-text">All Campaigns</span>
+          <span class="ms-caret">&#9662;</span>
+        </div>
+        <div class="ms-panel" id="ms-camp-panel">
+          <!-- populated by JS -->
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-sep"></div>
   </div>
-  <div class="ctrl-sep"></div>
-  <div class="ctrl-group" id="camp-ctrl-group">
-    <span class="ctrl-label">Campaign</span>
-    <select id="ctrl-camp" onchange="render()">
-      <option value="all">All campaigns</option>
-    </select>
+
+  <!-- Auction filters (campaign only: Generic / BrandCore) -->
+  <div id="auction-filters" style="display:none;align-items:center;gap:16px">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Campaign</span>
+      <div class="ms-wrap" id="ms-acamp-wrap">
+        <div class="ms-trigger" onclick="toggleMs('acamp',event)">
+          <span id="ms-acamp-text">All Campaigns</span>
+          <span class="ms-caret">&#9662;</span>
+        </div>
+        <div class="ms-panel" id="ms-acamp-panel">
+          <label class="ms-option"><input type="checkbox" value="all" checked onchange="onMsChange('acamp',this)"> All</label>
+          <div class="ms-divider"></div>
+          <label class="ms-option"><input type="checkbox" value="nonbrand_search_generic" onchange="onMsChange('acamp',this)"> Generic</label>
+          <label class="ms-option"><input type="checkbox" value="brand_search_brandcore" onchange="onMsChange('acamp',this)"> BrandCore</label>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-sep"></div>
   </div>
-  <div class="ctrl-sep" id="camp-ctrl-sep"></div>
+
+  <!-- Date range (always visible) -->
   <div class="ctrl-group">
     <span class="ctrl-label">From</span>
     <input type="date" id="ctrl-start" class="date-input" onchange="render()">
     <span style="font-size:11px;color:#94a3b8">to</span>
     <input type="date" id="ctrl-end" class="date-input" onchange="render()">
   </div>
+
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
@@ -157,21 +200,21 @@ tr:hover td{background:#f8fafc}
     </div>
   </div>
 
-  <div class="p0-insight-grid">
-    <div class="p0-insight-card p0-hero">
-      <div class="p0-insight-label">Opportunity</div>
-      <div class="p0-insight-title" id="s-insight-opp-title">—</div>
-      <div class="p0-insight-body" id="s-insight-opp-body">—</div>
+  <div class="p0-opp-card">
+    <div class="p0-opp-main">
+      <div class="p0-opp-label">Opportunity</div>
+      <div class="p0-opp-title" id="s-opp-title">—</div>
+      <div class="p0-opp-body" id="s-opp-body">IS not captured across selected campaigns &amp; period</div>
     </div>
-    <div class="p0-insight-card p0-green">
-      <div class="p0-insight-label">Strongest Campaign</div>
-      <div class="p0-insight-title" id="s-insight-best-title">—</div>
-      <div class="p0-insight-body" id="s-insight-best-body">—</div>
-    </div>
-    <div class="p0-insight-card p0-red">
-      <div class="p0-insight-label">Needs Attention</div>
-      <div class="p0-insight-title" id="s-insight-worst-title">—</div>
-      <div class="p0-insight-body" id="s-insight-worst-body">—</div>
+    <div class="p0-opp-stats">
+      <div>
+        <div class="p0-opp-stat-label">Lost to Budget</div>
+        <div class="p0-opp-stat-val" id="s-opp-budget" style="color:#f97316">—</div>
+      </div>
+      <div>
+        <div class="p0-opp-stat-label">Lost to Rank</div>
+        <div class="p0-opp-stat-val" id="s-opp-rank" style="color:#ef4444">—</div>
+      </div>
     </div>
   </div>
 
@@ -251,7 +294,7 @@ tr:hover td{background:#f8fafc}
 
   <div class="section">
     <div class="section-title">Impression Share by Competitor Over Time</div>
-    <div class="section-sub">Competitor IS — daily, filtered by channel group</div>
+    <div class="section-sub">Competitor IS — daily</div>
     <div class="legend-row" id="auction-legend"></div>
     <canvas id="chart-auction-is"></canvas>
   </div>
@@ -295,52 +338,110 @@ const COLORS = [
   '#6366f1','#f59e0b','#10b981','#8b5cf6','#0ea5e9',
 ];
 
+const TYPE_LABELS = {
+  Brand:'Brand Search', NonBrand:'NonBrand Search',
+  BrandShopping:'Brand Shopping', NonBrandShopping:'NB Shopping',
+};
+
+const ACAMP_LABELS = {
+  'nonbrand_search_generic':'Generic',
+  'brand_search_brandcore':'BrandCore',
+};
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let activeTab = 'summary';
-let charts = {};
+let charts    = {};
+let campTypeMap = {};
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-function init() {
-  // Build campaign type map for cascade
-  window.campTypeMap = {};
-  IS_DATA.forEach(r => { campTypeMap[r.camp] = r.t; });
+// Multi-select state
+const MS = {
+  type:  new Set(['all']),
+  camp:  new Set(['all']),
+  acamp: new Set(['all']),
+};
 
-  // Date range: full data range, excluding today
-  const allDates = [...new Set(IS_DATA.map(r => r.d))].filter(d => d < TODAY).sort();
-  if (allDates.length) {
-    document.getElementById('ctrl-start').value = allDates[0];
-    document.getElementById('ctrl-end').value   = allDates[allDates.length - 1];
+// ── Multi-select logic ────────────────────────────────────────────────────────
+function toggleMs(key, evt) {
+  evt.stopPropagation();
+  const panel = document.getElementById('ms-' + key + '-panel');
+  const isOpen = panel.classList.contains('is-open');
+  // Close all panels
+  document.querySelectorAll('.ms-panel').forEach(p => p.classList.remove('is-open'));
+  if (!isOpen) panel.classList.add('is-open');
+}
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.ms-panel').forEach(p => p.classList.remove('is-open'));
+});
+
+function onMsChange(key, cb) {
+  const sel = MS[key];
+
+  if (cb.value === 'all') {
+    // "All" clicked — uncheck specifics
+    document.querySelectorAll('#ms-' + key + '-panel input[type=checkbox]').forEach(c => {
+      c.checked = (c.value === 'all');
+    });
+    sel.clear();
+    sel.add('all');
+  } else {
+    if (cb.checked) {
+      sel.delete('all');
+      document.querySelector('#ms-' + key + '-panel input[value="all"]').checked = false;
+      sel.add(cb.value);
+    } else {
+      sel.delete(cb.value);
+      if (sel.size === 0) {
+        sel.add('all');
+        document.querySelector('#ms-' + key + '-panel input[value="all"]').checked = true;
+      }
+    }
   }
 
-  // Populate campaign dropdown with all campaigns
-  rebuildCampDropdown('all');
+  updateMsLabel(key);
+
+  if (key === 'type') {
+    // Cascade: rebuild campaign dropdown, reset camp selection
+    rebuildCampDropdown();
+  }
+
   render();
 }
 
-// ── Campaign dropdown cascade ──────────────────────────────────────────────────
-function rebuildCampDropdown(type) {
-  const sel = document.getElementById('ctrl-camp');
-  // Keep "all" option, remove the rest
-  while (sel.options.length > 1) sel.remove(1);
-
-  const camps = [...new Set(IS_DATA.map(r => r.camp))].sort();
-  camps.forEach(c => {
-    if (type !== 'all' && campTypeMap[c] !== type) return;
-    const opt = document.createElement('option');
-    opt.value = c;
-    opt.textContent = c.replace(/_/g, ' ');
-    sel.appendChild(opt);
-  });
+function updateMsLabel(key) {
+  const sel = MS[key];
+  let text;
+  if (sel.has('all')) {
+    text = (key === 'type') ? 'All Channels' : 'All Campaigns';
+  } else if (sel.size === 1) {
+    const val = [...sel][0];
+    if (key === 'type')  text = TYPE_LABELS[val]  || val;
+    else if (key === 'acamp') text = ACAMP_LABELS[val] || val.replace(/_/g,' ');
+    else text = val.replace(/_/g,' ');
+  } else {
+    text = sel.size + ' selected';
+  }
+  document.getElementById('ms-' + key + '-text').textContent = text;
 }
 
-function onTypeChange() {
-  const type = document.getElementById('ctrl-type').value;
-  rebuildCampDropdown(type);
-  // Hide campaign filter on auction tab (not applicable — auction filtered by type only)
-  const showCamp = activeTab !== 'auction';
-  document.getElementById('camp-ctrl-group').style.display = showCamp ? '' : 'none';
-  document.getElementById('camp-ctrl-sep').style.display   = showCamp ? '' : 'none';
-  render();
+// ── Campaign dropdown cascade ─────────────────────────────────────────────────
+function rebuildCampDropdown() {
+  const typeSel  = MS.type;
+  const camps    = [...new Set(IS_DATA.map(r => r.camp))].sort();
+  const filtered = camps.filter(c => typeSel.has('all') || typeSel.has(campTypeMap[c]));
+
+  const panel = document.getElementById('ms-camp-panel');
+  panel.innerHTML =
+    `<label class="ms-option"><input type="checkbox" value="all" checked onchange="onMsChange('camp',this)"> All</label>` +
+    `<div class="ms-divider"></div>` +
+    filtered.map(c =>
+      `<label class="ms-option"><input type="checkbox" value="${c}" onchange="onMsChange('camp',this)"> ${c.replace(/_/g,' ')}</label>`
+    ).join('');
+
+  // Reset camp selection to 'all'
+  MS.camp.clear();
+  MS.camp.add('all');
+  updateMsLabel('camp');
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
@@ -350,47 +451,51 @@ function switchTab(tab, btn) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');
-  // Show/hide campaign filter based on tab
-  const showCamp = tab !== 'auction';
-  document.getElementById('camp-ctrl-group').style.display = showCamp ? '' : 'none';
-  document.getElementById('camp-ctrl-sep').style.display   = showCamp ? '' : 'none';
+
+  const isAuction = tab === 'auction';
+  document.getElementById('is-filters').style.display      = isAuction ? 'none' : 'flex';
+  document.getElementById('auction-filters').style.display = isAuction ? 'flex' : 'none';
+
+  // Close any open panels
+  document.querySelectorAll('.ms-panel').forEach(p => p.classList.remove('is-open'));
+
   render();
 }
 
 // ── Filters ───────────────────────────────────────────────────────────────────
 function getFilters() {
   return {
-    type:  document.getElementById('ctrl-type').value,
-    camp:  document.getElementById('ctrl-camp').value,
-    start: document.getElementById('ctrl-start').value,
-    end:   document.getElementById('ctrl-end').value,
+    types:  MS.type,
+    camps:  MS.camp,
+    acamps: MS.acamp,
+    start:  document.getElementById('ctrl-start').value,
+    end:    document.getElementById('ctrl-end').value,
   };
 }
 
 function filterIS(f) {
   return IS_DATA.filter(r => {
-    if (r.d >= TODAY)                              return false; // exclude today
-    if (f.type !== 'all' && r.t !== f.type)        return false;
-    if (f.camp !== 'all' && r.camp !== f.camp)     return false;
-    if (f.start && r.d < f.start)                  return false;
-    if (f.end   && r.d > f.end)                    return false;
+    if (r.d >= TODAY)                                      return false;
+    if (!f.types.has('all') && !f.types.has(r.t))         return false;
+    if (!f.camps.has('all') && !f.camps.has(r.camp))      return false;
+    if (f.start && r.d < f.start)                         return false;
+    if (f.end   && r.d > f.end)                           return false;
     return true;
   });
 }
 
 function filterAuction(f) {
-  // Auction data is grouped by Generic/BrandCore — filter by type only, not individual campaign
   return AUCTION_DATA.filter(r => {
-    if (r.d >= TODAY)                              return false; // exclude today
-    if (f.type !== 'all' && r.t !== f.type)        return false;
-    if (f.start && r.d < f.start)                  return false;
-    if (f.end   && r.d > f.end)                    return false;
+    if (r.d >= TODAY)                                      return false;
+    if (!f.acamps.has('all') && !f.acamps.has(r.camp))    return false;
+    if (f.start && r.d < f.start)                         return false;
+    if (f.end   && r.d > f.end)                           return false;
     return true;
   });
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+const avg = arr => arr.length ? arr.reduce((a,b) => a+b, 0) / arr.length : null;
 
 function avgByDate(rows, field) {
   const map = {};
@@ -404,7 +509,7 @@ function avgByDate(rows, field) {
 
 function overallAvg(rows, field) {
   const vals = rows.map(r => r[field]).filter(v => v != null);
-  return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  return vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null;
 }
 
 function fmt(v, d=1) { return v == null ? '—' : (v*100).toFixed(d)+'%'; }
@@ -424,41 +529,42 @@ function typeBadge(t) {
 }
 
 function groupBadge(camp) {
+  if (!camp) return '';
   if (camp.includes('brandcore')) return '<span class="badge badge-brand">BrandCore</span>';
   if (camp.includes('generic'))   return '<span class="badge badge-nonbrand">Generic</span>';
-  return '<span class="badge" style="background:#f1f5f9;color:#64748b">'+camp+'</span>';
+  return `<span class="badge" style="background:#f1f5f9;color:#64748b">${camp}</span>`;
 }
 
 // ── Chart helpers ─────────────────────────────────────────────────────────────
-function dc(key) { if(charts[key]) { charts[key].destroy(); delete charts[key]; } }
+function dc(key) { if (charts[key]) { charts[key].destroy(); delete charts[key]; } }
 
 function lineChart(id, labels, datasets) {
   dc(id);
   charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
-    type: 'line', data: {labels, datasets},
-    options: {
-      responsive:true, interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y!=null?(c.parsed.y*100).toFixed(1)+'%':'—'}`}}},
+    type:'line', data:{labels, datasets},
+    options:{
+      responsive:true, interaction:{mode:'index', intersect:false},
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y!=null?(c.parsed.y*100).toFixed(1)+'%':'—'}`}}},
       scales:{
-        x:{ticks:{maxTicksLimit:20,font:{size:10}},grid:{color:'#f1f5f9'}},
-        y:{ticks:{callback:v=>(v*100).toFixed(0)+'%',font:{size:10}},grid:{color:'#f1f5f9'},min:0,max:1}
-      }
-    }
+        x:{ticks:{maxTicksLimit:20,font:{size:10}}, grid:{color:'#f1f5f9'}},
+        y:{ticks:{callback:v=>(v*100).toFixed(0)+'%', font:{size:10}}, grid:{color:'#f1f5f9'}, min:0, max:1},
+      },
+    },
   });
 }
 
 function stackedChart(id, labels, datasets) {
   dc(id);
   charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
-    type:'bar', data:{labels,datasets},
+    type:'bar', data:{labels, datasets},
     options:{
-      responsive:true, interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y!=null?(c.parsed.y*100).toFixed(1)+'%':'—'}`}}},
+      responsive:true, interaction:{mode:'index', intersect:false},
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y!=null?(c.parsed.y*100).toFixed(1)+'%':'—'}`}}},
       scales:{
-        x:{stacked:true,ticks:{maxTicksLimit:20,font:{size:10}},grid:{color:'#f1f5f9'}},
-        y:{stacked:true,ticks:{callback:v=>(v*100).toFixed(0)+'%',font:{size:10}},grid:{color:'#f1f5f9'},min:0,max:1}
-      }
-    }
+        x:{stacked:true, ticks:{maxTicksLimit:20,font:{size:10}}, grid:{color:'#f1f5f9'}},
+        y:{stacked:true, ticks:{callback:v=>(v*100).toFixed(0)+'%', font:{size:10}}, grid:{color:'#f1f5f9'}, min:0, max:1},
+      },
+    },
   });
 }
 
@@ -474,57 +580,37 @@ function renderSummary() {
   const f    = getFilters();
   const rows = filterIS(f);
 
-  // KPIs
-  document.getElementById('s-kpi-is').textContent     = fmt(overallAvg(rows,'search_is'));
-  document.getElementById('s-kpi-budget').textContent  = fmt(overallAvg(rows,'lost_budget'));
-  document.getElementById('s-kpi-rank').textContent    = fmt(overallAvg(rows,'lost_rank'));
-  document.getElementById('s-kpi-exact').textContent   = fmt(overallAvg(rows,'exact_is'));
+  // KPIs — use rows with non-null values for each metric
+  document.getElementById('s-kpi-is').textContent    = fmt(overallAvg(rows, 'search_is'));
+  document.getElementById('s-kpi-budget').textContent = fmt(overallAvg(rows, 'lost_budget'));
+  document.getElementById('s-kpi-rank').textContent   = fmt(overallAvg(rows, 'lost_rank'));
+  document.getElementById('s-kpi-exact').textContent  = fmt(overallAvg(rows, 'exact_is'));
 
-  // Insight cards — best and worst campaign by avg IS
-  const byCamp = {};
-  rows.forEach(r => {
-    if (!byCamp[r.camp]) byCamp[r.camp] = {t:r.t, is:[], budget:[], rank:[]};
-    if (r.search_is   != null) byCamp[r.camp].is.push(r.search_is);
-    if (r.lost_budget != null) byCamp[r.camp].budget.push(r.lost_budget);
-    if (r.lost_rank   != null) byCamp[r.camp].rank.push(r.lost_rank);
-  });
+  // Opportunity: total IS not captured = 1 - avg_IS
+  // Use only rows where all three IS metrics are present to keep numbers consistent
+  const validRows  = rows.filter(r => r.search_is != null && r.lost_budget != null && r.lost_rank != null);
+  const avgIS      = overallAvg(validRows, 'search_is');
+  const avgBudget  = overallAvg(validRows, 'lost_budget');
+  const avgRank    = overallAvg(validRows, 'lost_rank');
+  const lostTotal  = avgIS != null ? 1 - avgIS : null;
 
-  const campAvgs = Object.entries(byCamp)
-    .map(([c,v]) => ({camp:c, t:v.t, avgIS:avg(v.is), avgBudget:avg(v.budget), avgRank:avg(v.rank)}))
-    .filter(x => x.avgIS != null)
-    .sort((a,b) => b.avgIS - a.avgIS);
-
-  if (campAvgs.length) {
-    const best  = campAvgs[0];
-    const worst = campAvgs[campAvgs.length-1];
-
-    // Opportunity: whichever has the biggest total loss
-    const biggestLoss = [...campAvgs].sort((a,b) => ((b.avgBudget||0)+(b.avgRank||0)) - ((a.avgBudget||0)+(a.avgRank||0)))[0];
-    const totalLoss = (biggestLoss.avgBudget||0) + (biggestLoss.avgRank||0);
-    document.getElementById('s-insight-opp-title').textContent = fmt(totalLoss) + ' IS being lost';
-    document.getElementById('s-insight-opp-body').textContent  =
-      `${biggestLoss.camp.replace(/_/g,' ')} has the highest combined loss — ${fmt(biggestLoss.avgBudget)} to budget, ${fmt(biggestLoss.avgRank)} to rank.`;
-
-    document.getElementById('s-insight-best-title').textContent = fmt(best.avgIS) + ' avg IS';
-    document.getElementById('s-insight-best-body').textContent  = best.camp.replace(/_/g,' ');
-
-    document.getElementById('s-insight-worst-title').textContent = fmt(worst.avgIS) + ' avg IS';
-    document.getElementById('s-insight-worst-body').textContent  = worst.camp.replace(/_/g,' ');
-  }
+  document.getElementById('s-opp-title').textContent  = lostTotal != null ? fmt(lostTotal) + ' IS not captured' : '—';
+  document.getElementById('s-opp-budget').textContent = fmt(avgBudget);
+  document.getElementById('s-opp-rank').textContent   = fmt(avgRank);
 
   // Stacked IS chart
-  const dates         = [...new Set(rows.map(r=>r.d))].sort();
-  const byDateIS      = avgByDate(rows,'search_is');
-  const byDateBudget  = avgByDate(rows,'lost_budget');
-  const byDateRank    = avgByDate(rows,'lost_rank');
+  const dates        = [...new Set(rows.map(r => r.d))].sort();
+  const byDateIS     = avgByDate(rows, 'search_is');
+  const byDateBudget = avgByDate(rows, 'lost_budget');
+  const byDateRank   = avgByDate(rows, 'lost_rank');
 
   stackedChart('chart-summary-is', dates, [
-    {label:'Captured IS',   data:dates.map(d=>byDateIS[d]??null),     backgroundColor:'#22c55e', borderRadius:2},
-    {label:'Lost — Budget', data:dates.map(d=>byDateBudget[d]??null), backgroundColor:'#f97316', borderRadius:2},
-    {label:'Lost — Rank',   data:dates.map(d=>byDateRank[d]??null),   backgroundColor:'#ef4444', borderRadius:2},
+    {label:'Captured IS',   data:dates.map(d => byDateIS[d]     ?? null), backgroundColor:'#22c55e', borderRadius:2},
+    {label:'Lost — Budget', data:dates.map(d => byDateBudget[d] ?? null), backgroundColor:'#f97316', borderRadius:2},
+    {label:'Lost — Rank',   data:dates.map(d => byDateRank[d]   ?? null), backgroundColor:'#ef4444', borderRadius:2},
   ]);
 
-  // Top competitors table
+  // Top competitors table (uses global auction data, filtered by dates only)
   const aRows = filterAuction(f);
   const byComp = {};
   aRows.forEach(r => {
@@ -534,10 +620,10 @@ function renderSummary() {
   });
 
   const sorted = Object.entries(byComp)
-    .map(([comp,v]) => ({comp, camp:v.camp, avgIS:avg(v.is), avgOut:avg(v.out)}))
+    .map(([comp, v]) => ({comp, camp:v.camp, avgIS:avg(v.is), avgOut:avg(v.out)}))
     .filter(x => x.avgIS != null)
-    .sort((a,b) => b.avgIS - a.avgIS)
-    .slice(0,8);
+    .sort((a, b) => b.avgIS - a.avgIS)
+    .slice(0, 8);
 
   document.getElementById('s-comp-table').innerHTML = sorted.length
     ? sorted.map((x,i) => `<tr>
@@ -546,7 +632,7 @@ function renderSummary() {
         <td class="num">${barHtml(x.avgIS, COLORS[i%COLORS.length])}</td>
         <td class="num">${fmt(x.avgOut)}</td>
       </tr>`).join('')
-    : '<tr><td colspan="4" class="empty-state">No auction data for selected filters</td></tr>';
+    : '<tr><td colspan="4" class="empty-state">No auction data for selected period</td></tr>';
 }
 
 // ── IS tab ────────────────────────────────────────────────────────────────────
@@ -554,21 +640,21 @@ function renderIS() {
   const f    = getFilters();
   const rows = filterIS(f);
 
-  const dates        = [...new Set(rows.map(r=>r.d))].sort();
-  const byDateIS     = avgByDate(rows,'search_is');
-  const byDateBudget = avgByDate(rows,'lost_budget');
-  const byDateRank   = avgByDate(rows,'lost_rank');
-  const byDateExact  = avgByDate(rows,'exact_is');
+  const dates        = [...new Set(rows.map(r => r.d))].sort();
+  const byDateIS     = avgByDate(rows, 'search_is');
+  const byDateBudget = avgByDate(rows, 'lost_budget');
+  const byDateRank   = avgByDate(rows, 'lost_rank');
+  const byDateExact  = avgByDate(rows, 'exact_is');
 
   stackedChart('chart-is-stacked', dates, [
-    {label:'Captured IS',   data:dates.map(d=>byDateIS[d]??null),     backgroundColor:'#22c55e', borderRadius:2},
-    {label:'Lost — Budget', data:dates.map(d=>byDateBudget[d]??null), backgroundColor:'#f97316', borderRadius:2},
-    {label:'Lost — Rank',   data:dates.map(d=>byDateRank[d]??null),   backgroundColor:'#ef4444', borderRadius:2},
+    {label:'Captured IS',   data:dates.map(d => byDateIS[d]     ?? null), backgroundColor:'#22c55e', borderRadius:2},
+    {label:'Lost — Budget', data:dates.map(d => byDateBudget[d] ?? null), backgroundColor:'#f97316', borderRadius:2},
+    {label:'Lost — Rank',   data:dates.map(d => byDateRank[d]   ?? null), backgroundColor:'#ef4444', borderRadius:2},
   ]);
 
   lineChart('chart-exact', dates, [{
     label:'Exact Match IS',
-    data:dates.map(d=>byDateExact[d]??null),
+    data:dates.map(d => byDateExact[d] ?? null),
     borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.08)',
     fill:true, tension:0.3, pointRadius:2,
   }]);
@@ -576,7 +662,7 @@ function renderIS() {
   // Campaign breakdown table
   const byCamp = {};
   rows.forEach(r => {
-    if (!byCamp[r.camp]) byCamp[r.camp] = {t:r.t,is:[],budget:[],rank:[],exact:[]};
+    if (!byCamp[r.camp]) byCamp[r.camp] = {t:r.t, is:[], budget:[], rank:[], exact:[]};
     const e = byCamp[r.camp];
     if (r.search_is   != null) e.is.push(r.search_is);
     if (r.lost_budget != null) e.budget.push(r.lost_budget);
@@ -584,17 +670,16 @@ function renderIS() {
     if (r.exact_is    != null) e.exact.push(r.exact_is);
   });
 
-  const entries = Object.entries(byCamp).sort((a,b)=>(avg(b[1].is)??-1)-(avg(a[1].is)??-1));
-  const tbody = document.getElementById('is-table-body');
+  const entries = Object.entries(byCamp).sort((a,b) => (avg(b[1].is)??-1) - (avg(a[1].is)??-1));
 
-  tbody.innerHTML = entries.length
-    ? entries.map(([camp,v]) => `<tr>
+  document.getElementById('is-table-body').innerHTML = entries.length
+    ? entries.map(([camp, v]) => `<tr>
         <td style="max-width:340px;overflow:hidden;text-overflow:ellipsis" title="${camp}">${camp.replace(/_/g,' ')}</td>
         <td>${typeBadge(v.t)}</td>
-        <td class="num">${barHtml(avg(v.is),    '#22c55e')}</td>
-        <td class="num">${barHtml(avg(v.budget), '#f97316')}</td>
-        <td class="num">${barHtml(avg(v.rank),   '#ef4444')}</td>
-        <td class="num">${barHtml(avg(v.exact),  '#3b82f6')}</td>
+        <td class="num">${barHtml(avg(v.is),     '#22c55e')}</td>
+        <td class="num">${barHtml(avg(v.budget),  '#f97316')}</td>
+        <td class="num">${barHtml(avg(v.rank),    '#ef4444')}</td>
+        <td class="num">${barHtml(avg(v.exact),   '#3b82f6')}</td>
       </tr>`).join('')
     : '<tr><td colspan="6" class="empty-state">No data for selected filters</td></tr>';
 }
@@ -605,15 +690,15 @@ function renderAuction() {
   const rows = filterAuction(f);
 
   if (!rows.length) {
-    ['auction-legend','outranking-legend'].forEach(id => document.getElementById(id).innerHTML='');
+    ['auction-legend','outranking-legend'].forEach(id => document.getElementById(id).innerHTML = '');
     document.getElementById('auction-table-body').innerHTML =
       '<tr><td colspan="7" class="empty-state">No data for selected filters</td></tr>';
     dc('chart-auction-is'); dc('chart-outranking');
     return;
   }
 
-  const dates       = [...new Set(rows.map(r=>r.d))].sort();
-  const competitors = [...new Set(rows.map(r=>r.competitor))].sort();
+  const dates       = [...new Set(rows.map(r => r.d))].sort();
+  const competitors = [...new Set(rows.map(r => r.competitor))].sort();
 
   // Aggregate by competitor + date
   const byCD = {};
@@ -621,22 +706,22 @@ function renderAuction() {
     if (!byCD[r.competitor]) byCD[r.competitor] = {};
     if (!byCD[r.competitor][r.d]) byCD[r.competitor][r.d] = {isS:0,isN:0,outS:0,outN:0,olapS:0,olapN:0,topS:0,topN:0,absS:0,absN:0};
     const e = byCD[r.competitor][r.d];
-    if (r.comp_is    != null) {e.isS   +=r.comp_is;    e.isN++;}
-    if (r.outranking != null) {e.outS  +=r.outranking; e.outN++;}
-    if (r.overlap    != null) {e.olapS +=r.overlap;    e.olapN++;}
-    if (r.top_page   != null) {e.topS  +=r.top_page;   e.topN++;}
-    if (r.abs_top    != null) {e.absS  +=r.abs_top;    e.absN++;}
+    if (r.comp_is    != null) { e.isS   += r.comp_is;    e.isN++;  }
+    if (r.outranking != null) { e.outS  += r.outranking; e.outN++; }
+    if (r.overlap    != null) { e.olapS += r.overlap;    e.olapN++;}
+    if (r.top_page   != null) { e.topS  += r.top_page;   e.topN++; }
+    if (r.abs_top    != null) { e.absS  += r.abs_top;    e.absN++; }
   });
 
-  const ds = (field, sumK, nK) => competitors.map((comp,i) => ({
+  const ds = (sumK, nK) => competitors.map((comp, i) => ({
     label:comp,
-    data:dates.map(d => { const e=byCD[comp]?.[d]; return e&&e[nK]?e[sumK]/e[nK]:null; }),
+    data:dates.map(d => { const e = byCD[comp]?.[d]; return (e && e[nK]) ? e[sumK]/e[nK] : null; }),
     borderColor:COLORS[i%COLORS.length], backgroundColor:'transparent',
     tension:0.3, pointRadius:2, borderWidth:2,
   }));
 
-  lineChart('chart-auction-is',  dates, ds('is',  'isS', 'isN'));
-  lineChart('chart-outranking',  dates, ds('out', 'outS','outN'));
+  lineChart('chart-auction-is', dates, ds('isS',  'isN'));
+  lineChart('chart-outranking', dates, ds('outS', 'outN'));
 
   const makeLegend = id => {
     document.getElementById(id).innerHTML = competitors.map((c,i) =>
@@ -658,8 +743,8 @@ function renderAuction() {
     if (r.abs_top    != null) e.abs.push(r.abs_top);
   });
 
-  const sorted = Object.entries(byComp).sort((a,b)=>(avg(b[1].is)??-1)-(avg(a[1].is)??-1));
-  document.getElementById('auction-table-body').innerHTML = sorted.map(([comp,v],i) => `<tr>
+  const sortedComps = Object.entries(byComp).sort((a,b) => (avg(b[1].is)??-1) - (avg(a[1].is)??-1));
+  document.getElementById('auction-table-body').innerHTML = sortedComps.map(([comp, v], i) => `<tr>
     <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:6px"></span>${comp}</td>
     <td>${groupBadge(v.camp)}</td>
     <td class="num">${barHtml(avg(v.is), COLORS[i%COLORS.length])}</td>
@@ -670,7 +755,24 @@ function renderAuction() {
   </tr>`).join('');
 }
 
-// ── Boot ──────────────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────────
+function init() {
+  // Build campaign type map
+  IS_DATA.forEach(r => { campTypeMap[r.camp] = r.t; });
+
+  // Date range: full data range excluding today
+  const allDates = [...new Set(IS_DATA.map(r => r.d))].filter(d => d < TODAY).sort();
+  if (allDates.length) {
+    document.getElementById('ctrl-start').value = allDates[0];
+    document.getElementById('ctrl-end').value   = allDates[allDates.length - 1];
+  }
+
+  // Populate campaign dropdown
+  rebuildCampDropdown();
+
+  render();
+}
+
 init();
 </script>
 </body>
