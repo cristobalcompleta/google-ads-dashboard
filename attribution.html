@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="logo.png">
+<title>CookUnity — Attribution Comparison</title>
+<script>
+(function(){var p=sessionStorage.getItem('cu_mta_auth');if(p!=='Zd3@hN5&uE1sYg0pXi8kWa9qM'){var e=prompt('Enter password:');if(e!=='Zd3@hN5&uE1sYg0pXi8kWa9qM'){document.documentElement.innerHTML='<h2 style="font-family:sans-serif;margin:40px">Access denied.</h2>';throw'bad pw';}sessionStorage.setItem('cu_mta_auth','Zd3@hN5&uE1sYg0pXi8kWa9qM');}})();
+</script>
+<script src="mta-data.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;font-size:13px}
+
+header{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 28px;display:flex;align-items:center;gap:12px}
+.logo{width:36px;height:36px;background:#f5a623;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:12px;flex-shrink:0}
+.ht h1{font-size:16px;font-weight:700;color:#0f172a}
+.ht p{font-size:11px;color:#94a3b8;margin-top:1px}
+
+.controls{background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 28px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.ctrl-group{display:flex;align-items:center;gap:8px}
+.ctrl-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.ctrl-sep{width:1px;height:24px;background:#e2e8f0;flex-shrink:0}
+
+input[type=date],select{background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:4px 8px;font-size:12px;color:#334155;height:28px;outline:none;cursor:pointer}
+input[type=date]:focus,select:focus{border-color:#f5a623}
+select{min-width:160px;max-width:280px}
+
+.summary-bar{background:#fff;border-bottom:1px solid #e2e8f0;padding:8px 28px;display:flex;gap:28px;align-items:center;flex-wrap:wrap}
+.sb-item{display:flex;flex-direction:column;gap:2px}
+.sb-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em}
+.sb-val{font-size:14px;font-weight:700;color:#0f172a}
+
+.main{padding:20px 28px;display:flex;flex-direction:column;gap:20px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:1100px){.two-col{grid-template-columns:1fr}}
+
+.card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px 24px;overflow:hidden}
+.card-header{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:2px}
+.card-sub{font-size:11px;color:#94a3b8;margin-bottom:14px}
+
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{padding:7px 12px;text-align:right;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #e2e8f0;white-space:nowrap}
+thead th:first-child{text-align:left}
+tbody tr{border-bottom:1px solid #f1f5f9;transition:background .1s}
+tbody tr:hover{background:#f8fafc}
+tbody tr:last-child{border-bottom:none}
+tbody td{padding:9px 12px;vertical-align:middle}
+.td-label{text-align:left;white-space:nowrap}
+.td-num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12px}
+.td-spend{text-align:right;font-variant-numeric:tabular-nums;color:#64748b;white-space:nowrap}
+
+.row-label{display:block;font-weight:600;color:#1e293b;font-size:12px}
+.row-src{display:block;font-size:10px;color:#94a3b8;margin-top:1px}
+
+.row-baseline td{background:#fafbfe}
+.row-baseline .td-label .row-label{color:#475569}
+
+.baseline-tag{font-size:10px;color:#94a3b8;background:#f1f5f9;border-radius:4px;padding:2px 6px;font-weight:600}
+
+.delta-good{color:#16a34a;font-weight:600}
+.delta-bad{color:#dc2626;font-weight:600}
+.delta-neutral{color:#94a3b8}
+
+.note{font-size:10px;color:#94a3b8;margin-top:10px;padding-top:8px;border-top:1px solid #f1f5f9}
+
+.pltv-zero{color:#94a3b8;font-style:italic}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CU</div>
+  <div class="ht">
+    <h1>Attribution Comparison</h1>
+    <p>Last Touch · MTA Attributed · MTA Conversions · Current Conversion Action — Trials, pLTV, CAC, ROAS</p>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="ctrl-group">
+    <span class="ctrl-label">Date Range</span>
+    <input type="date" id="dt-start">
+    <span style="font-size:11px;color:#94a3b8">→</span>
+    <input type="date" id="dt-end">
+  </div>
+  <div class="ctrl-sep"></div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Channel</span>
+    <select id="sel-channel">
+      <option value="All">All Channels</option>
+      <option value="Brand">Brand</option>
+      <option value="NonBrand">NonBrand</option>
+      <option value="Shopping">Shopping</option>
+    </select>
+  </div>
+  <div class="ctrl-sep"></div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Campaign</span>
+    <select id="sel-campaign">
+      <option value="All">All Campaigns</option>
+    </select>
+  </div>
+</div>
+
+<div class="summary-bar" id="summary-bar">
+  <div class="sb-item"><div class="sb-label">Period</div><div class="sb-val" id="sb-period">—</div></div>
+  <div class="sb-item"><div class="sb-label">Spend</div><div class="sb-val" id="sb-spend">—</div></div>
+  <div class="sb-item"><div class="sb-label">LT Trials</div><div class="sb-val" id="sb-lt-trials">—</div></div>
+  <div class="sb-item"><div class="sb-label">MTA Attributed</div><div class="sb-val" id="sb-mta-trials">—</div></div>
+  <div class="sb-item"><div class="sb-label">Sub Purchase</div><div class="sb-val" id="sb-sub-trials">—</div></div>
+  <div class="sb-item"><div class="sb-label">LT CAC</div><div class="sb-val" id="sb-lt-cac">—</div></div>
+</div>
+
+<div class="main">
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header">Trials</div>
+      <div class="card-sub">All attribution models · Δ baseline = Sub Purchase (click time)</div>
+      <div class="tbl-wrap" id="tbl-trials"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">CAC — Cost per Trial</div>
+      <div class="card-sub">Spend ÷ Trials · Δ baseline = LT CAC</div>
+      <div class="tbl-wrap" id="tbl-cac"></div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header">pLTV / Conversion Value</div>
+      <div class="card-sub">All attribution models · Δ baseline = Sub Purchase (click time)</div>
+      <div class="tbl-wrap" id="tbl-pltv"></div>
+      <div class="note" id="pltv-note"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">ROAS — Conv Value / Spend</div>
+      <div class="card-sub">Conversion value ÷ Spend · Δ baseline = Sub Purchase (click time)</div>
+      <div class="tbl-wrap" id="tbl-roas"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// ── Init date range from data ─────────────────────────────────────────────
+const allDates = [...new Set(MTA_DATA.map(r => r.d))].sort();
+const minDate = allDates[0];
+const maxDate = allDates[allDates.length - 1];
+$('dt-start').value = minDate;
+$('dt-end').value = maxDate;
+$('dt-start').min = minDate; $('dt-start').max = maxDate;
+$('dt-end').min = minDate;   $('dt-end').max = maxDate;
+
+// ── Campaign dropdown ─────────────────────────────────────────────────────
+function populateCampaigns(channel) {
+  const sel = $('sel-campaign');
+  const prev = sel.value;
+  const camps = [...new Set(
+    MTA_DATA.filter(r => channel === 'All' || r.channel === channel).map(r => r.camp)
+  )].sort();
+  sel.innerHTML = '<option value="All">All Campaigns</option>';
+  camps.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c; sel.appendChild(o);
+  });
+  if (camps.includes(prev)) sel.value = prev;
+}
+populateCampaigns('All');
+
+// ── Format helpers ────────────────────────────────────────────────────────
+const na = v => v === null || v === undefined || !isFinite(v) || isNaN(v);
+const fmtN  = v => na(v) ? '—' : Math.round(v).toLocaleString('en-US');
+const fmtF  = v => na(v) ? '—' : v.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1});
+const fmtD  = v => na(v) ? '—' : '$' + Math.round(v).toLocaleString('en-US');
+const fmtCAC= v => na(v) ? '—' : '$' + v.toFixed(1);
+const fmtROAS=v => na(v) ? '—' : v.toFixed(2) + 'x';
+const fmtPct= v => na(v) ? '—' : (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+
+function deltaCls(v, lowerBetter) {
+  if (na(v)) return '';
+  if (v === 0) return 'delta-neutral';
+  return (v > 0) === !lowerBetter ? 'delta-good' : 'delta-bad';
+}
+function pctDiff(val, base) {
+  if (!base || base === 0) return null;
+  return (val - base) / Math.abs(base) * 100;
+}
+
+// ── Aggregate ─────────────────────────────────────────────────────────────
+function getAgg() {
+  const start = $('dt-start').value;
+  const end   = $('dt-end').value;
+  const ch    = $('sel-channel').value;
+  const camp  = $('sel-campaign').value;
+
+  const rows = MTA_DATA.filter(r =>
+    r.d >= start && r.d <= end &&
+    (ch   === 'All' || r.channel === ch) &&
+    (camp === 'All' || r.camp    === camp)
+  );
+
+  const a = {spend:0,lt_trials:0,lt_pltv:0,mta_attr:0,
+    ihc_ct_trials:0,ihc_clt_trials:0,ihc_ct_value:0,ihc_clt_value:0,
+    sub_ct_trials:0,sub_clt_trials:0,sub_ct_value:0,sub_clt_value:0};
+  rows.forEach(r => { for(const k in a) a[k] += r[k] || 0; });
+  return a;
+}
+
+// ── Build table HTML ──────────────────────────────────────────────────────
+function tbl(headers, rows) {
+  let h = '<table><thead><tr>';
+  headers.forEach(({label, align='right'}) => {
+    h += `<th style="text-align:${align}">${label}</th>`;
+  });
+  h += '</tr></thead><tbody>';
+  rows.forEach(({cells, isBaseline}) => {
+    h += `<tr class="${isBaseline ? 'row-baseline' : ''}">`;
+    cells.forEach(({html, cls='', align='right'}) => {
+      h += `<td class="${cls}" style="text-align:${align}">${html}</td>`;
+    });
+    h += '</tr>';
+  });
+  h += '</tbody></table>';
+  return h;
+}
+
+function labelCell(label, src) {
+  return {html:`<span class="row-label">${label}</span><span class="row-src">${src}</span>`, cls:'td-label', align:'left'};
+}
+function numCell(val, fmt=fmtN) {
+  return {html: fmt(val), cls:'td-num'};
+}
+function deltaCell(val, base, lowerBetter=false) {
+  const d = pctDiff(val, base);
+  const cls = 'td-num ' + deltaCls(d, lowerBetter);
+  const html = na(d) ? '—' : fmtPct(d);
+  return {html, cls};
+}
+function baselineCell() {
+  return {html:'<span class="baseline-tag">baseline</span>', cls:'td-num delta-neutral'};
+}
+
+// ── Render ────────────────────────────────────────────────────────────────
+function render() {
+  const a = getAgg();
+  const spend = a.spend;
+
+  // Summary bar
+  $('sb-period').textContent = $('dt-start').value + ' → ' + $('dt-end').value;
+  $('sb-spend').textContent  = fmtD(spend);
+  $('sb-lt-trials').textContent  = fmtN(a.lt_trials);
+  $('sb-mta-trials').textContent = fmtF(a.mta_attr);
+  $('sb-sub-trials').textContent = fmtF(a.sub_clt_trials);
+  const ltCAC = a.lt_trials > 0 ? spend / a.lt_trials : null;
+  $('sb-lt-cac').textContent = fmtCAC(ltCAC);
+
+  // ── Table 1: Trials ───────────────────────────────────────────────────
+  const trialsBase = a.sub_clt_trials;
+  const trialsHeaders = [
+    {label:'Attribution Method', align:'left'},
+    {label:'Trials', align:'right'},
+    {label:'Δ vs Sub Purchase', align:'right'},
+  ];
+  const trialsRows = [
+    {cells:[labelCell('LT Trials','Snowflake'), numCell(a.lt_trials), deltaCell(a.lt_trials, trialsBase)]},
+    {cells:[labelCell('MTA Attributed','CSV · IHC model'), numCell(a.mta_attr, fmtF), deltaCell(a.mta_attr, trialsBase)]},
+    {cells:[labelCell('MTA Conv (conv time)','IHC_Trial_pLTV · by conv. time'), numCell(a.ihc_ct_trials, fmtF), deltaCell(a.ihc_ct_trials, trialsBase)]},
+    {cells:[labelCell('MTA Conv (click time)','IHC_Trial_pLTV · click time'), numCell(a.ihc_clt_trials, fmtF), deltaCell(a.ihc_clt_trials, trialsBase)]},
+    {cells:[labelCell('Current Conv (conv time)','Sub Purchase · by conv. time'), numCell(a.sub_ct_trials, fmtF), deltaCell(a.sub_ct_trials, trialsBase)]},
+    {isBaseline:true, cells:[labelCell('Current Conv (click time)','Sub Purchase · click time ← baseline'), numCell(a.sub_clt_trials, fmtF), baselineCell()]},
+  ];
+  $('tbl-trials').innerHTML = tbl(trialsHeaders, trialsRows);
+
+  // ── Table 2: pLTV ─────────────────────────────────────────────────────
+  const pltvBase = a.sub_clt_value;
+  const pltvHeaders = [
+    {label:'Attribution Method', align:'left'},
+    {label:'Conv Value / pLTV', align:'right'},
+    {label:'Δ vs Sub Purchase', align:'right'},
+  ];
+  const pltvRows = [
+    {cells:[labelCell('LT pLTV','Snowflake'), numCell(a.lt_pltv, fmtD), deltaCell(a.lt_pltv, pltvBase)]},
+    {cells:[labelCell('MTA Conv Value (conv time)','IHC_Trial_pLTV · by conv. time'), numCell(a.ihc_ct_value, fmtD), deltaCell(a.ihc_ct_value, pltvBase)]},
+    {cells:[labelCell('MTA Conv Value (click time)','IHC_Trial_pLTV · click time'), numCell(a.ihc_clt_value, fmtD), deltaCell(a.ihc_clt_value, pltvBase)]},
+    {cells:[labelCell('Current Conv Value (conv time)','Sub Purchase · by conv. time'), numCell(a.sub_ct_value, fmtD), deltaCell(a.sub_ct_value, pltvBase)]},
+    {isBaseline:true, cells:[labelCell('Current Conv Value (click time)','Sub Purchase · click time ← baseline'), numCell(a.sub_clt_value, fmtD), baselineCell()]},
+  ];
+  $('tbl-pltv').innerHTML = tbl(pltvHeaders, pltvRows);
+  $('pltv-note').textContent = a.lt_pltv === 0
+    ? '⚠ LT pLTV from Snowflake is currently 0 — pLTV pipeline fix pending.'
+    : '';
+
+  // ── Table 3: CAC ─────────────────────────────────────────────────────
+  const cac = trials => (trials > 0 && spend > 0) ? spend / trials : null;
+  const cacHeaders = [
+    {label:'Attribution Method', align:'left'},
+    {label:'Spend', align:'right'},
+    {label:'CAC', align:'right'},
+    {label:'Δ vs LT CAC', align:'right'},
+  ];
+  const spendCell = {html: fmtD(spend), cls:'td-spend'};
+  const cacRows = [
+    {isBaseline:true, cells:[labelCell('LT Trials','Snowflake ← baseline'), spendCell, numCell(ltCAC, fmtCAC), baselineCell()]},
+    {cells:[labelCell('MTA Attributed','CSV · IHC model'), spendCell, numCell(cac(a.mta_attr), fmtCAC), deltaCell(cac(a.mta_attr), ltCAC, true)]},
+    {cells:[labelCell('MTA Conv (conv time)','IHC_Trial_pLTV · by conv. time'), spendCell, numCell(cac(a.ihc_ct_trials), fmtCAC), deltaCell(cac(a.ihc_ct_trials), ltCAC, true)]},
+    {cells:[labelCell('MTA Conv (click time)','IHC_Trial_pLTV · click time'), spendCell, numCell(cac(a.ihc_clt_trials), fmtCAC), deltaCell(cac(a.ihc_clt_trials), ltCAC, true)]},
+    {cells:[labelCell('Current Conv (conv time)','Sub Purchase · by conv. time'), spendCell, numCell(cac(a.sub_ct_trials), fmtCAC), deltaCell(cac(a.sub_ct_trials), ltCAC, true)]},
+    {cells:[labelCell('Current Conv (click time)','Sub Purchase · click time'), spendCell, numCell(cac(a.sub_clt_trials), fmtCAC), deltaCell(cac(a.sub_clt_trials), ltCAC, true)]},
+  ];
+  $('tbl-cac').innerHTML = tbl(cacHeaders, cacRows);
+
+  // ── Table 4: ROAS ─────────────────────────────────────────────────────
+  const roas = v => spend > 0 ? v / spend : null;
+  const roasBase = roas(a.sub_clt_value);
+  const roasHeaders = [
+    {label:'Attribution Method', align:'left'},
+    {label:'Spend', align:'right'},
+    {label:'ROAS', align:'right'},
+    {label:'Δ vs Sub Purchase', align:'right'},
+  ];
+  const roasRows = [
+    {cells:[labelCell('LT pLTV','Snowflake'), spendCell, numCell(roas(a.lt_pltv), fmtROAS), deltaCell(roas(a.lt_pltv), roasBase)]},
+    {cells:[labelCell('MTA Conv Value (conv time)','IHC_Trial_pLTV · by conv. time'), spendCell, numCell(roas(a.ihc_ct_value), fmtROAS), deltaCell(roas(a.ihc_ct_value), roasBase)]},
+    {cells:[labelCell('MTA Conv Value (click time)','IHC_Trial_pLTV · click time'), spendCell, numCell(roas(a.ihc_clt_value), fmtROAS), deltaCell(roas(a.ihc_clt_value), roasBase)]},
+    {cells:[labelCell('Current Conv Value (conv time)','Sub Purchase · by conv. time'), spendCell, numCell(roas(a.sub_ct_value), fmtROAS), deltaCell(roas(a.sub_ct_value), roasBase)]},
+    {isBaseline:true, cells:[labelCell('Current Conv Value (click time)','Sub Purchase · click time ← baseline'), spendCell, numCell(roasBase, fmtROAS), baselineCell()]},
+  ];
+  $('tbl-roas').innerHTML = tbl(roasHeaders, roasRows);
+}
+
+// ── Event listeners ───────────────────────────────────────────────────────
+$('sel-channel').addEventListener('change', () => {
+  populateCampaigns($('sel-channel').value);
+  render();
+});
+$('sel-campaign').addEventListener('change', render);
+$('dt-start').addEventListener('change', render);
+$('dt-end').addEventListener('change', render);
+
+render();
+</script>
+</body>
+</html>
