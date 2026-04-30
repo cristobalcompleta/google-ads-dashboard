@@ -195,7 +195,6 @@ tbody td{padding:9px 12px;vertical-align:middle}
         <div class="cmp-wrap"><span class="cmp-label">Compare vs</span><select id="cmp-pltv" class="cmp-sel"></select></div>
       </div>
       <div class="tbl-wrap" id="tbl-pltv"></div>
-      <div class="note" id="pltv-note"></div>
     </div>
     <div class="card">
       <div class="card-top">
@@ -397,10 +396,6 @@ function render() {
       ]};
     })
   );
-  $('pltv-note').textContent = a.lt_pltv === 0
-    ? '⚠ LT pLTV from Snowflake is currently 0 — pLTV pipeline fix pending.'
-    : '';
-
   // ── Table 3: CAC ─────────────────────────────────────────────────────
   const cacBKey  = $('cmp-cac').value;
   const cac      = key => (a[key] > 0 && spend > 0) ? spend / a[key] : null;
