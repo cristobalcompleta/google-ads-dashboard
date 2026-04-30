@@ -100,7 +100,6 @@ tr:hover td{background:#f8fafc}
 
 <div class="tab-nav">
   <button class="tab-btn active" onclick="switchTab('summary',this)">Summary</button>
-  <button class="tab-btn" onclick="switchTab('is',this)">Impression Share</button>
   <button class="tab-btn" onclick="switchTab('auction',this)">Auction Insights</button>
 </div>
 
@@ -251,48 +250,10 @@ tr:hover td{background:#f8fafc}
     </div>
   </div>
 
-</div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- TAB 1: IMPRESSION SHARE                                                   -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<div id="tab-is" class="tab-pane">
-<div class="main">
-
-  <div class="section">
-    <div class="section-title">Search Impression Share Over Time</div>
-    <div class="section-sub">Daily IS % — captured, lost to budget, lost to rank</div>
-    <div class="stacked-legend">
-      <div class="stacked-legend-item"><div class="stacked-legend-box" style="background:#22c55e"></div>Captured IS</div>
-      <div class="stacked-legend-item"><div class="stacked-legend-box" style="background:#f97316"></div>Lost — Budget</div>
-      <div class="stacked-legend-item"><div class="stacked-legend-box" style="background:#ef4444"></div>Lost — Rank</div>
-    </div>
-    <canvas id="chart-is-stacked"></canvas>
-  </div>
-
   <div class="section">
     <div class="section-title">Exact Match IS Over Time</div>
     <div class="section-sub">How well you capture impressions for exact-match eligible searches</div>
     <canvas id="chart-exact"></canvas>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Campaign Breakdown</div>
-    <div class="section-sub">Average IS metrics over selected period, per campaign</div>
-    <table>
-      <thead>
-        <tr>
-          <th>Campaign</th>
-          <th>Channel</th>
-          <th class="num">Search IS</th>
-          <th class="num">Lost — Budget</th>
-          <th class="num">Lost — Rank</th>
-          <th class="num">Exact Match IS</th>
-        </tr>
-      </thead>
-      <tbody id="is-table-body"></tbody>
-    </table>
   </div>
 
 </div>
@@ -604,7 +565,6 @@ function stackedChart(id, labels, datasets) {
 // ── Render dispatcher ─────────────────────────────────────────────────────────
 function render() {
   if (activeTab==='summary') renderSummary();
-  else if (activeTab==='is') renderIS();
   else renderAuction();
 }
 
@@ -642,6 +602,15 @@ function renderSummary() {
     {label:'Lost — Rank',   data:dates.map(d => byDateRank[d]   ?? null), backgroundColor:'#ef4444', borderRadius:2},
   ]);
 
+  // Exact Match IS chart
+  const byDateExact = avgByDate(rows, 'exact_is');
+  lineChart('chart-exact', dates, [{
+    label:'Exact Match IS',
+    data:dates.map(d => byDateExact[d] ?? null),
+    borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.08)',
+    fill:true, tension:0.3, pointRadius:2,
+  }]);
+
   // Top competitors table
   const aRows  = filterAuction(f);
   const byComp = {};
@@ -665,53 +634,6 @@ function renderSummary() {
         <td class="num">${fmt(x.avgOut)}</td>
       </tr>`).join('')
     : '<tr><td colspan="4" class="empty-state">No auction data for selected period</td></tr>';
-}
-
-// ── IS tab ────────────────────────────────────────────────────────────────────
-function renderIS() {
-  const f    = getFilters();
-  const rows = filterIS(f);
-
-  const dates        = [...new Set(rows.map(r => r.d))].sort();
-  const byDateIS     = avgByDate(rows, 'search_is');
-  const byDateBudget = avgByDate(rows, 'lost_budget');
-  const byDateRank   = avgByDate(rows, 'lost_rank');
-  const byDateExact  = avgByDate(rows, 'exact_is');
-
-  stackedChart('chart-is-stacked', dates, [
-    {label:'Captured IS',   data:dates.map(d => byDateIS[d]     ?? null), backgroundColor:'#22c55e', borderRadius:2},
-    {label:'Lost — Budget', data:dates.map(d => byDateBudget[d] ?? null), backgroundColor:'#f97316', borderRadius:2},
-    {label:'Lost — Rank',   data:dates.map(d => byDateRank[d]   ?? null), backgroundColor:'#ef4444', borderRadius:2},
-  ]);
-
-  lineChart('chart-exact', dates, [{
-    label:'Exact Match IS',
-    data:dates.map(d => byDateExact[d] ?? null),
-    borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.08)',
-    fill:true, tension:0.3, pointRadius:2,
-  }]);
-
-  const byCamp = {};
-  rows.forEach(r => {
-    if (!byCamp[r.camp]) byCamp[r.camp] = {t:r.t, is:[], budget:[], rank:[], exact:[]};
-    const e = byCamp[r.camp];
-    if (r.search_is   != null) e.is.push(r.search_is);
-    if (r.lost_budget != null) e.budget.push(r.lost_budget);
-    if (r.lost_rank   != null) e.rank.push(r.lost_rank);
-    if (r.exact_is    != null) e.exact.push(r.exact_is);
-  });
-
-  const entries = Object.entries(byCamp).sort((a,b) => (avg(b[1].is)??-1) - (avg(a[1].is)??-1));
-  document.getElementById('is-table-body').innerHTML = entries.length
-    ? entries.map(([camp, v]) => `<tr>
-        <td style="max-width:340px;overflow:hidden;text-overflow:ellipsis" title="${camp}">${camp.replace(/_/g,' ')}</td>
-        <td>${typeBadge(v.t)}</td>
-        <td class="num">${barHtml(avg(v.is),     '#22c55e')}</td>
-        <td class="num">${barHtml(avg(v.budget),  '#f97316')}</td>
-        <td class="num">${barHtml(avg(v.rank),    '#ef4444')}</td>
-        <td class="num">${barHtml(avg(v.exact),   '#3b82f6')}</td>
-      </tr>`).join('')
-    : '<tr><td colspan="6" class="empty-state">No data for selected filters</td></tr>';
 }
 
 // ── Auction tab ───────────────────────────────────────────────────────────────
