@@ -1130,6 +1130,10 @@ tr:hover td{background:#f8fafc}
       <button class="pvt-view-btn" id="pvtView_daily" onclick="pvt_setView('daily')">Daily</button>
     </div>
   </div>
+  <!-- KPI CARDS -->
+  <div class="p0-main" style="padding-bottom:0">
+    <div id="pvt_kpiRow" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px"></div>
+  </div>
   <!-- CHART -->
   <div class="p0-main">
     <div class="section">
@@ -4511,6 +4515,65 @@ function pvt_fmtTip(m, v){
   return v;
 }
 
+function pvt_renderKPIs(kpi){
+  const fmtSpend = v => '$'+Math.round(v).toLocaleString();
+  const fmtTrials = v => Math.round(v).toLocaleString();
+  const fmtCAC = v => '$'+v.toFixed(2);
+
+  const card = (label, actualStr, targetStr, deltaAbs, deltaPct, colorClass) => {
+    const sign = deltaAbs >= 0 ? '+' : '';
+    const pctSign = deltaPct >= 0 ? '+' : '';
+    return `
+    <div class="p0-kpi-card">
+      <div class="p0-kpi-label">${label}</div>
+      <div class="p0-kpi-value">${actualStr}</div>
+      <div class="p0-kpi-row"><span class="p0-kpi-row-label">Target (to date)</span><span>${targetStr}</span></div>
+      <div class="p0-kpi-row"><span class="p0-kpi-row-label">Delta</span>
+        <span class="${colorClass}" style="font-weight:700">${sign}${deltaAbs} <span style="font-size:10px;opacity:.8">(${pctSign}${deltaPct}%)</span></span>
+      </div>
+    </div>`;
+  };
+
+  const noData = kpi.actual.trials === 0 && kpi.actual.spend === 0;
+
+  // Spend card — neutral pacing color
+  const spendDeltaAbs = kpi.actual.spend - kpi.target.spend;
+  const spendDeltaPct = kpi.target.spend > 0 ? (spendDeltaAbs / kpi.target.spend * 100).toFixed(1) : '0.0';
+  const spendColor = noData ? 'delta-neu' : Math.abs(spendDeltaAbs/kpi.target.spend) < 0.05 ? 'delta-neu' : spendDeltaAbs > 0 ? 'delta-warn' : 'delta-neg';
+
+  // Trials card — positive = good
+  const trialsDeltaAbs = kpi.actual.trials - kpi.target.trials;
+  const trialsDeltaPct = kpi.target.trials > 0 ? (trialsDeltaAbs / kpi.target.trials * 100).toFixed(1) : '0.0';
+  const trialsColor = noData ? 'delta-neu' : trialsDeltaAbs >= 0 ? 'delta-pos' : 'delta-inv-pos';
+
+  // CAC card — negative = good (lower is better)
+  const cacActual = kpi.actual.trials > 0 ? kpi.actual.spend / kpi.actual.trials : null;
+  const cacTarget = kpi.target.trials > 0 ? kpi.target.spend / kpi.target.trials : null;
+  const cacDeltaAbs = cacActual !== null && cacTarget !== null ? cacActual - cacTarget : null;
+  const cacDeltaPct = cacTarget && cacDeltaAbs !== null ? (cacDeltaAbs / cacTarget * 100).toFixed(1) : '0.0';
+  const cacColor = noData || cacDeltaAbs === null ? 'delta-neu' : cacDeltaAbs <= 0 ? 'delta-pos' : 'delta-inv-pos';
+
+  document.getElementById('pvt_kpiRow').innerHTML =
+    card('Spend — Cumulative',
+      noData ? '—' : fmtSpend(kpi.actual.spend),
+      fmtSpend(kpi.target.spend),
+      noData ? '—' : fmtSpend(spendDeltaAbs),
+      noData ? '—' : spendDeltaPct,
+      spendColor) +
+    card('Trials — Cumulative',
+      noData ? '—' : fmtTrials(kpi.actual.trials),
+      fmtTrials(kpi.target.trials),
+      noData ? '—' : (trialsDeltaAbs >= 0 ? '+' : '') + trialsDeltaAbs,
+      noData ? '—' : trialsDeltaPct,
+      trialsColor) +
+    card('CAC — Cumulative',
+      noData || cacActual === null ? '—' : fmtCAC(cacActual),
+      cacTarget !== null ? fmtCAC(cacTarget) : '—',
+      noData || cacDeltaAbs === null ? '—' : fmtCAC(cacDeltaAbs),
+      noData || cacDeltaAbs === null ? '—' : cacDeltaPct,
+      cacColor);
+}
+
 function pvt_renderChart(){
   const colMetric = document.getElementById('pvtColMetric').value;
   const lineMetric = document.getElementById('pvtLineMetric').value;
@@ -4543,6 +4606,26 @@ function pvt_renderChart(){
   dates.forEach((d,i)=>{
     if(active.some(ch=>actuals[ch][i].spend>0||actuals[ch][i].trials>0)) lastIdx=i;
   });
+
+  // ── KPI totals (always cumulative, up to last actual day) ────────────────
+  {
+    let aSpend=0, aTrials=0, tSpend=0, tTrials=0;
+    const days = lastIdx >= 0 ? lastIdx+1 : 0;
+    dates.forEach((_,i)=>{
+      if(i < days){
+        active.forEach(ch=>{ aSpend+=actuals[ch][i].spend; aTrials+=actuals[ch][i].trials; });
+      }
+      if(i < Math.max(days,1)){
+        active.forEach(ch=>{ tSpend+=TARGETS_DATA.channels[ch].daily[i].spend; tTrials+=TARGETS_DATA.channels[ch].daily[i].trials; });
+      }
+    });
+    // If no actuals yet, target = day 0 only (just to show a reference)
+    if(days===0){
+      tSpend=0; tTrials=0;
+      active.forEach(ch=>{ tSpend+=TARGETS_DATA.channels[ch].daily[0].spend; tTrials+=TARGETS_DATA.channels[ch].daily[0].trials; });
+    }
+    pvt_renderKPIs({ actual:{spend:aSpend,trials:aTrials}, target:{spend:tSpend,trials:tTrials} });
+  }
 
   // Cumulative helpers
   const makeCumul=arr=>{
