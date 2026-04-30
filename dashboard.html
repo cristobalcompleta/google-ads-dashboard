@@ -1618,7 +1618,7 @@ function p0_dayRaw(dateStr){
   DATA.forEach(r=>{
     if(r.d!==dateStr) return;
     if(!p0_selCT.has(derivedType(r))) return;
-    if(p0_selCamp&&!p0_selCamp.has(r.cat)) return;
+    if(p0_selCamp&&!p0_selCamp.has(r.camp)) return;
     imp+=r.imp; cl+=r.cl; cost+=r.cost; trials+=r.trials;
   });
   return{imp,cl,cost,trials};
@@ -1639,7 +1639,7 @@ function p0_rangeRaw(startStr,endStr){
     const rd=new Date(r.d+"T00:00:00");
     if(rd<s||rd>e) return;
     if(!p0_selCT.has(derivedType(r))) return;
-    if(p0_selCamp&&!p0_selCamp.has(r.cat)) return;
+    if(p0_selCamp&&!p0_selCamp.has(r.camp)) return;
     imp+=r.imp; cl+=r.cl; cost+=r.cost; trials+=r.trials;
   });
   return{imp,cl,cost,trials};
@@ -1754,11 +1754,11 @@ function p0_onCTChange(){
 
 // ── Campaign filter ────────────────────────────────────────────────────────────
 function p0_rebuildCampList(){
-  const cats=new Set();
-  DATA.forEach(r=>{if(p0_selCT.has(derivedType(r))) cats.add(r.cat);});
-  const sorted=[...cats].sort();
+  const camps=new Set();
+  DATA.forEach(r=>{if(p0_selCT.has(derivedType(r))) camps.add(r.camp);});
+  const sorted=[...camps].sort();
   document.getElementById("p0_campList").innerHTML=sorted.map(c=>
-    `<label class="dd-item"><input type="checkbox" value="${c}" checked onchange="p0_onCampChange()"> ${c}</label>`
+    `<label class="dd-item"><input type="checkbox" value="${c.replace(/"/g,'&quot;')}" checked onchange="p0_onCampChange()"> <span title="${c.replace(/"/g,'&quot;')}">${p2_shortName(c)}</span></label>`
   ).join("");
   p0_updateCampLabel();
 }
@@ -1829,7 +1829,7 @@ function p0_efficiencyCard(selDate, groupLabel, groupTypes, accentColor){
   DATA.forEach(r=>{
     if(r.d!==selDate) return;
     if(!activeTypes.includes(derivedType(r))) return;
-    if(p0_selCamp&&!p0_selCamp.has(r.cat)) return;
+    if(p0_selCamp&&!p0_selCamp.has(r.camp)) return;
     if(!campMap[r.cat]) campMap[r.cat]={cost:0,trials:0};
     campMap[r.cat].cost+=r.cost; campMap[r.cat].trials+=r.trials;
     totalCost+=r.cost; totalTrials+=r.trials;
@@ -1877,7 +1877,7 @@ function p0_topCACMoverCard(selDate){
 
   DATA.forEach(r=>{
     if(!p0_selCT.has(derivedType(r))) return;
-    if(p0_selCamp&&!p0_selCamp.has(r.cat)) return;
+    if(p0_selCamp&&!p0_selCamp.has(r.camp)) return;
     if(r.d===selDate){
       if(!todayMap[r.cat]) todayMap[r.cat]={cost:0,trials:0};
       todayMap[r.cat].cost+=r.cost; todayMap[r.cat].trials+=r.trials;
@@ -3900,7 +3900,7 @@ function pw_weekRaw(wStart){
   DATA.forEach(r=>{
     if(r.d<wStart||r.d>wEnd) return;
     if(!pw_selCT.has(derivedType(r))) return;
-    if(pw_selCamp&&!pw_selCamp.has(r.cat)) return;
+    if(pw_selCamp&&!pw_selCamp.has(r.camp)) return;
     imp+=r.imp;cl+=r.cl;cost+=r.cost;trials+=r.trials;
   });
   return{imp,cl,cost,trials};
@@ -4006,10 +4006,10 @@ function pw_onCTChange(){
   pw_recalc();
 }
 function pw_rebuildCampList(){
-  const cats=new Set();
-  DATA.forEach(r=>{if(pw_selCT.has(derivedType(r)))cats.add(r.cat);});
-  document.getElementById("pw_campList").innerHTML=[...cats].sort().map(c=>
-    `<label class="dd-item"><input type="checkbox" value="${c}" checked onchange="pw_onCampChange()"> ${c}</label>`
+  const camps=new Set();
+  DATA.forEach(r=>{if(pw_selCT.has(derivedType(r)))camps.add(r.camp);});
+  document.getElementById("pw_campList").innerHTML=[...camps].sort().map(c=>
+    `<label class="dd-item"><input type="checkbox" value="${c.replace(/"/g,'&quot;')}" checked onchange="pw_onCampChange()"> <span title="${c.replace(/"/g,'&quot;')}">${p2_shortName(c)}</span></label>`
   ).join("");
   pw_updateCampLabel();
 }
@@ -4042,7 +4042,7 @@ function pw_efficiencyCard(wStart,groupLabel,groupTypes,accentColor){
   DATA.forEach(r=>{
     if(r.d<wStart||r.d>wEnd) return;
     if(!activeTypes.includes(derivedType(r))) return;
-    if(pw_selCamp&&!pw_selCamp.has(r.cat)) return;
+    if(pw_selCamp&&!pw_selCamp.has(r.camp)) return;
     if(!campMap[r.cat]) campMap[r.cat]={cost:0,trials:0};
     campMap[r.cat].cost+=r.cost;campMap[r.cat].trials+=r.trials;
     totalCost+=r.cost;totalTrials+=r.trials;
@@ -4063,7 +4063,7 @@ function pw_topCACMoverCard(wStart){
   const thisMap={},lwMap={};
   DATA.forEach(r=>{
     if(!pw_selCT.has(derivedType(r))) return;
-    if(pw_selCamp&&!pw_selCamp.has(r.cat)) return;
+    if(pw_selCamp&&!pw_selCamp.has(r.camp)) return;
     if(r.d>=wStart&&r.d<=wEnd){if(!thisMap[r.cat])thisMap[r.cat]={cost:0,trials:0};thisMap[r.cat].cost+=r.cost;thisMap[r.cat].trials+=r.trials;}
     if(r.d>=lwStart&&r.d<=lwEnd){if(!lwMap[r.cat])lwMap[r.cat]={cost:0,trials:0};lwMap[r.cat].cost+=r.cost;lwMap[r.cat].trials+=r.trials;}
   });
@@ -4241,7 +4241,7 @@ function pd_weekDowRaw(wStart){
   DATA.forEach(r=>{
     if(r.d<wStart||r.d>wEnd) return;
     if(!pd_selCT.has(derivedType(r))) return;
-    if(pd_selCamp&&!pd_selCamp.has(r.cat)) return;
+    if(pd_selCamp&&!pd_selCamp.has(r.camp)) return;
     const diffMs=new Date(r.d+"T00:00:00")-new Date(wStart+"T00:00:00");
     const i=Math.round(diffMs/86400000);
     if(i<0||i>6) return;
@@ -4334,9 +4334,9 @@ function pd_onCTChange(){
   pd_selCamp=null;pd_rebuildCampList();pd_recalc();
 }
 function pd_rebuildCampList(){
-  const cats=new Set();
-  DATA.forEach(r=>{if(pd_selCT.has(derivedType(r)))cats.add(r.cat);});
-  document.getElementById("pd_campList").innerHTML=[...cats].sort().map(c=>`<label class="dd-item"><input type="checkbox" value="${c}" checked onchange="pd_onCampChange()"> ${c}</label>`).join("");
+  const camps=new Set();
+  DATA.forEach(r=>{if(pd_selCT.has(derivedType(r)))camps.add(r.camp);});
+  document.getElementById("pd_campList").innerHTML=[...camps].sort().map(c=>`<label class="dd-item"><input type="checkbox" value="${c.replace(/"/g,'&quot;')}" checked onchange="pd_onCampChange()"> <span title="${c.replace(/"/g,'&quot;')}">${p2_shortName(c)}</span></label>`).join("");
   pd_updateCampLabel();
 }
 function pd_updateCampLabel(){
