@@ -26,6 +26,21 @@ input[type=date],select{background:#fff;border:1px solid #cbd5e1;border-radius:6
 input[type=date]:focus,select:focus{border-color:#f5a623}
 select{min-width:160px;max-width:280px}
 
+.dd-wrap{position:relative}
+.dd-btn{background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;min-width:160px;justify-content:space-between;color:#334155;white-space:nowrap;height:28px}
+.dd-btn:hover{border-color:#94a3b8}
+.dd-panel{position:absolute;top:calc(100%+4px);left:0;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:300;min-width:220px;display:none;flex-direction:column}
+.dd-panel.open{display:flex}
+.dd-search{border:none;border-bottom:1px solid #e2e8f0;padding:8px 12px;font-size:12px;outline:none;border-radius:8px 8px 0 0;width:100%}
+.dd-list{max-height:220px;overflow-y:auto;padding:4px 0}
+.dd-item{padding:6px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#334155;user-select:none}
+.dd-item:hover{background:#f8fafc}
+.dd-item input{width:13px;height:13px;accent-color:#f5a623;cursor:pointer;flex-shrink:0}
+.dd-item.hidden{display:none}
+.dd-actions{border-top:1px solid #e2e8f0;padding:6px 12px;display:flex;gap:8px}
+.dd-act-btn{font-size:11px;color:#f5a623;cursor:pointer;background:none;border:none;padding:0;font-weight:600}
+.dd-act-btn:hover{color:#d97706}
+
 
 .main{padding:20px 28px;display:flex;flex-direction:column;gap:20px}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -166,9 +181,17 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div class="ctrl-sep"></div>
     <div class="ctrl-group">
       <span class="ctrl-label">Campaign</span>
-      <select id="sel-campaign">
-        <option value="All">All Campaigns</option>
-      </select>
+      <div class="dd-wrap">
+        <button class="dd-btn" onclick="toggleDD('camp-panel')"><span id="camp-label">All Campaigns</span><span>▾</span></button>
+        <div class="dd-panel" id="camp-panel">
+          <input class="dd-search" type="text" placeholder="Search campaigns…" oninput="filterCampList(this.value)">
+          <div class="dd-list" id="camp-list"></div>
+          <div class="dd-actions">
+            <button class="dd-act-btn" onclick="campSelectAll()">Select all</button>
+            <button class="dd-act-btn" onclick="campClearAll()">Clear</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -261,20 +284,67 @@ populateCmp('cmp-cac',    TRIALS_ROWS, 'lt_trials');
 populateCmp('cmp-pltv',   PLTV_ROWS,   'sub_clt_value');
 populateCmp('cmp-roas',   PLTV_ROWS,   'sub_clt_value');
 
-// ── Campaign dropdown ─────────────────────────────────────────────────────
+// ── Campaign multi-select dropdown ───────────────────────────────────────
+let selCamp = null; // null = all selected, Set = specific selection
+
+function toggleDD(id) {
+  const p = document.getElementById(id);
+  document.querySelectorAll('.dd-panel').forEach(x => { if (x.id !== id) x.classList.remove('open'); });
+  p.classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dd-wrap')) document.querySelectorAll('.dd-panel').forEach(x => x.classList.remove('open'));
+});
+
 function populateCampaigns(channel) {
-  const sel = $('sel-campaign');
-  const prev = sel.value;
+  const prevSel = selCamp ? new Set(selCamp) : null;
   const camps = [...new Set(
     MTA_DATA.filter(r => channel === 'All' || r.channel === channel).map(r => r.camp)
   )].sort();
-  sel.innerHTML = '<option value="All">All Campaigns</option>';
-  camps.forEach(c => {
-    const o = document.createElement('option');
-    o.value = c; o.textContent = c; sel.appendChild(o);
-  });
-  if (camps.includes(prev)) sel.value = prev;
+  $('camp-list').innerHTML = camps.map(c => {
+    const checked = prevSel === null || prevSel.has(c) ? 'checked' : '';
+    const esc = c.replace(/"/g, '&quot;');
+    const short = c.length > 42 ? c.slice(0, 40) + '…' : c;
+    return `<label class="dd-item"><input type="checkbox" value="${esc}" ${checked} onchange="onCampChange()"> <span title="${esc}">${short}</span></label>`;
+  }).join('');
+  selCamp = null; // reset to all when channel changes
+  updateCampLabel();
 }
+
+function onCampChange() {
+  const checks = [...document.querySelectorAll('#camp-list input:checked')].map(x => x.value);
+  const total  = document.querySelectorAll('#camp-list input').length;
+  selCamp = checks.length === total ? null : new Set(checks);
+  updateCampLabel();
+  render();
+}
+
+function updateCampLabel() {
+  const checks = [...document.querySelectorAll('#camp-list input:checked')];
+  const total  = document.querySelectorAll('#camp-list input').length;
+  $('camp-label').textContent = checks.length === 0 ? 'None' : checks.length === total ? 'All Campaigns' : `${checks.length} campaigns`;
+}
+
+function filterCampList(q) {
+  document.querySelectorAll('#camp-list .dd-item').forEach(el => {
+    el.classList.toggle('hidden', !el.textContent.toLowerCase().includes(q.toLowerCase()));
+  });
+}
+
+function campSelectAll() {
+  document.querySelectorAll('#camp-list input').forEach(x => x.checked = true);
+  selCamp = null;
+  updateCampLabel();
+  render();
+}
+
+function campClearAll() {
+  document.querySelectorAll('#camp-list input').forEach(x => x.checked = false);
+  selCamp = new Set();
+  updateCampLabel();
+  render();
+}
+
 populateCampaigns('All');
 
 // ── Format helpers ────────────────────────────────────────────────────────
@@ -301,11 +371,10 @@ function getAgg() {
   const start = $('dt-start').value;
   const end   = $('dt-end').value;
   const ch    = $('sel-channel').value;
-  const camp  = $('sel-campaign').value;
   const rows  = MTA_DATA.filter(r =>
     r.d >= start && r.d <= end &&
-    (ch   === 'All' || r.channel === ch) &&
-    (camp === 'All' || r.camp    === camp)
+    (ch      === 'All' || r.channel === ch) &&
+    (selCamp === null  || selCamp.has(r.camp))
   );
   const a = {spend:0,lt_trials:0,lt_pltv:0,mta_attr:0,
     ihc_ct_trials:0,ihc_clt_trials:0,ihc_ct_value:0,ihc_clt_value:0,
@@ -437,7 +506,7 @@ function render() {
 
 // ── Event listeners ───────────────────────────────────────────────────────
 $('sel-channel').addEventListener('change', () => { populateCampaigns($('sel-channel').value); render(); });
-['sel-campaign','dt-start','dt-end','cmp-trials','cmp-cac','cmp-pltv','cmp-roas'].forEach(id => $(id).addEventListener('change', render));
+['dt-start','dt-end','cmp-trials','cmp-cac','cmp-pltv','cmp-roas'].forEach(id => $(id).addEventListener('change', render));
 
 render();
 </script>
